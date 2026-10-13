@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  secrets:
+    name: secrets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Varredura de segredos (gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  node:
+    name: node
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Detecta workspace Node
+        id: detect
+        run: |
+          if [ -f pnpm-lock.yaml ]; then echo "present=true" >> "$GITHUB_OUTPUT"; else echo "present=false" >> "$GITHUB_OUTPUT"; fi
+      - uses: pnpm/action-setup@v4
+        if: steps.detect.outputs.present == 'true'
+      - uses: actions/setup-node@v4
+        if: steps.detect.outputs.present == 'true'
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - name: Instala dependências
+        if: steps.detect.outputs.present == 'true'
+        run: pnpm install --frozen-lockfile
+      - name: Lint
+        if: steps.detect.outputs.present == 'true'
+        run: pnpm -r --if-present lint
+      - name: Tipos
+        if: steps.detect.outputs.present == 'true'
+        run: pnpm -r --if-present typecheck
+      - name: Testes
+        if: steps.detect.outputs.present == 'true'
+        run: pnpm -r --if-present test
+      - name: Sem workspace Node ainda
+        if: steps.detect.outputs.present != 'true'
+        run: echo "Nenhum pnpm-lock.yaml encontrado; nada a verificar."
+
+  python:
+    name: python
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/ingest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Detecta projeto Python
+        id: detect
+        working-directory: .
+        run: |
+          if [ -f services/ingest/pyproject.toml ]; then echo "present=true" >> "$GITHUB_OUTPUT"; else echo "present=false" >> "$GITHUB_OUTPUT"; fi
+      - uses: astral-sh/setup-uv@v5
+        if: steps.detect.outputs.present == 'true'
+      - name: Instala dependências
+        if: steps.detect.outputs.present == 'true'
+        run: uv sync --frozen
+      - name: Lint
+        if: steps.detect.outputs.present == 'true'
+        run: uv run ruff check . && uv run ruff format --check .
+      - name: Testes
+        if: steps.detect.outputs.present == 'true'
+        run: uv run pytest
+      - name: Sem projeto Python ainda
+        if: steps.detect.outputs.present != 'true'
+        working-directory: .
+        run: echo "Nenhum services/ingest/pyproject.toml encontrado; nada a verificar."

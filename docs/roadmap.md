@@ -36,7 +36,7 @@ Objetivo: saber quem é quem, em todas as fontes, sem casar pessoas só pelo nom
 | [x] | `ingest/senado-senadores` | Senadores em exercício |
 | [x] | `ingest/tse-candidaturas` | Candidaturas 2026 e histórico de eleições anteriores |
 | [x] | `ingest/partidos` | Partidos, números, siglas, fusões e renomeações |
-| [ ] | `canon/resolucao-pessoas` | Casamento entre fontes por CPF (só hash), depois nome civil + data de nascimento; fila de revisão para casos incertos |
+| [x] | `canon/resolucao-pessoas` | Casamento entre fontes por CPF (só hash), depois nome civil + data de nascimento; fila de revisão para casos incertos |
 | [ ] | `canon/mandatos-filiacoes` | Mandatos e histórico de partido por pessoa |
 
 **Critério de saída:** 95% ou mais dos parlamentares casados sem erro, conferidos por amostragem.

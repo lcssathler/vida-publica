@@ -32,7 +32,7 @@ Objetivo: saber quem é quem, em todas as fontes, sem casar pessoas só pelo nom
 
 | | Branch | Entrega |
 | --- | --- | --- |
-| [ ] | `ingest/camara-deputados` | Deputados em exercício e detalhe (inclui identificadores) |
+| [x] | `ingest/camara-deputados` | Deputados em exercício e detalhe (inclui identificadores) |
 | [ ] | `ingest/senado-senadores` | Senadores em exercício |
 | [ ] | `ingest/tse-candidaturas` | Candidaturas 2026 e histórico de eleições anteriores |
 | [ ] | `ingest/partidos` | Partidos, números, siglas, fusões e renomeações |

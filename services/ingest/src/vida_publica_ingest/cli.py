@@ -23,6 +23,7 @@ from .sources import (
     senado_senadores,
     senado_votacoes,
     tse_candidaturas,
+    tse_contas_candidatos,
 )
 
 # Janela padrão dos coletores por período: cobre a semana e absorve atrasos de publicação.
@@ -334,6 +335,28 @@ def _ceaps_senado(settings: Settings, anos: list[int]) -> int:
     return 0
 
 
+def _tse_contas_candidatos(settings: Settings, anos: list[int], cargos: list[int] | None) -> int:
+    conn = connect(settings)
+    try:
+        with SourceClient(settings) as client:
+            run_job(
+                "tse-contas-candidatos",
+                lambda: tse_contas_candidatos.collect(
+                    client,
+                    S3RawStorage(settings),
+                    PgRawRegistry(conn),
+                    conn,
+                    cpf_hash_key=settings.cpf_hash_key.get_secret_value(),
+                    anos=anos,
+                    cargos=set(cargos) if cargos is not None else None,
+                ),
+                PgJobRecorder(conn),
+            )
+    finally:
+        conn.close()
+    return 0
+
+
 def _mandatos_filiacoes(settings: Settings) -> int:
     conn = connect(settings)
     try:
@@ -395,6 +418,18 @@ def main(argv: list[str] | None = None) -> int:
         "ceaps-senado", help="despesas dos senadores (CEAPS), arquivo anual com diferença"
     )
     ceaps.add_argument("--ano", type=int, action="append", help="padrão: ano corrente")
+    contas = commands.add_parser(
+        "tse-contas-candidatos",
+        help="prestação de contas de candidatos do TSE: receitas, doador originário e despesas",
+    )
+    contas.add_argument("--ano", type=int, action="append", help="padrão: 2026")
+    contas.add_argument(
+        "--cargo",
+        type=int,
+        action="append",
+        help="código de cargo do TSE; padrão: 1 (Presidente), 5 (Senador), 6 (Deputado Federal)",
+    )
+    contas.add_argument("--todos-cargos", action="store_true", help="não filtra por cargo")
     commands.add_parser(
         "mandatos-filiacoes", help="constrói mandatos e períodos de filiação por pessoa"
     )
@@ -431,6 +466,9 @@ def main(argv: list[str] | None = None) -> int:
         return _cota_camara(settings, args.ano or [date.today().year])
     if args.command == "ceaps-senado":
         return _ceaps_senado(settings, args.ano or [date.today().year])
+    if args.command == "tse-contas-candidatos":
+        cargos = set() if args.todos_cargos else args.cargo
+        return _tse_contas_candidatos(settings, args.ano or [2026], cargos)
     if args.command == "mandatos-filiacoes":
         return _mandatos_filiacoes(settings)
     if args.command == "resolver-pessoas":

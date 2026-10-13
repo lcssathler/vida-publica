@@ -70,6 +70,7 @@ Cada comando roda como job registrado em `raw.job_run`. Pelo Docker: `docker com
 | 12 | `presenca` | Presença de deputados nos eventos deliberativos já coletados (`--desde`, `--ate`); com `VP_CAMARA_PRESENCA_LEGADO=true`, também a frequência diária do Plenário com justificativas (serviço legado). No Senado, a presença vem dos códigos de comparecimento em `senado-votacoes` |
 | 13 | `cota-camara` | Despesas da cota parlamentar da Câmara: arquivo anual rebaixado e comparado com o banco (novas, removidas, restauradas); CPF de fornecedor pessoa física só em hash (`--ano`; padrão: ano corrente) |
 | 14 | `ceaps-senado` | Despesas dos senadores (CEAPS): arquivo anual comparado com o banco; senador casado pelo nome parlamentar; CPF de fornecedor pessoa física só em hash (`--ano`) |
+| 15 | `tse-contas-candidatos` | Prestação de contas de candidatos do TSE (receitas, doador originário, despesas contratadas) como fotografia anual; padrão só cargos federais (`--cargo`, `--todos-cargos`, `--ano`); CPF de doador ou fornecedor só em hash |
 
 Todos são idempotentes: rodar de novo só grava o que mudou.
 

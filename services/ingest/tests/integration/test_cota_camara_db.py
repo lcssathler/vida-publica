@@ -12,7 +12,7 @@ pytestmark = pytest.mark.integration
 
 def test_insercao_diferenca_e_hash_do_fornecedor(ingest_conn):
     repository = CamaraDespesaRepository(ingest_conn)
-    ano = random.randint(2100, 2999)  # noqa: S311 - ano fictício isola o teste
+    ano = random.randint(2100, 32000)  # noqa: S311 - ano fictício isola o teste
     linhas = list(
         parse_file(
             _zip(

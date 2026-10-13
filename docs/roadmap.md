@@ -20,7 +20,7 @@ Objetivo: qualquer pessoa clona o repositório, roda um comando e tem o ambiente
 | [x] | `ci/pipeline-base` | GitHub Actions: varredura de segredos (gitleaks), lint e testes por pacote; checks obrigatórios na `main` |
 | [x] | `infra/local-stack` | Docker Compose com PostgreSQL 16 e RustFS (S3); senhas locais geradas por script, nenhuma versionada |
 | [ ] | `db/schema-base` | Migrações com dbmate; esquemas `raw`, `canon`, `feed`, `app`; papéis separados para worker, API e admin; tabelas `raw_object` e `job_run` |
-| [ ] | `api/skeleton` | NestJS com configuração validada, `/health`, logs estruturados, OpenAPI, testes e Dockerfile |
+| [x] | `api/skeleton` | NestJS com configuração validada, `/health`, logs estruturados, OpenAPI, testes e Dockerfile |
 | [ ] | `ingest/skeleton` | Worker Python com portas de armazenamento (S3) e banco, execução idempotente de jobs, testes e Dockerfile |
 | [ ] | `mobile/skeleton` | Expo + Expo Router, tokens do design "Protocolo", fontes, testes |
 

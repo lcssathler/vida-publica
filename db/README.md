@@ -50,4 +50,4 @@ cd services/ingest
 uv run pytest -m integration
 ```
 
-As variáveis do `infra/.env` precisam estar no ambiente.
+As variáveis do `infra/.env` precisam estar no ambiente. Os testes gravam registros fictícios: rode-os num banco descartável (como o do CI) ou recrie o local com `down -v`.

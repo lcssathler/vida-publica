@@ -1,0 +1,30 @@
+{
+  "dados": {
+    "id": 900001,
+    "uri": "https://dadosabertos.camara.leg.br/api/v2/deputados/900001",
+    "nomeCivil": "MARIA EXEMPLO DA SILVA",
+    "cpf": "123.456.789-00",
+    "sexo": "F",
+    "urlWebsite": null,
+    "redeSocial": ["https://exemplo.invalid/maria"],
+    "dataNascimento": "1980-05-17",
+    "dataFalecimento": null,
+    "ufNascimento": "MG",
+    "municipioNascimento": "Cidade Exemplo",
+    "escolaridade": "Superior",
+    "ultimoStatus": {
+      "id": 900001,
+      "nome": "Maria Exemplo",
+      "siglaPartido": "XYZ",
+      "siglaUf": "MG",
+      "idLegislatura": 57,
+      "urlFoto": "https://exemplo.invalid/foto.jpg",
+      "email": "dep.mariaexemplo@exemplo.invalid",
+      "data": "2023-02-01",
+      "nomeEleitoral": "Maria Exemplo",
+      "situacao": "Exercício",
+      "condicaoEleitoral": "Titular",
+      "descricaoStatus": null
+    }
+  }
+}

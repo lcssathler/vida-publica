@@ -62,6 +62,7 @@ Cada comando roda como job registrado em `raw.job_run`. Pelo Docker: `docker com
 | 6 | `camara-historico` | Legislaturas e histórico de posses, saídas e trocas de partido |
 | 7 | `mandatos-filiacoes` | Mandatos por pessoa e períodos de filiação com datas |
 | 8 | `camara-votacoes` | Votações da Câmara com votos nominais e orientações de bancada (`--desde`, `--ate`; padrão: últimos 7 dias) |
+| 9 | `senado-votacoes` | Votações nominais do Senado com o voto ou o motivo da ausência de cada senador (`--desde`, `--ate`) |
 
 Todos são idempotentes: rodar de novo só grava o que mudou.
 

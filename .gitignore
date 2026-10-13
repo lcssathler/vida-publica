@@ -1,0 +1,62 @@
+# Segredos — nunca versionar
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.keystore
+*.jks
+google-services.json
+GoogleService-Info.plist
+credentials*.json
+service-account*.json
+
+# Dados brutos baixados das fontes (contêm dados pessoais)
+data/
+raw/
+downloads/
+*.zip
+*.csv
+!**/fixtures/**/*.csv
+
+# Node
+node_modules/
+dist/
+build/
+coverage/
+.turbo/
+*.tsbuildinfo
+npm-debug.log*
+pnpm-debug.log*
+
+# Expo / React Native
+.expo/
+ios/
+android/
+web-build/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+*.egg-info/
+
+# Infra
+.terraform/
+*.tfstate
+*.tfstate.*
+infra/volumes/
+
+# Sistema e editores
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp

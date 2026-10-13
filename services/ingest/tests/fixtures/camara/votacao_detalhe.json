@@ -1,0 +1,53 @@
+{
+  "dados": {
+    "id": "9900001-7",
+    "uri": "https://dadosabertos.camara.leg.br/api/v2/votacoes/9900001-7",
+    "data": "2026-06-10",
+    "dataHoraRegistro": "2026-06-10T14:46:15",
+    "siglaOrgao": "PLEN",
+    "uriOrgao": "https://dadosabertos.camara.leg.br/api/v2/orgaos/180",
+    "idOrgao": 180,
+    "uriEvento": "https://dadosabertos.camara.leg.br/api/v2/eventos/9900100",
+    "idEvento": 9900100,
+    "descricao": "Aprovado o Parecer com o seguinte resultado: 2 votos \"Sim\", 1 voto \"Não\".",
+    "aprovacao": 1,
+    "descUltimaAberturaVotacao": "Iniciada a Votação da Matéria.",
+    "dataHoraUltimaAberturaVotacao": "2026-06-10T13:05:57",
+    "ultimaApresentacaoProposicao": {
+      "dataHoraRegistro": null,
+      "descricao": "Apresentação do parecer.",
+      "uriProposicaoCitada": "https://dadosabertos.camara.leg.br/api/v2/proposicoes/9900003"
+    },
+    "efeitosRegistrados": [],
+    "objetosPossiveis": [
+      {
+        "id": 9900003,
+        "uri": "https://dadosabertos.camara.leg.br/api/v2/proposicoes/9900003",
+        "siglaTipo": "PPP",
+        "codTipo": 192,
+        "numero": 1,
+        "ano": 0,
+        "ementa": "Parecer proferido em Plenário.",
+        "dataApresentacao": "2026-06-10T13:00"
+      }
+    ],
+    "proposicoesAfetadas": [
+      {
+        "id": 9900001,
+        "uri": "https://dadosabertos.camara.leg.br/api/v2/proposicoes/9900001",
+        "siglaTipo": "PL",
+        "codTipo": 139,
+        "numero": 123,
+        "ano": 2025,
+        "ementa": "Dispõe sobre um assunto de exemplo.",
+        "dataApresentacao": "2025-03-01T10:00"
+      }
+    ]
+  },
+  "links": [
+    {
+      "rel": "self",
+      "href": "https://dadosabertos.camara.leg.br/api/v2/votacoes/9900001-7"
+    }
+  ]
+}

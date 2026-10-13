@@ -99,6 +99,9 @@ jobs:
       - name: Testes
         if: steps.detect.outputs.present == 'true'
         run: uv run pytest
+      - name: Build da imagem do worker
+        if: steps.detect.outputs.present == 'true'
+        run: docker build -t vida-publica-ingest:ci .
       - name: Sem projeto Python ainda
         if: steps.detect.outputs.present != 'true'
         working-directory: .

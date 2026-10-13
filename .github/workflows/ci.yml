@@ -41,7 +41,9 @@ jobs:
       - name: API responde no compose
         run: curl -fsS http://localhost:3000/health
       - name: Worker acessa o armazenamento
-        run: docker compose -f infra/docker-compose.yml run --rm worker check-storage
+        run: |
+          docker compose -f infra/docker-compose.yml run --rm worker check-storage
+          docker compose -f infra/docker-compose.yml run --rm worker check-db
       - uses: astral-sh/setup-uv@v5
       - name: Testes de integração (esquema e permissões)
         working-directory: services/ingest

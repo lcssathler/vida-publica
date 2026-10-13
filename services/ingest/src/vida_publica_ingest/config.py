@@ -13,6 +13,15 @@ class Settings(BaseSettings):
     s3_secret_key: SecretStr = SecretStr("")
     s3_bucket_raw: str = "vp-raw"
 
+    db_host: str = "127.0.0.1"
+    db_port: int = 5433
+    db_name: str = "vida_publica"
+    db_user: str = "vp_ingest"
+    db_password: SecretStr = SecretStr("")
+
+    # Chave do HMAC que transforma CPFs em hash. O CPF em si nunca é guardado.
+    cpf_hash_key: SecretStr = SecretStr("")
+
     # Identifica o coletor para os servidores das fontes oficiais.
     user_agent: str = Field(
         default="VidaPublica/0.1 (+https://github.com/lcssathler/vida-publica)",

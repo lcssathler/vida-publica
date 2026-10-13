@@ -24,6 +24,7 @@ from .sources import (
     senado_votacoes,
     tse_candidaturas,
     tse_contas_candidatos,
+    tse_contas_partidos,
 )
 
 # Janela padrão dos coletores por período: cobre a semana e absorve atrasos de publicação.
@@ -357,6 +358,27 @@ def _tse_contas_candidatos(settings: Settings, anos: list[int], cargos: list[int
     return 0
 
 
+def _tse_contas_partidos(settings: Settings, anos: list[int]) -> int:
+    conn = connect(settings)
+    try:
+        with SourceClient(settings) as client:
+            run_job(
+                "tse-contas-partidos",
+                lambda: tse_contas_partidos.collect(
+                    client,
+                    S3RawStorage(settings),
+                    PgRawRegistry(conn),
+                    conn,
+                    cpf_hash_key=settings.cpf_hash_key.get_secret_value(),
+                    anos=anos,
+                ),
+                PgJobRecorder(conn),
+            )
+    finally:
+        conn.close()
+    return 0
+
+
 def _mandatos_filiacoes(settings: Settings) -> int:
     conn = connect(settings)
     try:
@@ -430,6 +452,11 @@ def main(argv: list[str] | None = None) -> int:
         help="código de cargo do TSE; padrão: 1 (Presidente), 5 (Senador), 6 (Deputado Federal)",
     )
     contas.add_argument("--todos-cargos", action="store_true", help="não filtra por cargo")
+    partidos_contas = commands.add_parser(
+        "tse-contas-partidos",
+        help="prestação de contas de órgãos partidários do TSE: receitas, despesas e pagamentos",
+    )
+    partidos_contas.add_argument("--ano", type=int, action="append", help="padrão: 2026")
     commands.add_parser(
         "mandatos-filiacoes", help="constrói mandatos e períodos de filiação por pessoa"
     )
@@ -469,6 +496,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "tse-contas-candidatos":
         cargos = set() if args.todos_cargos else args.cargo
         return _tse_contas_candidatos(settings, args.ano or [2026], cargos)
+    if args.command == "tse-contas-partidos":
+        return _tse_contas_partidos(settings, args.ano or [2026])
     if args.command == "mandatos-filiacoes":
         return _mandatos_filiacoes(settings)
     if args.command == "resolver-pessoas":

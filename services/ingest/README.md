@@ -71,6 +71,7 @@ Cada comando roda como job registrado em `raw.job_run`. Pelo Docker: `docker com
 | 13 | `cota-camara` | Despesas da cota parlamentar da Câmara: arquivo anual rebaixado e comparado com o banco (novas, removidas, restauradas); CPF de fornecedor pessoa física só em hash (`--ano`; padrão: ano corrente) |
 | 14 | `ceaps-senado` | Despesas dos senadores (CEAPS): arquivo anual comparado com o banco; senador casado pelo nome parlamentar; CPF de fornecedor pessoa física só em hash (`--ano`) |
 | 15 | `tse-contas-candidatos` | Prestação de contas de candidatos do TSE (receitas, doador originário, despesas contratadas) como fotografia anual; padrão só cargos federais (`--cargo`, `--todos-cargos`, `--ano`); CPF de doador ou fornecedor só em hash |
+| 16 | `tse-contas-partidos` | Prestação de contas de órgãos partidários do TSE (receitas, doador originário, despesas contratadas e pagamentos com a fonte do recurso) como fotografia anual (`--ano`) |
 
 Todos são idempotentes: rodar de novo só grava o que mudou.
 

@@ -32,7 +32,8 @@ packages = ["src/vida_publica_ingest"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-q"
+addopts = "-q -m 'not integration'"
+markers = ["integration: precisa do Postgres local com as migrações aplicadas"]
 
 [tool.ruff]
 line-length = 100

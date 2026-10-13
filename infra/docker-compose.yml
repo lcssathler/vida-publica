@@ -10,11 +10,15 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-vida_publica}
       POSTGRES_USER: ${POSTGRES_USER:-vp_owner}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?rode node infra/scripts/init-env.mjs}
+      VP_INGEST_DB_PASSWORD: ${VP_INGEST_DB_PASSWORD:?rode node infra/scripts/init-env.mjs}
+      VP_API_DB_PASSWORD: ${VP_API_DB_PASSWORD:?rode node infra/scripts/init-env.mjs}
+      VP_ADMIN_DB_PASSWORD: ${VP_ADMIN_DB_PASSWORD:?rode node infra/scripts/init-env.mjs}
       TZ: UTC
     ports:
       - "${POSTGRES_PORT:-5433}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
@@ -40,6 +44,22 @@ services:
       interval: 5s
       timeout: 3s
       retries: 20
+
+  # Migrações do banco (db/migrations). Rodar com:
+  #   docker compose -f infra/docker-compose.yml run --rm migrate
+  migrate:
+    image: ghcr.io/amacneil/dbmate:2.36.0
+    profiles: [tools]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-vp_owner}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-vida_publica}?sslmode=disable
+      DBMATE_MIGRATIONS_DIR: /db/migrations
+      DBMATE_NO_DUMP_SCHEMA: "true"
+    volumes:
+      - ../db:/db:ro
+    command: ["--wait", "up"]
 
 volumes:
   postgres-data:

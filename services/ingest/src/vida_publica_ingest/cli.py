@@ -5,7 +5,7 @@ from datetime import date, timedelta
 
 from .adapters.postgres import PgJobRecorder, PgRawRegistry, connect
 from .adapters.s3 import S3RawStorage
-from .canon import mandatos, pessoas
+from .canon import mandatos, pessoas, repasses
 from .config import Settings
 from .http import SourceClient
 from .jobs import run_job
@@ -379,6 +379,20 @@ def _tse_contas_partidos(settings: Settings, anos: list[int]) -> int:
     return 0
 
 
+def _repasses(settings: Settings) -> int:
+    conn = connect(settings)
+    try:
+        run_job("repasses", lambda: repasses.build(conn), PgJobRecorder(conn))
+        for row in repasses.resumo_por_fonte(conn):
+            print(
+                f"{row['ano_eleicao']} esfera {row['esfera'] or '?'} {row['fonte']}:"
+                f" {row['repasses']} repasses, R$ {row['valor']:,.2f}"
+            )
+    finally:
+        conn.close()
+    return 0
+
+
 def _mandatos_filiacoes(settings: Settings) -> int:
     conn = connect(settings)
     try:
@@ -458,6 +472,9 @@ def main(argv: list[str] | None = None) -> int:
     )
     partidos_contas.add_argument("--ano", type=int, action="append", help="padrão: 2026")
     commands.add_parser(
+        "repasses", help="repasses partido → candidato por diretório e fonte, a partir do TSE"
+    )
+    commands.add_parser(
         "mandatos-filiacoes", help="constrói mandatos e períodos de filiação por pessoa"
     )
     commands.add_parser(
@@ -498,6 +515,8 @@ def main(argv: list[str] | None = None) -> int:
         return _tse_contas_candidatos(settings, args.ano or [2026], cargos)
     if args.command == "tse-contas-partidos":
         return _tse_contas_partidos(settings, args.ano or [2026])
+    if args.command == "repasses":
+        return _repasses(settings)
     if args.command == "mandatos-filiacoes":
         return _mandatos_filiacoes(settings)
     if args.command == "resolver-pessoas":

@@ -65,7 +65,7 @@ Objetivo: saber quem é quem, em todas as fontes, sem casar pessoas só pelo nom
 | [x] | `ingest/ceaps-senado` | Despesas do Senado |
 | [x] | `ingest/tse-contas-candidatos` | Receitas, despesas e doador originário |
 | [x] | `ingest/tse-contas-partidos` | Contas de órgãos partidários (Fundo Eleitoral) |
-| [ ] | `canon/repasses` | Repasses partido → candidato por diretório e origem, sem somar níveis |
+| [x] | `canon/repasses` | Repasses partido → candidato por diretório e origem, sem somar níveis |
 
 ## Fase 4 — Motor de eventos
 

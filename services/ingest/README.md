@@ -72,6 +72,7 @@ Cada comando roda como job registrado em `raw.job_run`. Pelo Docker: `docker com
 | 14 | `ceaps-senado` | Despesas dos senadores (CEAPS): arquivo anual comparado com o banco; senador casado pelo nome parlamentar; CPF de fornecedor pessoa física só em hash (`--ano`) |
 | 15 | `tse-contas-candidatos` | Prestação de contas de candidatos do TSE (receitas, doador originário, despesas contratadas) como fotografia anual; padrão só cargos federais (`--cargo`, `--todos-cargos`, `--ano`); CPF de doador ou fornecedor só em hash |
 | 16 | `tse-contas-partidos` | Prestação de contas de órgãos partidários do TSE (receitas, doador originário, despesas contratadas e pagamentos com a fonte do recurso) como fotografia anual (`--ano`) |
+| 17 | `repasses` | Repasses partido → candidato (`canon.repasse`): uma linha por receita de partido, com diretório (esfera e UF), fonte (fundo especial, fundo partidário, outros) e prestação vigente; totais em `canon.repasse_total` nunca somam esferas nem fontes |
 
 Todos são idempotentes: rodar de novo só grava o que mudou.
 

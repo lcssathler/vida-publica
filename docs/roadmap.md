@@ -22,7 +22,7 @@ Objetivo: qualquer pessoa clona o repositório, roda um comando e tem o ambiente
 | [x] | `db/schema-base` | Migrações com dbmate; esquemas `raw`, `canon`, `feed`, `app`; papéis separados para worker, API e admin; tabelas `raw_object` e `job_run` |
 | [x] | `api/skeleton` | NestJS com configuração validada, `/health`, logs estruturados, OpenAPI, testes e Dockerfile |
 | [x] | `ingest/skeleton` | Worker Python com portas de armazenamento (S3) e banco, execução idempotente de jobs, testes e Dockerfile |
-| [ ] | `mobile/skeleton` | Expo + Expo Router, tokens do design "Protocolo", fontes, testes |
+| [x] | `mobile/skeleton` | Expo + Expo Router, tokens do design "Protocolo", fontes, testes |
 
 **Critério de saída:** `docker compose up` sobe banco, armazenamento, API e worker; CI verde é obrigatória para merge.
 

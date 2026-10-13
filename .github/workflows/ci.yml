@@ -77,6 +77,10 @@ jobs:
       - name: Testes
         if: steps.detect.outputs.present == 'true'
         run: pnpm -r --if-present test
+      - name: Empacota o app mobile (Metro)
+        if: steps.detect.outputs.present == 'true' && hashFiles('apps/mobile/package.json') != ''
+        working-directory: apps/mobile
+        run: CI=1 pnpm exec expo export --platform android --output-dir /tmp/expo-export
       - name: Build da imagem da API
         if: steps.detect.outputs.present == 'true' && hashFiles('apps/api/Dockerfile') != ''
         run: docker build -f apps/api/Dockerfile -t vida-publica-api:ci .

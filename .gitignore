@@ -60,3 +60,6 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 *.swp
+
+# Expo (gerado)
+expo-env.d.ts

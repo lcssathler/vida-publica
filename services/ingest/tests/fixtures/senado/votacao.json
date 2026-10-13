@@ -1,0 +1,69 @@
+{
+  "ano": 2026,
+  "casaSessao": "SF",
+  "codigoMateria": 990001,
+  "codigoSessao": 990100,
+  "codigoSessaoLegislativa": 874,
+  "codigoSessaoVotacao": 9900001,
+  "dataApresentacao": "2026-08-31",
+  "dataSessao": "2026-09-01",
+  "descricaoVotacao": "Votação nominal do Projeto de Lei nº 123, de 2026.",
+  "ementa": "Dispõe sobre um assunto de exemplo.",
+  "idProcesso": 9900900,
+  "identificacao": "PL 123/2026",
+  "informeLegislativo": {
+    "id": 9900500,
+    "data": "2026-09-01",
+    "siglaColegiado": "PLEN",
+    "texto": "(Sessão Deliberativa Ordinária, realizada em 01/09/2026) Aprovado o projeto."
+  },
+  "numero": "123",
+  "numeroSessao": 120,
+  "resultadoVotacao": "A",
+  "sequencialSessao": 1,
+  "sequencialVotacao": 4418,
+  "sigla": "PL",
+  "siglaTipoSessao": "DOR",
+  "totalVotosAbstencao": 0,
+  "totalVotosNao": 1,
+  "totalVotosSim": 2,
+  "votacaoSecreta": "N",
+  "votos": [
+    {
+      "codigoParlamentar": 990001,
+      "descricaoVotoParlamentar": null,
+      "nomeParlamentar": "Joana Exemplo",
+      "sexoParlamentar": "F",
+      "siglaPartidoParlamentar": "XYZ",
+      "siglaUFParlamentar": "MG",
+      "siglaVotoParlamentar": "Sim"
+    },
+    {
+      "codigoParlamentar": 990002,
+      "descricaoVotoParlamentar": null,
+      "nomeParlamentar": "Carlos Exemplo",
+      "sexoParlamentar": "M",
+      "siglaPartidoParlamentar": "ABC",
+      "siglaUFParlamentar": "SP",
+      "siglaVotoParlamentar": "Não"
+    },
+    {
+      "codigoParlamentar": 990003,
+      "descricaoVotoParlamentar": "Atividade parlamentar",
+      "nomeParlamentar": "Ana Exemplo",
+      "sexoParlamentar": "F",
+      "siglaPartidoParlamentar": "XYZ",
+      "siglaUFParlamentar": "RJ",
+      "siglaVotoParlamentar": "AP"
+    },
+    {
+      "codigoParlamentar": 990004,
+      "descricaoVotoParlamentar": "Presente – Não registrou voto",
+      "nomeParlamentar": "Pedro Exemplo",
+      "sexoParlamentar": "M",
+      "siglaPartidoParlamentar": "ABC",
+      "siglaUFParlamentar": "BA",
+      "siglaVotoParlamentar": "P-NRV"
+    }
+  ]
+}

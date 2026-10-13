@@ -15,6 +15,7 @@ from .sources import (
     camara_votacoes,
     partidos,
     senado_senadores,
+    senado_votacoes,
     tse_candidaturas,
 )
 
@@ -185,6 +186,27 @@ def _camara_votacoes(settings: Settings, desde: date, ate: date) -> int:
     return 0
 
 
+def _senado_votacoes(settings: Settings, desde: date, ate: date) -> int:
+    conn = connect(settings)
+    try:
+        with SourceClient(settings) as client:
+            run_job(
+                "senado-votacoes",
+                lambda: senado_votacoes.collect(
+                    client,
+                    S3RawStorage(settings),
+                    PgRawRegistry(conn),
+                    senado_votacoes.SenadoVotacaoRepository(conn),
+                    desde=desde,
+                    ate=ate,
+                ),
+                PgJobRecorder(conn),
+            )
+    finally:
+        conn.close()
+    return 0
+
+
 def _mandatos_filiacoes(settings: Settings) -> int:
     conn = connect(settings)
     try:
@@ -213,6 +235,11 @@ def main(argv: list[str] | None = None) -> int:
             "camara-votacoes", help="coleta votações da Câmara com votos e orientações"
         )
     )
+    _add_window(
+        commands.add_parser(
+            "senado-votacoes", help="coleta votações nominais do Senado com votos e ausências"
+        )
+    )
     commands.add_parser(
         "mandatos-filiacoes", help="constrói mandatos e períodos de filiação por pessoa"
     )
@@ -237,6 +264,8 @@ def main(argv: list[str] | None = None) -> int:
         return _camara_historico(settings)
     if args.command == "camara-votacoes":
         return _camara_votacoes(settings, *_window(args))
+    if args.command == "senado-votacoes":
+        return _senado_votacoes(settings, *_window(args))
     if args.command == "mandatos-filiacoes":
         return _mandatos_filiacoes(settings)
     if args.command == "resolver-pessoas":

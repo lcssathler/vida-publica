@@ -1,7 +1,7 @@
 """Adaptadores Postgres (driver pg8000, Python puro)."""
 
 import re
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from typing import Any
 
@@ -25,22 +25,23 @@ def connect(settings: Settings) -> pg8000.native.Connection:
 _IDENTIFIER = re.compile(r"^[a-z_][a-z0-9_]*(\.[a-z_][a-z0-9_]*)?$")
 
 
-def upsert_if_changed_sql(table: str, columns: list[str], key: str) -> str:
+def upsert_if_changed_sql(table: str, columns: list[str], key: str | Sequence[str]) -> str:
     """INSERT ... ON CONFLICT que só atualiza quando content_hash mudou.
 
     Devolve a chave apenas das linhas inseridas ou alteradas. Tabela e colunas
     vêm do código (nomes de campos de dataclass) e são validadas aqui.
     """
-    names = [table, key, *columns]
+    keys = [key] if isinstance(key, str) else list(key)
+    names = [table, *keys, *columns]
     if not all(_IDENTIFIER.match(name) for name in names):
         raise ValueError(f"identificador inválido em {names}")
-    updates = ", ".join(f"{c} = EXCLUDED.{c}" for c in columns if c != key)
+    updates = ", ".join(f"{c} = EXCLUDED.{c}" for c in columns if c not in keys)
     return (
         f"INSERT INTO {table} ({', '.join(columns)}) "  # noqa: S608 - identificadores validados
         f"VALUES ({', '.join(':' + c for c in columns)}) "
-        f"ON CONFLICT ({key}) DO UPDATE SET {updates}, atualizado_em = now() "
+        f"ON CONFLICT ({', '.join(keys)}) DO UPDATE SET {updates}, atualizado_em = now() "
         f"WHERE {table}.content_hash IS DISTINCT FROM EXCLUDED.content_hash "
-        f"RETURNING {key}"
+        f"RETURNING {keys[0]}"
     )
 
 

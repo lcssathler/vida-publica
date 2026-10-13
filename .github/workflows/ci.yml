@@ -68,6 +68,9 @@ jobs:
       - name: Testes
         if: steps.detect.outputs.present == 'true'
         run: pnpm -r --if-present test
+      - name: Build da imagem da API
+        if: steps.detect.outputs.present == 'true' && hashFiles('apps/api/Dockerfile') != ''
+        run: docker build -f apps/api/Dockerfile -t vida-publica-api:ci .
       - name: Sem workspace Node ainda
         if: steps.detect.outputs.present != 'true'
         run: echo "Nenhum pnpm-lock.yaml encontrado; nada a verificar."

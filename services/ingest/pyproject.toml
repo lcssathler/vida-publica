@@ -1,0 +1,45 @@
+[project]
+name = "vida-publica-ingest"
+version = "0.1.0"
+description = "Coleta de dados públicos oficiais e motor de eventos do Vida Pública"
+license = "AGPL-3.0-only"
+requires-python = ">=3.12"
+# Dependências em Python puro sempre que possível (pg8000, csv da biblioteca
+# padrão): o worker roda igual em qualquer máquina, sem binários nativos.
+dependencies = [
+  "boto3>=1.40",
+  "httpx>=0.28",
+  "pg8000>=1.31",
+  "pydantic>=2.11",
+  "pydantic-settings>=2.10",
+]
+
+[project.scripts]
+vp-ingest = "vida_publica_ingest.cli:main"
+
+[dependency-groups]
+dev = [
+  "pytest>=8.4",
+  "ruff>=0.13",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/vida_publica_ingest"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "SIM", "RUF"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101"]

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<dia>
+  <data>03/09/2026 11:00:00</data>
+  <qtdeSessoesDia>1</qtdeSessoesDia>
+  <legislatura>57</legislatura>
+  <parlamentares>
+    <parlamentar>
+      <carteiraParlamentar>10</carteiraParlamentar>
+      <nomeParlamentar>Maria Exemplo-XYZ/MG</nomeParlamentar>
+      <siglaPartido>XYZ       </siglaPartido>
+      <siglaUF>MG</siglaUF>
+      <descricaoFrequenciaDia>Presença</descricaoFrequenciaDia>
+      <justificativa>
+      </justificativa>
+      <presencaExterna>0</presencaExterna>
+      <sessoesDia>
+        <sessaoDia>
+          <inicio>03/09/2026 11:55:00</inicio>
+          <descricao>EXTRAORDINÁRIA Nº 160 - 03/09/2026</descricao>
+          <frequencia>Presença</frequencia>
+        </sessaoDia>
+      </sessoesDia>
+    </parlamentar>
+    <parlamentar>
+      <carteiraParlamentar>20</carteiraParlamentar>
+      <nomeParlamentar>Carlos Exemplo-ABC/SP</nomeParlamentar>
+      <siglaPartido>ABC       </siglaPartido>
+      <siglaUF>SP</siglaUF>
+      <descricaoFrequenciaDia>Ausência justificada</descricaoFrequenciaDia>
+      <justificativa>Missão Autorizada</justificativa>
+      <presencaExterna>0</presencaExterna>
+      <sessoesDia>
+        <sessaoDia>
+          <inicio>03/09/2026 11:55:00</inicio>
+          <descricao>EXTRAORDINÁRIA Nº 160 - 03/09/2026</descricao>
+          <frequencia>Ausência</frequencia>
+        </sessaoDia>
+      </sessoesDia>
+    </parlamentar>
+    <parlamentar>
+      <carteiraParlamentar>30</carteiraParlamentar>
+      <nomeParlamentar>Ana Exemplo-XYZ/RJ</nomeParlamentar>
+      <siglaPartido>XYZ       </siglaPartido>
+      <siglaUF>RJ</siglaUF>
+      <descricaoFrequenciaDia>Ausência</descricaoFrequenciaDia>
+      <justificativa>
+      </justificativa>
+      <presencaExterna>0</presencaExterna>
+      <sessoesDia>
+        <sessaoDia>
+          <inicio>03/09/2026 11:55:00</inicio>
+          <descricao>EXTRAORDINÁRIA Nº 160 - 03/09/2026</descricao>
+          <frequencia>Ausência</frequencia>
+        </sessaoDia>
+      </sessoesDia>
+    </parlamentar>
+  </parlamentares>
+</dia>

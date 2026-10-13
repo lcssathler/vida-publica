@@ -75,6 +75,7 @@ services:
       VP_DB_USER: vp_ingest
       VP_DB_PASSWORD: ${VP_INGEST_DB_PASSWORD:?rode node infra/scripts/init-env.mjs}
       VP_CPF_HASH_KEY: ${VP_CPF_HASH_KEY:?rode node infra/scripts/init-env.mjs}
+      VP_CAMARA_PRESENCA_LEGADO: ${VP_CAMARA_PRESENCA_LEGADO:-false}
     depends_on:
       postgres:
         condition: service_healthy

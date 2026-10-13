@@ -13,6 +13,7 @@ from .sources import (
     camara_deputados,
     camara_eventos,
     camara_historico,
+    camara_presenca,
     camara_votacoes,
     partidos,
     proposicoes,
@@ -267,6 +268,28 @@ def _proposicoes(
     return 0
 
 
+def _presenca(settings: Settings, desde: date, ate: date) -> int:
+    conn = connect(settings)
+    try:
+        with SourceClient(settings) as client:
+            run_job(
+                "camara-presenca",
+                lambda: camara_presenca.collect(
+                    client,
+                    S3RawStorage(settings),
+                    PgRawRegistry(conn),
+                    camara_presenca.CamaraPresencaRepository(conn),
+                    desde=desde,
+                    ate=ate,
+                    legado=settings.camara_presenca_legado,
+                ),
+                PgJobRecorder(conn),
+            )
+    finally:
+        conn.close()
+    return 0
+
+
 def _mandatos_filiacoes(settings: Settings) -> int:
     conn = connect(settings)
     try:
@@ -313,6 +336,13 @@ def main(argv: list[str] | None = None) -> int:
     props.add_argument(
         "--so-ids", action="store_true", help="ignora a lista de interesse; só os ids pedidos"
     )
+    _add_window(
+        commands.add_parser(
+            "presenca",
+            help="presença por evento da Câmara; com VP_CAMARA_PRESENCA_LEGADO=true, também"
+            " a frequência diária do Plenário com justificativas",
+        )
+    )
     commands.add_parser(
         "mandatos-filiacoes", help="constrói mandatos e períodos de filiação por pessoa"
     )
@@ -343,6 +373,8 @@ def main(argv: list[str] | None = None) -> int:
         return _agenda_pauta(settings, *_window(args))
     if args.command == "proposicoes":
         return _proposicoes(settings, args.camara or [], args.senado or [], args.so_ids)
+    if args.command == "presenca":
+        return _presenca(settings, *_window(args))
     if args.command == "mandatos-filiacoes":
         return _mandatos_filiacoes(settings)
     if args.command == "resolver-pessoas":

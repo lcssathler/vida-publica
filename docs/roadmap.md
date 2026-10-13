@@ -53,6 +53,10 @@ Objetivo: saber quem é quem, em todas as fontes, sem casar pessoas só pelo nom
 | [x] | `ingest/proposicoes` | Propostas, tramitações e temas oficiais |
 | [x] | `ingest/presenca` | Presença por sessão; justificativas via serviço legado atrás de chave liga/desliga |
 
+**Critério de saída:** todo voto, presença e item de pauta coletado aponta para um parlamentar, uma votação ou uma proposição já conhecidos; toda proposição votada ou pautada está coletada com suas tramitações; rodar qualquer coletor de novo não altera nada.
+
+**Resultado (13/10/2026):** 824 votações da Câmara (8 nominais, 3.187 votos) e 59 do Senado (4.779 votos, 640 ausências com motivo); 166 eventos da Câmara com 1.125 itens de pauta, 41 sessões e 60 reuniões do Senado; 1.103 proposições com 21.916 tramitações; 5.917 presenças e 7 dias de frequência com justificativas. Conferência completa: nenhum voto ou presença sem parlamentar, nenhum item de pauta sem votação, nenhuma votação ou matéria pautada sem proposição coletada, nenhuma proposição sem tramitação, nenhum job com falha. Segunda execução de cada coletor sem alterações.
+
 ## Fase 3 — Dinheiro
 
 | | Branch | Entrega |

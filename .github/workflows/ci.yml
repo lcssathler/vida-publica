@@ -25,6 +25,21 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  infra:
+    name: infra
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Gera infra/.env com senhas aleatórias
+        run: node infra/scripts/init-env.mjs
+      - name: Valida o docker-compose
+        run: docker compose -f infra/docker-compose.yml config --quiet
+      - name: Sobe banco e armazenamento e espera ficarem saudáveis
+        run: docker compose -f infra/docker-compose.yml up -d --wait --wait-timeout 120
+      - name: Derruba o ambiente
+        if: always()
+        run: docker compose -f infra/docker-compose.yml down -v
+
   node:
     name: node
     runs-on: ubuntu-latest

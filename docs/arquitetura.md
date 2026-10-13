@@ -18,7 +18,7 @@ App mobile ◄── API própria ◄── PostgreSQL ◄── Motor de evento
 | Worker de coleta e eventos | `services/ingest` | Python 3.12 | Baixar fontes, guardar o bruto, normalizar, casar pessoas, gerar eventos |
 | App | `apps/mobile` | Expo (React Native) | Interface para iOS e Android |
 | Banco | `db/` | PostgreSQL 16 + dbmate | Dados canônicos, eventos e dados de usuário |
-| Infra local | `infra/` | Docker Compose | Banco e armazenamento S3 (MinIO) na máquina de quem desenvolve |
+| Infra local | `infra/` | Docker Compose | Banco e armazenamento S3 (RustFS) na máquina de quem desenvolve |
 
 ## Princípios
 

@@ -1,0 +1,82 @@
+{
+  "AgendaPlenario": {
+    "Metadados": {"Versao": "13/10/2026 14:38:06", "VersaoServico": "2"},
+    "Sessoes": {
+      "Sessao": [
+        {
+          "DiaUtil": "03",
+          "Data": "2026-09-03",
+          "DiaSemana": "quinta-feira",
+          "Mes": "Setembro",
+          "Horario": "14 horas ",
+          "Hora": "14:00",
+          "NumeroSessao": "120ª SESSÃO ",
+          "TipoSessao": "SESSÃO DELIBERATIVA ORDINÁRIA ",
+          "Comunicado": "A Presidência informa que serão deliberadas as medidas provisórias.",
+          "LocalSessao": "Plenário do Senado Federal",
+          "CodigoSessao": "9900001",
+          "Casa": "SF",
+          "SessaoLegislativa": "4",
+          "Legislatura": "57",
+          "CodigoSituacaoSessao": "40",
+          "SituacaoSessao": "Encerrada",
+          "Realizada": {"Status": "Sim"},
+          "PautaConfirmada": "Sim",
+          "TipoPresenca": "P",
+          "DescricaoTipoPresenca": "Presencial",
+          "Materias": {
+            "Materia": [
+              {
+                "CodigoMateria": "990001",
+                "Identificacao": "PROJETO DE LEI Nº 123, DE 2026",
+                "SiglaMateria": "PL",
+                "NumeroMateria": "00123",
+                "AnoMateria": "2026",
+                "DescricaoObjetivoProcesso": "Revisora",
+                "DescricaoIdentificacaoMateria": "PL 123/2026",
+                "SiglaCasaIniciadora": "CD",
+                "Ementa": "Dispõe sobre um assunto de exemplo.",
+                "Parecer": "Parecer nº 1, de 2026, de Plenário, favorável ao projeto.\n",
+                "Apreciacao": "-",
+                "NomeAutor": "Presidência da República",
+                "TipoPauta": "E",
+                "DescricaoTipoPauta": "Extrapauta",
+                "SequenciaOrdem": "1"
+              },
+              {
+                "CodigoMateria": "990002",
+                "Identificacao": "REQUERIMENTO Nº 7, DE 2026",
+                "SiglaMateria": "RQS",
+                "NumeroMateria": "00007",
+                "AnoMateria": "2026",
+                "DescricaoIdentificacaoMateria": "RQS 7/2026",
+                "SiglaCasaIniciadora": "SF",
+                "Ementa": "Requer urgência.",
+                "TipoPauta": "P",
+                "DescricaoTipoPauta": "Pauta",
+                "SequenciaOrdem": "2"
+              }
+            ]
+          }
+        },
+        {
+          "DiaUtil": "04",
+          "Data": "2026-09-04",
+          "Hora": "09:00",
+          "TipoSessao": "SESSÃO NÃO DELIBERATIVA ",
+          "LocalSessao": "Plenário do Senado Federal",
+          "CodigoSessao": "9900002",
+          "Casa": "SF",
+          "SessaoLegislativa": "4",
+          "Legislatura": "57",
+          "CodigoSituacaoSessao": "36",
+          "SituacaoSessao": "Sessão não realizada",
+          "Realizada": {"Status": "Não"},
+          "PautaConfirmada": "Sim",
+          "TipoPresenca": "S",
+          "DescricaoTipoPresenca": "Semipresencial"
+        }
+      ]
+    }
+  }
+}

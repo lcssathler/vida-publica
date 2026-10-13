@@ -36,6 +36,15 @@ jobs:
         run: docker compose -f infra/docker-compose.yml config --quiet
       - name: Sobe banco e armazenamento e espera ficarem saudáveis
         run: docker compose -f infra/docker-compose.yml up -d --wait --wait-timeout 120
+      - name: Aplica as migrações do banco
+        run: docker compose -f infra/docker-compose.yml run --rm migrate
+      - uses: astral-sh/setup-uv@v5
+      - name: Testes de integração (esquema e permissões)
+        working-directory: services/ingest
+        run: |
+          set -a; . ../../infra/.env; set +a
+          uv sync --frozen
+          uv run pytest -m integration
       - name: Derruba o ambiente
         if: always()
         run: docker compose -f infra/docker-compose.yml down -v

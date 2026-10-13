@@ -15,6 +15,7 @@ from .sources import (
     camara_historico,
     camara_presenca,
     camara_votacoes,
+    ceaps_senado,
     cota_camara,
     partidos,
     proposicoes,
@@ -312,6 +313,27 @@ def _cota_camara(settings: Settings, anos: list[int]) -> int:
     return 0
 
 
+def _ceaps_senado(settings: Settings, anos: list[int]) -> int:
+    conn = connect(settings)
+    try:
+        with SourceClient(settings) as client:
+            run_job(
+                "ceaps-senado",
+                lambda: ceaps_senado.collect(
+                    client,
+                    S3RawStorage(settings),
+                    PgRawRegistry(conn),
+                    conn,
+                    cpf_hash_key=settings.cpf_hash_key.get_secret_value(),
+                    anos=anos,
+                ),
+                PgJobRecorder(conn),
+            )
+    finally:
+        conn.close()
+    return 0
+
+
 def _mandatos_filiacoes(settings: Settings) -> int:
     conn = connect(settings)
     try:
@@ -369,6 +391,10 @@ def main(argv: list[str] | None = None) -> int:
         "cota-camara", help="despesas da cota parlamentar da Câmara (arquivo anual, diferença)"
     )
     cota.add_argument("--ano", type=int, action="append", help="padrão: ano corrente")
+    ceaps = commands.add_parser(
+        "ceaps-senado", help="despesas dos senadores (CEAPS), arquivo anual com diferença"
+    )
+    ceaps.add_argument("--ano", type=int, action="append", help="padrão: ano corrente")
     commands.add_parser(
         "mandatos-filiacoes", help="constrói mandatos e períodos de filiação por pessoa"
     )
@@ -403,6 +429,8 @@ def main(argv: list[str] | None = None) -> int:
         return _presenca(settings, *_window(args))
     if args.command == "cota-camara":
         return _cota_camara(settings, args.ano or [date.today().year])
+    if args.command == "ceaps-senado":
+        return _ceaps_senado(settings, args.ano or [date.today().year])
     if args.command == "mandatos-filiacoes":
         return _mandatos_filiacoes(settings)
     if args.command == "resolver-pessoas":

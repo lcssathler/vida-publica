@@ -48,6 +48,22 @@ Variáveis com prefixo `VP_` (`src/vida_publica_ingest/config.py`):
 | `VP_S3_BUCKET_RAW` | `vp-raw` |
 | `VP_USER_AGENT` | identifica o coletor para as fontes oficiais |
 
+## Pipeline
+
+Cada comando roda como job registrado em `raw.job_run`. Pelo Docker: `docker compose -f infra/docker-compose.yml run --rm worker <comando>`.
+
+| Ordem | Comando | O que faz |
+| --- | --- | --- |
+| 1 | `camara-deputados` | Deputados da legislatura (padrão 57), com CPF só em hash |
+| 2 | `senado-senadores` | Senadores e suplentes da legislatura, com data de nascimento |
+| 3 | `tse-candidaturas` | Candidaturas do TSE (padrão 2018, 2022, 2026) |
+| 4 | `partidos` | Partidos, siglas ao longo do tempo e sucessões |
+| 5 | `resolver-pessoas` | Liga TSE, Câmara e Senado numa mesma pessoa e mostra a cobertura |
+| 6 | `camara-historico` | Legislaturas e histórico de posses, saídas e trocas de partido |
+| 7 | `mandatos-filiacoes` | Mandatos por pessoa e períodos de filiação com datas |
+
+Todos são idempotentes: rodar de novo só grava o que mudou.
+
 ## Regra de ouro
 
 Arquivos baixados das fontes nunca vão para o repositório: eles contêm dados pessoais (CPF, nomes de doadores). Fixtures de teste são pequenas e anonimizadas.

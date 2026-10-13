@@ -50,4 +50,10 @@ cd services/ingest
 uv run pytest -m integration
 ```
 
-As variáveis do `infra/.env` precisam estar no ambiente. Os testes gravam registros fictícios: rode-os num banco descartável (como o do CI) ou recrie o local com `down -v`.
+As variáveis do `infra/.env` precisam estar no ambiente. Os testes gravam registros fictícios: rode-os num banco descartável, como o do CI. Localmente, crie um banco separado e aponte os testes para ele:
+
+```bash
+docker compose -f infra/docker-compose.yml exec postgres psql -U vp_owner -d vida_publica -c "CREATE DATABASE vida_publica_test"
+```
+
+Aplique as migrações nele (`run --rm -e DATABASE_URL=... migrate`) e rode `POSTGRES_DB=vida_publica_test uv run pytest -m integration`.

@@ -4,6 +4,7 @@ import sys
 
 from .adapters.postgres import PgJobRecorder, PgRawRegistry, connect
 from .adapters.s3 import S3RawStorage
+from .canon import pessoas
 from .config import Settings
 from .http import SourceClient
 from .jobs import run_job
@@ -108,6 +109,21 @@ def _partidos(settings: Settings) -> int:
     return 0
 
 
+def _resolver_pessoas(settings: Settings) -> int:
+    conn = connect(settings)
+    try:
+        run_job(
+            "resolver-pessoas",
+            lambda: pessoas.resolve(pessoas.PessoaRepository(conn)),
+            PgJobRecorder(conn),
+        )
+        for row in pessoas.coverage(conn):
+            print(f"{row['grupo']}: {row['com_tse']}/{row['total']} ({row['percentual']}%)")
+    finally:
+        conn.close()
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
     logging.getLogger("httpx").setLevel(logging.WARNING)
@@ -118,6 +134,9 @@ def main(argv: list[str] | None = None) -> int:
     deputados = commands.add_parser("camara-deputados", help="coleta deputados da Câmara")
     deputados.add_argument(
         "--legislatura", type=int, action="append", help="padrão: 57 (2023-2027)"
+    )
+    commands.add_parser(
+        "resolver-pessoas", help="casa registros de TSE, Câmara e Senado numa mesma pessoa"
     )
     commands.add_parser("partidos", help="reconstrói partidos a partir do TSE e da Câmara")
     candidaturas = commands.add_parser("tse-candidaturas", help="coleta candidaturas do TSE")
@@ -133,6 +152,8 @@ def main(argv: list[str] | None = None) -> int:
         return _check_storage(settings)
     if args.command == "check-db":
         return _check_db(settings)
+    if args.command == "resolver-pessoas":
+        return _resolver_pessoas(settings)
     if args.command == "partidos":
         return _partidos(settings)
     if args.command == "tse-candidaturas":

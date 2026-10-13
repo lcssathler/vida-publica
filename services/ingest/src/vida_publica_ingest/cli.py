@@ -15,6 +15,7 @@ from .sources import (
     camara_historico,
     camara_presenca,
     camara_votacoes,
+    cota_camara,
     partidos,
     proposicoes,
     senado_agenda,
@@ -290,6 +291,27 @@ def _presenca(settings: Settings, desde: date, ate: date) -> int:
     return 0
 
 
+def _cota_camara(settings: Settings, anos: list[int]) -> int:
+    conn = connect(settings)
+    try:
+        with SourceClient(settings) as client:
+            run_job(
+                "cota-camara",
+                lambda: cota_camara.collect(
+                    client,
+                    S3RawStorage(settings),
+                    PgRawRegistry(conn),
+                    cota_camara.CamaraDespesaRepository(conn),
+                    cpf_hash_key=settings.cpf_hash_key.get_secret_value(),
+                    anos=anos,
+                ),
+                PgJobRecorder(conn),
+            )
+    finally:
+        conn.close()
+    return 0
+
+
 def _mandatos_filiacoes(settings: Settings) -> int:
     conn = connect(settings)
     try:
@@ -343,6 +365,10 @@ def main(argv: list[str] | None = None) -> int:
             " a frequência diária do Plenário com justificativas",
         )
     )
+    cota = commands.add_parser(
+        "cota-camara", help="despesas da cota parlamentar da Câmara (arquivo anual, diferença)"
+    )
+    cota.add_argument("--ano", type=int, action="append", help="padrão: ano corrente")
     commands.add_parser(
         "mandatos-filiacoes", help="constrói mandatos e períodos de filiação por pessoa"
     )
@@ -375,6 +401,8 @@ def main(argv: list[str] | None = None) -> int:
         return _proposicoes(settings, args.camara or [], args.senado or [], args.so_ids)
     if args.command == "presenca":
         return _presenca(settings, *_window(args))
+    if args.command == "cota-camara":
+        return _cota_camara(settings, args.ano or [date.today().year])
     if args.command == "mandatos-filiacoes":
         return _mandatos_filiacoes(settings)
     if args.command == "resolver-pessoas":

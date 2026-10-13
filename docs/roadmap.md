@@ -61,7 +61,7 @@ Objetivo: saber quem é quem, em todas as fontes, sem casar pessoas só pelo nom
 
 | | Branch | Entrega |
 | --- | --- | --- |
-| [ ] | `ingest/cota-camara` | Arquivo anual da cota parlamentar, diff diário |
+| [x] | `ingest/cota-camara` | Arquivo anual da cota parlamentar, diff diário |
 | [ ] | `ingest/ceaps-senado` | Despesas do Senado |
 | [ ] | `ingest/tse-contas-candidatos` | Receitas, despesas e doador originário |
 | [ ] | `ingest/tse-contas-partidos` | Contas de órgãos partidários (Fundo Eleitoral) |

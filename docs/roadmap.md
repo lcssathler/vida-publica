@@ -67,6 +67,10 @@ Objetivo: saber quem é quem, em todas as fontes, sem casar pessoas só pelo nom
 | [x] | `ingest/tse-contas-partidos` | Contas de órgãos partidários (Fundo Eleitoral) |
 | [x] | `canon/repasses` | Repasses partido → candidato por diretório e origem, sem somar níveis |
 
+**Critério de saída:** toda despesa e receita coletada aponta para um parlamentar ou candidatura já conhecidos; nenhum CPF em claro no esquema `canon` (só hash em `ident`); cada pagamento de partido liga-se à sua despesa; cada repasse tem pessoa, partido, diretório e fonte, sem receita vigente duplicada; rebaixar qualquer arquivo não altera nada.
+
+**Resultado (13/10/2026):** 114.452 despesas da cota da Câmara (R$ 138,0 mi) e 15.098 da CEAPS do Senado (R$ 24,2 mi), todas ligadas a deputado ou senador (lideranças partidárias sem deputado ficam marcadas); TSE 2026 para cargos federais: 71.482 receitas (R$ 4,14 bi) e 565.154 despesas (R$ 2,84 bi) de 7.790 candidatos, 218.741 linhas de doador originário; órgãos partidários: 15.079 receitas (R$ 6,09 bi), 64.772 despesas e 40.804 pagamentos com fonte, todos ligados à despesa; 25.406 repasses partido → candidato (22.442 vigentes) por diretório e fonte. Conferência completa: nenhuma coluna de CPF em `canon`, nenhuma receita ou despesa sem candidatura, nenhum repasse sem pessoa ou partido, nenhuma receita vigente duplicada. Segunda execução de cada coletor sem alterações.
+
 ## Fase 4 — Motor de eventos
 
 | | Branch | Entrega |

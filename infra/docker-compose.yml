@@ -45,6 +45,42 @@ services:
       timeout: 3s
       retries: 20
 
+  api:
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+    ports:
+      - "${API_PORT:-3000}:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # Worker de coleta: roda um comando e termina. Exemplo:
+  #   docker compose -f infra/docker-compose.yml run --rm worker check-storage
+  worker:
+    build:
+      context: ../services/ingest
+    profiles: [tools]
+    environment:
+      VP_S3_ENDPOINT: http://s3:9000
+      VP_S3_ACCESS_KEY: ${S3_ACCESS_KEY:-vp_s3}
+      VP_S3_SECRET_KEY: ${S3_SECRET_KEY:?rode node infra/scripts/init-env.mjs}
+      VP_DB_HOST: postgres
+      VP_DB_PORT: 5432
+      VP_DB_NAME: ${POSTGRES_DB:-vida_publica}
+      VP_DB_USER: vp_ingest
+      VP_DB_PASSWORD: ${VP_INGEST_DB_PASSWORD:?rode node infra/scripts/init-env.mjs}
+      VP_CPF_HASH_KEY: ${VP_CPF_HASH_KEY:?rode node infra/scripts/init-env.mjs}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      s3:
+        condition: service_healthy
+
   # Migrações do banco (db/migrations). Rodar com:
   #   docker compose -f infra/docker-compose.yml run --rm migrate
   migrate:

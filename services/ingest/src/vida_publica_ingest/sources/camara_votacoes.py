@@ -48,7 +48,7 @@ class VotacaoProposicao:
 @dataclass(frozen=True)
 class Voto:
     id_camara: int
-    voto: str
+    voto: str | None  # None em votação secreta: a Câmara publica quem votou, não o voto
     sigla_partido: str | None
     sigla_uf: str | None
     registrado_em: datetime | None
@@ -130,14 +130,15 @@ def parse_votacao(payload: dict[str, Any]) -> tuple[CamaraVotacao, list[VotacaoP
 
 
 def parse_votos(payload: dict[str, Any]) -> list[Voto]:
-    """Converte /votacoes/{id}/votos. Lista vazia em votações simbólicas."""
+    """Converte /votacoes/{id}/votos. Lista vazia em votações simbólicas; em votação
+    secreta a lista traz quem votou com o voto em branco."""
     votos = []
     for item in payload["dados"]:
         deputado = item.get("deputado_") or {}
         votos.append(
             Voto(
                 id_camara=int(deputado["id"]),
-                voto=_text(item.get("tipoVoto")) or "",
+                voto=_text(item.get("tipoVoto")),
                 sigla_partido=_text(deputado.get("siglaPartido")),
                 sigla_uf=_text(deputado.get("siglaUf")),
                 registrado_em=_datetime(item.get("dataRegistroVoto")),

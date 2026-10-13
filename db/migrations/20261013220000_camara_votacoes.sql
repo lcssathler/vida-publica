@@ -41,10 +41,11 @@ CREATE INDEX camara_votacao_proposicao_prop_idx
 
 -- Voto de cada deputado numa votação nominal. Sem FK para canon.camara_deputado:
 -- votações antigas citam deputados de outras legislaturas ainda não coletadas.
+-- voto é nulo em votação secreta: a Câmara publica quem votou, não o voto.
 CREATE TABLE canon.camara_voto (
   votacao_id    text NOT NULL REFERENCES canon.camara_votacao (id) ON DELETE CASCADE,
   id_camara     integer NOT NULL,
-  voto          text NOT NULL,
+  voto          text,
   sigla_partido text,
   sigla_uf      char(2),
   registrado_em timestamp,

@@ -96,6 +96,11 @@ def test_parse_votos_e_orientacoes():
     ]
 
 
+def test_voto_secreto_fica_nulo():
+    [voto] = parse_votos({"dados": [_voto(900001, "")]})
+    assert voto.id_camara == 900001 and voto.voto is None
+
+
 def test_hash_muda_quando_um_voto_muda():
     votacao, proposicoes = parse_votacao(_detalhe())
     base = VotacaoCompleta(votacao, tuple(proposicoes), tuple(parse_votos(VOTOS)), ())

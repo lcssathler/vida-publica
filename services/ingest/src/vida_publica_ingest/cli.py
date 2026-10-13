@@ -15,6 +15,7 @@ from .sources import (
     camara_historico,
     camara_votacoes,
     partidos,
+    proposicoes,
     senado_agenda,
     senado_senadores,
     senado_votacoes,
@@ -242,6 +243,30 @@ def _agenda_pauta(settings: Settings, desde: date, ate: date) -> int:
     return 0
 
 
+def _proposicoes(
+    settings: Settings, ids_camara: list[int], ids_senado: list[int], so_ids: bool
+) -> int:
+    conn = connect(settings)
+    try:
+        with SourceClient(settings) as client:
+            run_job(
+                "proposicoes",
+                lambda: proposicoes.collect(
+                    client,
+                    S3RawStorage(settings),
+                    PgRawRegistry(conn),
+                    proposicoes.ProposicaoRepository(conn),
+                    ids_camara=ids_camara,
+                    ids_senado=ids_senado,
+                    usar_interesse=not so_ids,
+                ),
+                PgJobRecorder(conn),
+            )
+    finally:
+        conn.close()
+    return 0
+
+
 def _mandatos_filiacoes(settings: Settings) -> int:
     conn = connect(settings)
     try:
@@ -280,6 +305,14 @@ def main(argv: list[str] | None = None) -> int:
             "agenda-pauta", help="coleta eventos e pauta da Câmara e agenda do Senado"
         )
     )
+    props = commands.add_parser(
+        "proposicoes", help="coleta proposições citadas por votações e pautas, com tramitações"
+    )
+    props.add_argument("--camara", type=int, action="append", help="id de proposição da Câmara")
+    props.add_argument("--senado", type=int, action="append", help="id de processo do Senado")
+    props.add_argument(
+        "--so-ids", action="store_true", help="ignora a lista de interesse; só os ids pedidos"
+    )
     commands.add_parser(
         "mandatos-filiacoes", help="constrói mandatos e períodos de filiação por pessoa"
     )
@@ -308,6 +341,8 @@ def main(argv: list[str] | None = None) -> int:
         return _senado_votacoes(settings, *_window(args))
     if args.command == "agenda-pauta":
         return _agenda_pauta(settings, *_window(args))
+    if args.command == "proposicoes":
+        return _proposicoes(settings, args.camara or [], args.senado or [], args.so_ids)
     if args.command == "mandatos-filiacoes":
         return _mandatos_filiacoes(settings)
     if args.command == "resolver-pessoas":

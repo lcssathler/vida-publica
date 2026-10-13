@@ -1,0 +1,72 @@
+{
+  "id": 9900900,
+  "codigoMateria": 990001,
+  "identificacao": "PL 123/2026",
+  "sigla": "PL",
+  "descricaoSigla": "Projeto de Lei",
+  "numero": "123",
+  "ano": 2026,
+  "apelido": "Lei de Exemplo",
+  "objetivo": "Iniciadora",
+  "casaIdentificadora": "SF",
+  "conteudo": {
+    "id": 7524862,
+    "siglaTipo": "NORMA_GERAL",
+    "tipo": "Norma Geral",
+    "ementa": "Dispõe sobre um assunto de exemplo."
+  },
+  "documento": {
+    "id": 9347593,
+    "siglaTipo": "PROJETO_LEI_ORDINARIA",
+    "tipo": "Projeto de Lei Ordinária",
+    "dataApresentacao": "2026-03-03",
+    "indexacao": "EXEMPLO, TESTE",
+    "url": "https://exemplo.invalid/documento",
+    "resumoAutoria": "Senadora Joana Exemplo (XYZ/MG)"
+  },
+  "tramitando": "Sim",
+  "dataInicioEfetivo": "2026-03-03",
+  "situacaoAtual": "PRONTA PARA A PAUTA NA COMISSÃO",
+  "siglaSituacaoAtual": "PRPTAC",
+  "dataSituacaoAtual": "2026-08-20",
+  "classificacoes": [
+    {"codigo": 33805092, "descricao": "Ciência, Tecnologia e Informática",
+     "descricaoHierarquia": "Economia e Desenvolvimento / Ciência, Tecnologia e Informática"},
+    {"codigo": 33805512, "descricao": "Responsabilidade Civil",
+     "descricaoHierarquia": "Jurídico / Direito Civil / Responsabilidade Civil"}
+  ],
+  "autoriaIniciativa": [
+    {"autor": "Joana Exemplo", "siglaTipo": "SENADOR", "descricaoTipo": "SENADOR", "ordem": 1,
+     "codigoParlamentar": 990001, "uf": "MG", "siglaPartido": "XYZ"}
+  ],
+  "siglaCasaIniciadora": "SF",
+  "autuacoes": [
+    {
+      "numero": 1,
+      "descricao": "Autuação Principal",
+      "situacoes": [
+        {"idTipo": 175, "sigla": "AGDESP", "descricao": "AGUARDANDO DESPACHO",
+         "inicio": "2026-03-03", "fim": "2026-03-10",
+         "colegiado": {"codigo": 1998, "casa": "SF", "sigla": "PLEN", "nome": "Plenário do Senado Federal"}},
+        {"idTipo": 90, "sigla": "PRPTAC", "descricao": "PRONTA PARA A PAUTA NA COMISSÃO",
+         "inicio": "2026-08-20",
+         "colegiado": {"codigo": 38, "casa": "SF", "sigla": "CCJ", "nome": "Comissão de Constituição, Justiça e Cidadania"}}
+      ],
+      "informesLegislativos": [
+        {"id": 9900501, "data": "2026-03-03 19:16:49",
+         "colegiado": {"codigo": 1998, "casa": "SF", "sigla": "PLEN", "nome": "Plenário do Senado Federal"},
+         "enteAdministrativo": {"id": 55312, "casa": "SF", "sigla": "SLSF", "nome": "Secretaria Legislativa"},
+         "descricao": "Autuado o Projeto de Lei nº 123/2026.",
+         "idSituacaoIniciada": 175, "siglaSituacaoIniciada": "AGDESP",
+         "documentosAssociados": [{"id": 1, "tipo": "Projeto de Lei Ordinária", "url": "https://exemplo.invalid/doc1"}]},
+        {"id": 9900502, "data": "2026-08-20 10:00:00",
+         "colegiado": {"codigo": 38, "casa": "SF", "sigla": "CCJ", "nome": "Comissão de Constituição, Justiça e Cidadania"},
+         "enteAdministrativo": {"id": 1, "casa": "SF", "sigla": "CCJ", "nome": "CCJ"},
+         "descricao": "Pronta para a pauta na comissão.",
+         "idSituacaoIniciada": 90, "siglaSituacaoIniciada": "PRPTAC"}
+      ]
+    }
+  ],
+  "normaGerada": {},
+  "dthUltimaAtualizacao": "2026-09-09T17:43:42.548000"
+}

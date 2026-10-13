@@ -1,0 +1,41 @@
+{
+  "dados": {
+    "id": 9900001,
+    "uri": "https://dadosabertos.camara.leg.br/api/v2/proposicoes/9900001",
+    "siglaTipo": "PL",
+    "codTipo": 139,
+    "numero": 123,
+    "ano": 2025,
+    "ementa": "Dispõe sobre um assunto de exemplo.",
+    "dataApresentacao": "2025-03-01T10:00",
+    "uriOrgaoNumerador": "https://dadosabertos.camara.leg.br/api/v2/orgaos/180",
+    "statusProposicao": {
+      "dataHora": "2026-09-03T17:29",
+      "sequencia": 3,
+      "siglaOrgao": "PLEN",
+      "uriOrgao": "https://dadosabertos.camara.leg.br/api/v2/orgaos/180",
+      "uriUltimoRelator": "https://dadosabertos.camara.leg.br/api/v2/deputados/900001",
+      "regime": "Urgência (Art. 155, RICD)",
+      "descricaoTramitacao": "Aprovação de Proposição (Plenário)",
+      "codTipoTramitacao": "1235",
+      "descricaoSituacao": "Aguardando Envio ao Senado Federal",
+      "codSituacao": 1293,
+      "despacho": "Aprovada a Redação Final.",
+      "url": null,
+      "ambito": "Regimental",
+      "apreciacao": "Proposição Sujeita à Apreciação do Plenário"
+    },
+    "uriAutores": "https://dadosabertos.camara.leg.br/api/v2/proposicoes/9900001/autores",
+    "descricaoTipo": "Projeto de Lei",
+    "ementaDetalhada": "",
+    "keywords": "Exemplo, Teste",
+    "uriPropPrincipal": null,
+    "uriPropAnterior": null,
+    "uriPropPosterior": null,
+    "urlInteiroTeor": "https://exemplo.invalid/inteiro-teor",
+    "urnFinal": null,
+    "texto": null,
+    "justificativa": null
+  },
+  "links": [{"rel": "self", "href": "https://dadosabertos.camara.leg.br/api/v2/proposicoes/9900001"}]
+}

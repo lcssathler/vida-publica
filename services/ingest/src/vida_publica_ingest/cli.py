@@ -1,6 +1,7 @@
 import argparse
 import logging
 import sys
+from datetime import date, timedelta
 
 from .adapters.postgres import PgJobRecorder, PgRawRegistry, connect
 from .adapters.s3 import S3RawStorage
@@ -11,10 +12,24 @@ from .jobs import run_job
 from .sources import (
     camara_deputados,
     camara_historico,
+    camara_votacoes,
     partidos,
     senado_senadores,
     tse_candidaturas,
 )
+
+# Janela padrão dos coletores por período: cobre a semana e absorve atrasos de publicação.
+DEFAULT_WINDOW_DAYS = 7
+
+
+def _add_window(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--desde", type=date.fromisoformat, help="AAAA-MM-DD; padrão: 7 dias atrás")
+    parser.add_argument("--ate", type=date.fromisoformat, help="AAAA-MM-DD; padrão: hoje")
+
+
+def _window(args: argparse.Namespace) -> tuple[date, date]:
+    ate = args.ate or date.today()
+    return args.desde or ate - timedelta(days=DEFAULT_WINDOW_DAYS), ate
 
 
 def _check_storage(settings: Settings) -> int:
@@ -149,6 +164,27 @@ def _camara_historico(settings: Settings) -> int:
     return 0
 
 
+def _camara_votacoes(settings: Settings, desde: date, ate: date) -> int:
+    conn = connect(settings)
+    try:
+        with SourceClient(settings) as client:
+            run_job(
+                "camara-votacoes",
+                lambda: camara_votacoes.collect(
+                    client,
+                    S3RawStorage(settings),
+                    PgRawRegistry(conn),
+                    camara_votacoes.CamaraVotacaoRepository(conn),
+                    desde=desde,
+                    ate=ate,
+                ),
+                PgJobRecorder(conn),
+            )
+    finally:
+        conn.close()
+    return 0
+
+
 def _mandatos_filiacoes(settings: Settings) -> int:
     conn = connect(settings)
     try:
@@ -172,6 +208,11 @@ def main(argv: list[str] | None = None) -> int:
     commands.add_parser(
         "camara-historico", help="coleta legislaturas e o histórico de cada deputado"
     )
+    _add_window(
+        commands.add_parser(
+            "camara-votacoes", help="coleta votações da Câmara com votos e orientações"
+        )
+    )
     commands.add_parser(
         "mandatos-filiacoes", help="constrói mandatos e períodos de filiação por pessoa"
     )
@@ -194,6 +235,8 @@ def main(argv: list[str] | None = None) -> int:
         return _check_db(settings)
     if args.command == "camara-historico":
         return _camara_historico(settings)
+    if args.command == "camara-votacoes":
+        return _camara_votacoes(settings, *_window(args))
     if args.command == "mandatos-filiacoes":
         return _mandatos_filiacoes(settings)
     if args.command == "resolver-pessoas":

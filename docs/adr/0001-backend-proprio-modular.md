@@ -9,7 +9,7 @@ O app precisa crescer sem depender inteiramente de um único fornecedor de infra
 ## Decisão
 
 - API própria em NestJS, organizada como monólito modular.
-- Toda dependência externa fica atrás de uma interface: banco (PostgreSQL padrão), fila (tabela no Postgres com `SKIP LOCKED`, depois RabbitMQ ou SQS), armazenamento (API S3: MinIO no local), push (FCM), login (módulo próprio com JWT e OIDC), busca (busca textual do Postgres).
+- Toda dependência externa fica atrás de uma interface: banco (PostgreSQL padrão), fila (tabela no Postgres com `SKIP LOCKED`, depois RabbitMQ ou SQS), armazenamento (API S3: RustFS no local; o MinIO deixou de distribuir imagens prontas), push (FCM), login (módulo próprio com JWT e OIDC), busca (busca textual do Postgres).
 - Tudo roda em contêineres: Docker Compose no local; VMs com Terraform em produção.
 
 ## Consequências

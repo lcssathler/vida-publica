@@ -16,6 +16,8 @@ import pg8000.native
 from .adapters.postgres import transaction
 
 BATCH = 500
+# Linhas por INSERT; as tabelas têm até ~45 colunas e o Postgres aceita 65.535 parâmetros.
+ROWS_PER_STATEMENT = 200
 _IDENTIFIER_CHARS = set("abcdefghijklmnopqrstuvwxyz0123456789_.")
 
 
@@ -124,26 +126,46 @@ class PgSnapshotTable:
     def insert_many(
         self, items: list[tuple[str, tuple[dict[str, Any], str | None]]], *, raw_object_id
     ) -> None:
-        """items: (id, (valores da linha, hash sensível ou None))."""
+        """items: (id, (valores da linha, hash sensível ou None)). Insere várias linhas por
+        comando: uma ida ao banco a cada ROWS_PER_STATEMENT linhas."""
         if not items:
             return
         columns = ["id", *items[0][1][0], "raw_object_id"]
         for column in columns:
             _check_identifier(column)
-        placeholders = ", ".join(":" + c for c in columns)
-        sql = (
-            f"INSERT INTO {self._table} ({', '.join(columns)})"  # noqa: S608 - validado
-            f" VALUES ({placeholders}) ON CONFLICT (id) DO NOTHING"
-        )
         with transaction(self._conn):
-            for id_, (values, sensitive) in items:
-                self._conn.run(sql, id=id_, raw_object_id=raw_object_id, **values)
-                if sensitive and self._ident_table:
+            for start in range(0, len(items), ROWS_PER_STATEMENT):
+                chunk = items[start : start + ROWS_PER_STATEMENT]
+                params: dict[str, Any] = {}
+                tuples = []
+                sensitive = []
+                for n, (id_, (values, hash_)) in enumerate(chunk):
+                    params[f"id_{n}"] = id_
+                    params[f"raw_{n}"] = raw_object_id
+                    names = [f":id_{n}"]
+                    for column in columns[1:-1]:
+                        params[f"{column}_{n}"] = values[column]
+                        names.append(f":{column}_{n}")
+                    names.append(f":raw_{n}")
+                    tuples.append(f"({', '.join(names)})")
+                    if hash_ and self._ident_table:
+                        sensitive.append((id_, hash_))
+                self._conn.run(
+                    f"INSERT INTO {self._table} ({', '.join(columns)})"  # noqa: S608 - validado
+                    f" VALUES {', '.join(tuples)} ON CONFLICT (id) DO NOTHING",
+                    **params,
+                )
+                if sensitive:
+                    hparams = {}
+                    htuples = []
+                    for n, (id_, hash_) in enumerate(sensitive):
+                        hparams[f"id_{n}"] = id_
+                        hparams[f"hash_{n}"] = hash_
+                        htuples.append(f"(:id_{n}, :hash_{n})")
                     self._conn.run(
                         f"INSERT INTO {self._ident_table} (linha_id, {self._ident_column})"  # noqa: S608
-                        " VALUES (:id, :hash) ON CONFLICT (linha_id) DO NOTHING",
-                        id=id_,
-                        hash=sensitive,
+                        f" VALUES {', '.join(htuples)} ON CONFLICT (linha_id) DO NOTHING",
+                        **hparams,
                     )
 
     def mark_removed(self, ids: list[str]) -> None:

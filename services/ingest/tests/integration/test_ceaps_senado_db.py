@@ -20,7 +20,7 @@ pytestmark = pytest.mark.integration
 
 def test_fotografia_da_ceaps_casa_senador_pelo_nome(ingest_conn):
     codigo = random.randint(10_000_000, 99_999_999)  # noqa: S311 - id de teste
-    ano = random.randint(2100, 2999)  # noqa: S311 - ano fictício isola o teste
+    ano = random.randint(2100, 32000)  # noqa: S311 - ano fictício isola o teste
     nome = f"Joana Exemplo {codigo}"
     detalhe = _detalhe(codigo)
     detalhe["DetalheParlamentar"]["Parlamentar"]["IdentificacaoParlamentar"]["NomeParlamentar"] = (

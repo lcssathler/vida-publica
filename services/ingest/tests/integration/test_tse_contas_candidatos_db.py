@@ -14,7 +14,7 @@ pytestmark = pytest.mark.integration
 
 
 def test_coleta_filtra_cargos_e_sincroniza(ingest_conn):
-    ano = random.randint(2100, 2999)  # noqa: S311 - ano fictício isola o teste
+    ano = random.randint(2100, 32000)  # noqa: S311 - ano fictício isola o teste
     estadual = {
         "CD_CARGO": "7",
         "DS_CARGO": "Deputado Estadual",

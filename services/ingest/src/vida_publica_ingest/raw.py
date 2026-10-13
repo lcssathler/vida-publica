@@ -10,6 +10,7 @@ _SLUG = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
 _EXTENSIONS = {
     "application/json": "json",
     "application/zip": "zip",
+    "application/x-zip-compressed": "zip",
     "text/csv": "csv",
     "application/xml": "xml",
     "text/xml": "xml",

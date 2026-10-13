@@ -47,6 +47,7 @@ Variáveis com prefixo `VP_` (`src/vida_publica_ingest/config.py`):
 | `VP_S3_SECRET_KEY` | (obrigatória fora dos testes) |
 | `VP_S3_BUCKET_RAW` | `vp-raw` |
 | `VP_USER_AGENT` | identifica o coletor para as fontes oficiais |
+| `VP_CAMARA_PRESENCA_LEGADO` | `false`; `true` liga o serviço legado de frequência diária da Câmara |
 
 ## Pipeline
 
@@ -65,6 +66,7 @@ Cada comando roda como job registrado em `raw.job_run`. Pelo Docker: `docker com
 | 9 | `senado-votacoes` | Votações nominais do Senado com o voto ou o motivo da ausência de cada senador (`--desde`, `--ate`) |
 | 10 | `agenda-pauta` | Eventos da Câmara com a pauta dos deliberativos; sessões do Plenário e reuniões de comissão do Senado com seus itens (`--desde`, `--ate`; inclui agenda futura) |
 | 11 | `proposicoes` | Proposições citadas por votações, pautas e reuniões (lista de interesse), com tramitações, temas oficiais e autores; `--camara`/`--senado` acrescentam ids, `--so-ids` coleta só eles |
+| 12 | `presenca` | Presença de deputados nos eventos deliberativos já coletados (`--desde`, `--ate`); com `VP_CAMARA_PRESENCA_LEGADO=true`, também a frequência diária do Plenário com justificativas (serviço legado). No Senado, a presença vem dos códigos de comparecimento em `senado-votacoes` |
 
 Todos são idempotentes: rodar de novo só grava o que mudou.
 

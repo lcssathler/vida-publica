@@ -22,6 +22,11 @@ class Settings(BaseSettings):
     # Chave do HMAC que transforma CPFs em hash. O CPF em si nunca é guardado.
     cpf_hash_key: SecretStr = SecretStr("")
 
+    # Liga a coleta da frequência diária do Plenário no serviço legado da Câmara
+    # (SitCamaraWS, XML), que traz as justificativas de ausência. Desligada por
+    # padrão: o serviço é antigo e pode ser descontinuado sem aviso.
+    camara_presenca_legado: bool = False
+
     # Identifica o coletor para os servidores das fontes oficiais.
     user_agent: str = Field(
         default="VidaPublica/0.1 (+https://github.com/lcssathler/vida-publica)",

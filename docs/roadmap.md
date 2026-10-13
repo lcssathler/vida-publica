@@ -51,7 +51,7 @@ Objetivo: saber quem é quem, em todas as fontes, sem casar pessoas só pelo nom
 | [x] | `ingest/senado-votacoes` | Votações com votos e motivo de ausência |
 | [x] | `ingest/agenda-pauta` | Agenda e pauta da Câmara e do Senado |
 | [x] | `ingest/proposicoes` | Propostas, tramitações e temas oficiais |
-| [ ] | `ingest/presenca` | Presença por sessão; justificativas via serviço legado atrás de chave liga/desliga |
+| [x] | `ingest/presenca` | Presença por sessão; justificativas via serviço legado atrás de chave liga/desliga |
 
 ## Fase 3 — Dinheiro
 

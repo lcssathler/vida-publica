@@ -7,7 +7,7 @@ from .adapters.s3 import S3RawStorage
 from .config import Settings
 from .http import SourceClient
 from .jobs import run_job
-from .sources import camara_deputados, senado_senadores, tse_candidaturas
+from .sources import camara_deputados, partidos, senado_senadores, tse_candidaturas
 
 
 def _check_storage(settings: Settings) -> int:
@@ -89,6 +89,25 @@ def _tse_candidaturas(settings: Settings, anos: list[int]) -> int:
     return 0
 
 
+def _partidos(settings: Settings) -> int:
+    conn = connect(settings)
+    try:
+        with SourceClient(settings) as client:
+            run_job(
+                "partidos",
+                lambda: partidos.build(
+                    client,
+                    S3RawStorage(settings),
+                    PgRawRegistry(conn),
+                    partidos.PartidoRepository(conn),
+                ),
+                PgJobRecorder(conn),
+            )
+    finally:
+        conn.close()
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
     logging.getLogger("httpx").setLevel(logging.WARNING)
@@ -100,6 +119,7 @@ def main(argv: list[str] | None = None) -> int:
     deputados.add_argument(
         "--legislatura", type=int, action="append", help="padrão: 57 (2023-2027)"
     )
+    commands.add_parser("partidos", help="reconstrói partidos a partir do TSE e da Câmara")
     candidaturas = commands.add_parser("tse-candidaturas", help="coleta candidaturas do TSE")
     candidaturas.add_argument("--ano", type=int, action="append", help="padrão: 2018, 2022, 2026")
     senadores = commands.add_parser("senado-senadores", help="coleta senadores do Senado")
@@ -113,6 +133,8 @@ def main(argv: list[str] | None = None) -> int:
         return _check_storage(settings)
     if args.command == "check-db":
         return _check_db(settings)
+    if args.command == "partidos":
+        return _partidos(settings)
     if args.command == "tse-candidaturas":
         return _tse_candidaturas(settings, args.ano or [2018, 2022, 2026])
     if args.command == "senado-senadores":

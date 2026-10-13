@@ -38,6 +38,10 @@ jobs:
         run: docker compose -f infra/docker-compose.yml up -d --wait --wait-timeout 120
       - name: Aplica as migrações do banco
         run: docker compose -f infra/docker-compose.yml run --rm migrate
+      - name: API responde no compose
+        run: curl -fsS http://localhost:3000/health
+      - name: Worker acessa o armazenamento
+        run: docker compose -f infra/docker-compose.yml run --rm worker check-storage
       - uses: astral-sh/setup-uv@v5
       - name: Testes de integração (esquema e permissões)
         working-directory: services/ingest

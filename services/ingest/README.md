@@ -9,6 +9,7 @@ Baixa os dados públicos oficiais, guarda cada arquivo bruto sem alteração, no
 | `ports.py` | Interfaces (armazenamento bruto, registro de coletas, registro de jobs) |
 | `adapters/` | Implementações: em memória (testes) e S3 |
 | `raw.py` | Guarda cada conteúdo uma única vez por fonte, dataset e hash, em caminho imutável |
+| `snapshot.py` | Sincroniza arquivos que são fotografias completas: linhas novas entram, ausentes ganham `removido_em` |
 | `jobs.py` | Executa jobs registrando início, fim e erro |
 | `cli.py` | Comando `vp-ingest` |
 
@@ -68,6 +69,7 @@ Cada comando roda como job registrado em `raw.job_run`. Pelo Docker: `docker com
 | 11 | `proposicoes` | Proposições citadas por votações, pautas e reuniões (lista de interesse), com tramitações, temas oficiais e autores; `--camara`/`--senado` acrescentam ids, `--so-ids` coleta só eles |
 | 12 | `presenca` | Presença de deputados nos eventos deliberativos já coletados (`--desde`, `--ate`); com `VP_CAMARA_PRESENCA_LEGADO=true`, também a frequência diária do Plenário com justificativas (serviço legado). No Senado, a presença vem dos códigos de comparecimento em `senado-votacoes` |
 | 13 | `cota-camara` | Despesas da cota parlamentar da Câmara: arquivo anual rebaixado e comparado com o banco (novas, removidas, restauradas); CPF de fornecedor pessoa física só em hash (`--ano`; padrão: ano corrente) |
+| 14 | `ceaps-senado` | Despesas dos senadores (CEAPS): arquivo anual comparado com o banco; senador casado pelo nome parlamentar; CPF de fornecedor pessoa física só em hash (`--ano`) |
 
 Todos são idempotentes: rodar de novo só grava o que mudou.
 

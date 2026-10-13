@@ -53,11 +53,16 @@ class SourceClient:
     def __exit__(self, *_: object) -> None:
         self.close()
 
-    def get(self, url: str, params: Mapping[str, Any] | None = None) -> httpx.Response:
+    def get(
+        self,
+        url: str,
+        params: Mapping[str, Any] | None = None,
+        headers: Mapping[str, str] | None = None,
+    ) -> httpx.Response:
         last_problem = ""
         for attempt in range(1, self._max_attempts + 1):
             try:
-                response = self._client.get(url, params=params)
+                response = self._client.get(url, params=params, headers=headers)
             except httpx.TransportError as error:
                 last_problem = f"{type(error).__name__}: {error}"
             else:
@@ -85,9 +90,11 @@ class SourceClient:
         dataset: str,
         url: str,
         params: Mapping[str, Any] | None = None,
+        headers: Mapping[str, str] | None = None,
     ) -> tuple[httpx.Response, StoreResult]:
-        """Baixa e guarda a resposta como dado bruto antes de qualquer interpretação."""
-        response = self.get(url, params=params)
+        """Baixa e guarda a resposta como dado bruto antes de qualquer interpretação.
+        `headers` sobrepõe os padrões (ex.: Accept para servidores que recusam JSON)."""
+        response = self.get(url, params=params, headers=headers)
         content_type = response.headers.get("Content-Type", "application/octet-stream")
         stored = store_raw(
             storage,

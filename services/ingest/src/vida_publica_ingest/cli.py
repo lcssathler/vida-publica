@@ -11,9 +11,11 @@ from .http import SourceClient
 from .jobs import run_job
 from .sources import (
     camara_deputados,
+    camara_eventos,
     camara_historico,
     camara_votacoes,
     partidos,
+    senado_agenda,
     senado_senadores,
     senado_votacoes,
     tse_candidaturas,
@@ -207,6 +209,39 @@ def _senado_votacoes(settings: Settings, desde: date, ate: date) -> int:
     return 0
 
 
+def _agenda_pauta(settings: Settings, desde: date, ate: date) -> int:
+    conn = connect(settings)
+    try:
+        with SourceClient(settings) as client:
+            run_job(
+                "camara-eventos",
+                lambda: camara_eventos.collect(
+                    client,
+                    S3RawStorage(settings),
+                    PgRawRegistry(conn),
+                    camara_eventos.CamaraEventoRepository(conn),
+                    desde=desde,
+                    ate=ate,
+                ),
+                PgJobRecorder(conn),
+            )
+            run_job(
+                "senado-agenda",
+                lambda: senado_agenda.collect(
+                    client,
+                    S3RawStorage(settings),
+                    PgRawRegistry(conn),
+                    senado_agenda.SenadoAgendaRepository(conn),
+                    desde=desde,
+                    ate=ate,
+                ),
+                PgJobRecorder(conn),
+            )
+    finally:
+        conn.close()
+    return 0
+
+
 def _mandatos_filiacoes(settings: Settings) -> int:
     conn = connect(settings)
     try:
@@ -240,6 +275,11 @@ def main(argv: list[str] | None = None) -> int:
             "senado-votacoes", help="coleta votações nominais do Senado com votos e ausências"
         )
     )
+    _add_window(
+        commands.add_parser(
+            "agenda-pauta", help="coleta eventos e pauta da Câmara e agenda do Senado"
+        )
+    )
     commands.add_parser(
         "mandatos-filiacoes", help="constrói mandatos e períodos de filiação por pessoa"
     )
@@ -266,6 +306,8 @@ def main(argv: list[str] | None = None) -> int:
         return _camara_votacoes(settings, *_window(args))
     if args.command == "senado-votacoes":
         return _senado_votacoes(settings, *_window(args))
+    if args.command == "agenda-pauta":
+        return _agenda_pauta(settings, *_window(args))
     if args.command == "mandatos-filiacoes":
         return _mandatos_filiacoes(settings)
     if args.command == "resolver-pessoas":

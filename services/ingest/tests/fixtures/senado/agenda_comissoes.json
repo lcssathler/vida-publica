@@ -1,0 +1,87 @@
+{
+  "AgendaReuniao": {
+    "Metadados": {"Versao": "13/10/2026 14:38:06", "VersaoServico": "2"},
+    "reunioes": {
+      "reuniao": {
+        "codigo": "9900500",
+        "versao": "2026-09-04T17:17:24.792",
+        "descricao": "2ª, Semipresencial",
+        "titulo": "2ª Reunião Semipresencial",
+        "colegiadoCriador": {
+          "codigo": "2860",
+          "sigla": "CMMPV 999/2026",
+          "nome": "Comissão Mista da Medida Provisória nº 999, de 2026",
+          "siglaCasa": "CN",
+          "codigoTipo": "20",
+          "descricaoTipo": "Comissão Mista"
+        },
+        "dataInicio": "2026-09-01T15:00:00.000",
+        "realizada": "true",
+        "codigoSituacao": "6",
+        "situacao": "Realizada",
+        "status": "Realizada",
+        "secreta": "false",
+        "local": "Anexo II, Plenário 3",
+        "urlUltimaPautaSimplesPublicada": "https://exemplo.invalid/pauta-simples",
+        "urlUltimaPautaCheiaPublicada": "https://exemplo.invalid/pauta-cheia",
+        "urlUltimoResultadoPublicado": "https://exemplo.invalid/resultado",
+        "tipoPresenca": "Semipresencial",
+        "tipo": {"codigo": "2", "descricao": "Extraordinária", "sigla": "EXT"},
+        "partes": {
+          "codigo": "19283",
+          "nome": "Deliberativa",
+          "codigoTipo": "2",
+          "descricaoTipo": "Deliberativa",
+          "sequencial": "1",
+          "sequencialFormatado": "1ª PARTE",
+          "isDeliberativa": "true",
+          "finalidade": "Apreciação do Relatório",
+          "itens": {
+            "codigo": "112515",
+            "tipo": "MATE",
+            "ordem": "1",
+            "nome": "MPV 999/2026",
+            "descricao": "MPV 999/2026",
+            "autorItemPauta": {"nomeAutoria": "Presidência da República"},
+            "tipoPauta": "Pauta",
+            "categoria": "Matéria",
+            "relatorio": "Pela aprovação nos termos do PLV que apresenta",
+            "descricaoResultado": "Em 01/09/2026, a reunião é aberta e suspensa.",
+            "siglaResultado": "Sem deliberação",
+            "doma": {
+              "idDoma": "10225896",
+              "idProcesso": "9900900",
+              "autoria": "Presidência da República",
+              "descricaoTipoDoma": "Medida Provisória",
+              "ementa": "Altera a Lei de exemplo.",
+              "sigla": "MPV",
+              "numero": "00999",
+              "ano": "2026",
+              "identificacao": "MPV 999/2026",
+              "codigoMateria": "990003",
+              "relatorias": {
+                "codigoColegiado": "2860",
+                "siglaColegiado": "CMMPV 999/2026",
+                "relator": {
+                  "id": "10295673",
+                  "idProcesso": "9900900",
+                  "parlamentar": {
+                    "codigo": "990777",
+                    "nomeComCargo": "Deputado Carlos Exemplo",
+                    "casa": "CD",
+                    "siglaPartido": "ABC"
+                  },
+                  "relator": "true"
+                }
+              }
+            },
+            "resultado": {
+              "descricao": "Sem deliberação",
+              "texto": "Em 01/09/2026, a reunião é aberta e suspensa."
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -7,6 +7,7 @@ from .adapters.postgres import PgJobRecorder, PgRawRegistry, connect
 from .adapters.s3 import S3RawStorage
 from .canon import mandatos, pessoas, repasses
 from .config import Settings
+from .events import engine, registro
 from .http import SourceClient
 from .jobs import run_job
 from .sources import (
@@ -393,6 +394,59 @@ def _repasses(settings: Settings) -> int:
     return 0
 
 
+def _eventos(settings: Settings, tipos: list[str], carga_inicial: bool) -> int:
+    geradores = [g for g in registro.geradores() if not tipos or g.regra.tipo in tipos]
+    desconhecidos = set(tipos) - {g.regra.tipo for g in geradores}
+    if desconhecidos:
+        print(f"tipos sem gerador: {', '.join(sorted(desconhecidos))}")
+        return 1
+    conn = connect(settings)
+    try:
+        for gerador in geradores:
+            resultado: list[engine.Stats] = []
+            run_job(
+                f"eventos-{gerador.regra.tipo}",
+                lambda g=gerador, r=resultado: r.append(
+                    engine.processar(conn, g, carga_inicial=True if carga_inicial else None)
+                ),
+                PgJobRecorder(conn),
+            )
+            [s] = resultado
+            print(
+                f"{s.tipo} v{s.versao}{' (carga inicial)' if s.carga_inicial else ''}:"
+                f" {s.gerados} gerados, {s.novos} novos, {s.alterados} alterados,"
+                f" {s.arquivados} arquivados, {s.substituidos} substituídos,"
+                f" {s.segurados} segurados"
+            )
+    finally:
+        conn.close()
+    return 0
+
+
+def _eventos_liberar(settings: Settings, tipo: str | None) -> int:
+    conn = connect(settings)
+    try:
+        print(f"{engine.liberar_carga_inicial(conn, tipo)} eventos da carga inicial publicados")
+    finally:
+        conn.close()
+    return 0
+
+
+def _eventos_resumo(settings: Settings) -> int:
+    conn = connect(settings)
+    try:
+        for row in engine.resumo(conn):
+            valor = f", R$ {row['valor']:,.2f}" if row["valor"] is not None else ""
+            motivo = f" ({row['motivo']})" if row["motivo"] else ""
+            print(
+                f"{row['tipo']} v{row['regra_versao']} {row['status']}{motivo}:"
+                f" {row['eventos']}{valor}"
+            )
+    finally:
+        conn.close()
+    return 0
+
+
 def _mandatos_filiacoes(settings: Settings) -> int:
     conn = connect(settings)
     try:
@@ -474,6 +528,21 @@ def main(argv: list[str] | None = None) -> int:
     commands.add_parser(
         "repasses", help="repasses partido → candidato por diretório e fonte, a partir do TSE"
     )
+    eventos = commands.add_parser(
+        "eventos", help="gera os eventos do feed a partir do esquema canon (só grava a diferença)"
+    )
+    eventos.add_argument("--tipo", action="append", help="tipo de evento; padrão: todos")
+    eventos.add_argument(
+        "--carga-inicial",
+        action="store_true",
+        help="segura os eventos novos sem publicar (automático na primeira execução de cada tipo)",
+    )
+    liberar = commands.add_parser(
+        "eventos-liberar",
+        help="publica os eventos segurados pela carga inicial (os segurados por valor continuam)",
+    )
+    liberar.add_argument("--tipo", help="só este tipo; padrão: todos")
+    commands.add_parser("eventos-resumo", help="eventos por tipo, versão, status e motivo")
     commands.add_parser(
         "mandatos-filiacoes", help="constrói mandatos e períodos de filiação por pessoa"
     )
@@ -517,6 +586,12 @@ def main(argv: list[str] | None = None) -> int:
         return _tse_contas_partidos(settings, args.ano or [2026])
     if args.command == "repasses":
         return _repasses(settings)
+    if args.command == "eventos":
+        return _eventos(settings, args.tipo or [], args.carga_inicial)
+    if args.command == "eventos-liberar":
+        return _eventos_liberar(settings, args.tipo)
+    if args.command == "eventos-resumo":
+        return _eventos_resumo(settings)
     if args.command == "mandatos-filiacoes":
         return _mandatos_filiacoes(settings)
     if args.command == "resolver-pessoas":

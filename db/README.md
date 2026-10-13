@@ -27,6 +27,16 @@ O arquivo aparece em `db/migrations/` com as seções `-- migrate:up` e `-- migr
 | `feed` | Eventos gerados | worker (admin revisa) | worker, API, admin |
 | `app` | Dados de usuários | API | API, admin |
 
+## Feed
+
+| Tabela | Conteúdo |
+| --- | --- |
+| `feed.regra` | Regras de geração de eventos por tipo e versão, com descrição e parâmetros (180 dias, R$ 500 mil...) |
+| `feed.evento` | Um evento por fato e versão de regra, de qualquer tipo: `chave_dedup` única, data do fato, fonte, título, resumo, `payload` jsonb, valor, visibilidade (`geral` ou só `seguidores`) e status (`segurado`, `publicado`, `arquivado`) com o motivo |
+| `feed.evento_alvo` | Pessoas, partidos, proposições e assuntos de cada evento, para seguir e filtrar sem varrer o `payload` |
+
+A API lê só eventos `publicado`; o admin revisa os `segurado`.
+
 ## Papéis
 
 Cada componente conecta com um usuário próprio, membro de um papel de grupo:

@@ -75,7 +75,7 @@ Objetivo: saber quem é quem, em todas as fontes, sem casar pessoas só pelo nom
 
 | | Branch | Entrega |
 | --- | --- | --- |
-| [ ] | `events/engine` | Regras versionadas, chave de deduplicação, carga inicial sem publicar, eventos "segurados" para revisão |
+| [x] | `events/engine` | Regras versionadas, chave de deduplicação, carga inicial sem publicar, eventos "segurados" para revisão |
 | [ ] | `events/votacoes` | Voto nominal e voto contra a orientação do partido |
 | [ ] | `events/pauta-tramitacao` | Pauta, etapas de tramitação selecionadas, mudança de regime, proposta parada há 180 dias |
 | [ ] | `events/presenca-gastos` | Presença e ausência; despesas agrupadas por mês, marcadas como incompletas |

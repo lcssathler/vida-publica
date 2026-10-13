@@ -7,7 +7,7 @@ from .adapters.s3 import S3RawStorage
 from .config import Settings
 from .http import SourceClient
 from .jobs import run_job
-from .sources import camara_deputados
+from .sources import camara_deputados, senado_senadores
 
 
 def _check_storage(settings: Settings) -> int:
@@ -48,6 +48,26 @@ def _camara_deputados(settings: Settings, legislaturas: list[int]) -> int:
     return 0
 
 
+def _senado_senadores(settings: Settings, legislaturas: list[int]) -> int:
+    conn = connect(settings)
+    try:
+        with SourceClient(settings) as client:
+            run_job(
+                "senado-senadores",
+                lambda: senado_senadores.collect(
+                    client,
+                    S3RawStorage(settings),
+                    PgRawRegistry(conn),
+                    senado_senadores.SenadoSenadorRepository(conn),
+                    legislaturas=legislaturas,
+                ),
+                PgJobRecorder(conn),
+            )
+    finally:
+        conn.close()
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
     logging.getLogger("httpx").setLevel(logging.WARNING)
@@ -59,6 +79,10 @@ def main(argv: list[str] | None = None) -> int:
     deputados.add_argument(
         "--legislatura", type=int, action="append", help="padrão: 57 (2023-2027)"
     )
+    senadores = commands.add_parser("senado-senadores", help="coleta senadores do Senado")
+    senadores.add_argument(
+        "--legislatura", type=int, action="append", help="padrão: 57 (2023-2027)"
+    )
 
     args = parser.parse_args(argv)
     settings = Settings()
@@ -66,6 +90,8 @@ def main(argv: list[str] | None = None) -> int:
         return _check_storage(settings)
     if args.command == "check-db":
         return _check_db(settings)
+    if args.command == "senado-senadores":
+        return _senado_senadores(settings, args.legislatura or [57])
     if args.command == "camara-deputados":
         return _camara_deputados(settings, args.legislatura or [57])
     return 1

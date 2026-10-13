@@ -64,6 +64,7 @@ Cada comando roda como job registrado em `raw.job_run`. Pelo Docker: `docker com
 | 8 | `camara-votacoes` | Votações da Câmara com votos nominais e orientações de bancada (`--desde`, `--ate`; padrão: últimos 7 dias) |
 | 9 | `senado-votacoes` | Votações nominais do Senado com o voto ou o motivo da ausência de cada senador (`--desde`, `--ate`) |
 | 10 | `agenda-pauta` | Eventos da Câmara com a pauta dos deliberativos; sessões do Plenário e reuniões de comissão do Senado com seus itens (`--desde`, `--ate`; inclui agenda futura) |
+| 11 | `proposicoes` | Proposições citadas por votações, pautas e reuniões (lista de interesse), com tramitações, temas oficiais e autores; `--camara`/`--senado` acrescentam ids, `--so-ids` coleta só eles |
 
 Todos são idempotentes: rodar de novo só grava o que mudou.
 

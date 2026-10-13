@@ -50,7 +50,7 @@ Objetivo: saber quem é quem, em todas as fontes, sem casar pessoas só pelo nom
 | [x] | `ingest/camara-votacoes` | Votações nominais, votos e orientações de bancada |
 | [x] | `ingest/senado-votacoes` | Votações com votos e motivo de ausência |
 | [x] | `ingest/agenda-pauta` | Agenda e pauta da Câmara e do Senado |
-| [ ] | `ingest/proposicoes` | Propostas, tramitações e temas oficiais |
+| [x] | `ingest/proposicoes` | Propostas, tramitações e temas oficiais |
 | [ ] | `ingest/presenca` | Presença por sessão; justificativas via serviço legado atrás de chave liga/desliga |
 
 ## Fase 3 — Dinheiro

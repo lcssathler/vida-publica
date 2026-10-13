@@ -33,7 +33,7 @@ Objetivo: saber quem é quem, em todas as fontes, sem casar pessoas só pelo nom
 | | Branch | Entrega |
 | --- | --- | --- |
 | [x] | `ingest/camara-deputados` | Deputados em exercício e detalhe (inclui identificadores) |
-| [ ] | `ingest/senado-senadores` | Senadores em exercício |
+| [x] | `ingest/senado-senadores` | Senadores em exercício |
 | [ ] | `ingest/tse-candidaturas` | Candidaturas 2026 e histórico de eleições anteriores |
 | [ ] | `ingest/partidos` | Partidos, números, siglas, fusões e renomeações |
 | [ ] | `canon/resolucao-pessoas` | Casamento entre fontes por CPF (só hash), depois nome civil + data de nascimento; fila de revisão para casos incertos |

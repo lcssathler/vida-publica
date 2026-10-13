@@ -1,0 +1,22 @@
+{
+  "DetalheParlamentar": {
+    "Parlamentar": {
+      "IdentificacaoParlamentar": {
+        "CodigoParlamentar": "990001",
+        "NomeParlamentar": "Joana Exemplo",
+        "NomeCompletoParlamentar": "Joana Exemplo de Souza",
+        "SexoParlamentar": "Feminino",
+        "UrlFotoParlamentar": "https://exemplo.invalid/foto.jpg",
+        "UrlPaginaParlamentar": "https://exemplo.invalid/perfil",
+        "EmailParlamentar": "sen.joanaexemplo@exemplo.invalid",
+        "SiglaPartidoParlamentar": "XYZ",
+        "UfParlamentar": "RS"
+      },
+      "DadosBasicosParlamentar": {
+        "DataNascimento": "1971-03-09",
+        "Naturalidade": "Cidade Exemplo",
+        "UfNaturalidade": "RS"
+      }
+    }
+  }
+}

@@ -137,6 +137,24 @@ def test_parse_senado():
     assert [(a.nome, a.id_fonte) for a in completa.autores] == [("Joana Exemplo", "990001")]
 
 
+def test_sequencia_repetida_na_camara_ganha_sufixo():
+    repetida = {"dados": [*TRAMITACOES["dados"], dict(TRAMITACOES["dados"][1], despacho="Outro")]}
+    completa = parse_camara(_detalhe_camara(), repetida, TEMAS, AUTORES)
+    assert [t.id_fonte for t in completa.tramitacoes] == ["1", "3", "3-2"]
+
+
+def test_informes_repetidos_no_senado_ficam_um_por_id():
+    payload = _processo()
+    informes = payload["autuacoes"][0]["informesLegislativos"]
+    repetido = dict(
+        informes[0], documentosAssociados=[{"id": 2, "url": "https://exemplo.invalid/doc0"}]
+    )
+    payload["autuacoes"][0]["informesLegislativos"] = [informes[1], repetido, *informes]
+    completa = parse_senado(payload)
+    assert [t.id_fonte for t in completa.tramitacoes] == ["9900501", "9900502"]
+    assert completa.tramitacoes[0].url == "https://exemplo.invalid/doc0"
+
+
 def test_hash_muda_com_tramitacao_nova():
     base = parse_camara(_detalhe_camara(), TRAMITACOES, TEMAS, AUTORES)
     menos = parse_camara(_detalhe_camara(), {"dados": TRAMITACOES["dados"][:1]}, TEMAS, AUTORES)

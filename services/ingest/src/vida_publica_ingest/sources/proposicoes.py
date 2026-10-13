@@ -166,11 +166,15 @@ def parse_camara(
         casa_iniciadora=None,
     )
     lista = []
+    vistas: dict[int, int] = {}
     for item in tramitacoes["dados"]:
         sequencia = int(item["sequencia"])
+        # A Câmara repete a sequência em raras tramitações; a repetição ganha sufixo.
+        vistas[sequencia] = vistas.get(sequencia, 0) + 1
+        id_fonte = str(sequencia) if vistas[sequencia] == 1 else f"{sequencia}-{vistas[sequencia]}"
         lista.append(
             Tramitacao(
-                id_fonte=str(sequencia),
+                id_fonte=id_fonte,
                 sequencia=sequencia,
                 data_hora=datetime.fromisoformat(item["dataHora"]),
                 sigla_orgao=_text(item.get("siglaOrgao")),
@@ -252,13 +256,21 @@ def parse_senado(processo: dict[str, Any]) -> ProposicaoCompleta:
         codigo_materia=_int(processo.get("codigoMateria")),
         casa_iniciadora=_text(processo.get("siglaCasaIniciadora")),
     )
-    informes = sorted(
-        (i for a in autuacoes for i in a.get("informesLegislativos") or []),
-        key=lambda i: (str(i.get("data") or ""), int(i["id"])),
-    )
+    # O Senado repete o mesmo informe (um por documento ou situação associada);
+    # fica um por id, em ordem cronológica, com a menor URL entre os documentos.
+    por_id: dict[int, dict[str, Any]] = {}
+    urls_por_id: dict[int, set[str]] = {}
+    for autuacao in autuacoes:
+        for informe in autuacao.get("informesLegislativos") or []:
+            codigo = int(informe["id"])
+            por_id.setdefault(codigo, informe)
+            for documento in informe.get("documentosAssociados") or []:
+                if url := _text(documento.get("url")):
+                    urls_por_id.setdefault(codigo, set()).add(url)
+    informes = sorted(por_id.values(), key=lambda i: (str(i.get("data") or ""), int(i["id"])))
     tramitacoes = []
     for sequencia, informe in enumerate(informes, start=1):
-        documentos = informe.get("documentosAssociados") or []
+        urls = sorted(urls_por_id.get(int(informe["id"]), ()))
         tramitacoes.append(
             Tramitacao(
                 id_fonte=str(informe["id"]),
@@ -273,7 +285,7 @@ def parse_senado(processo: dict[str, Any]) -> ProposicaoCompleta:
                 despacho=None,
                 regime=None,
                 relator_id_fonte=None,
-                url=_text(documentos[0].get("url")) if documentos else None,
+                url=urls[0] if urls else None,
             )
         )
     temas = {

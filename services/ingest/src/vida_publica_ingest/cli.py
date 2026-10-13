@@ -4,11 +4,17 @@ import sys
 
 from .adapters.postgres import PgJobRecorder, PgRawRegistry, connect
 from .adapters.s3 import S3RawStorage
-from .canon import pessoas
+from .canon import mandatos, pessoas
 from .config import Settings
 from .http import SourceClient
 from .jobs import run_job
-from .sources import camara_deputados, partidos, senado_senadores, tse_candidaturas
+from .sources import (
+    camara_deputados,
+    camara_historico,
+    partidos,
+    senado_senadores,
+    tse_candidaturas,
+)
 
 
 def _check_storage(settings: Settings) -> int:
@@ -124,6 +130,34 @@ def _resolver_pessoas(settings: Settings) -> int:
     return 0
 
 
+def _camara_historico(settings: Settings) -> int:
+    conn = connect(settings)
+    try:
+        with SourceClient(settings) as client:
+            run_job(
+                "camara-historico",
+                lambda: camara_historico.collect(
+                    client,
+                    S3RawStorage(settings),
+                    PgRawRegistry(conn),
+                    camara_historico.CamaraHistoricoRepository(conn),
+                ),
+                PgJobRecorder(conn),
+            )
+    finally:
+        conn.close()
+    return 0
+
+
+def _mandatos_filiacoes(settings: Settings) -> int:
+    conn = connect(settings)
+    try:
+        run_job("mandatos-filiacoes", lambda: mandatos.build(conn), PgJobRecorder(conn))
+    finally:
+        conn.close()
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
     logging.getLogger("httpx").setLevel(logging.WARNING)
@@ -134,6 +168,12 @@ def main(argv: list[str] | None = None) -> int:
     deputados = commands.add_parser("camara-deputados", help="coleta deputados da Câmara")
     deputados.add_argument(
         "--legislatura", type=int, action="append", help="padrão: 57 (2023-2027)"
+    )
+    commands.add_parser(
+        "camara-historico", help="coleta legislaturas e o histórico de cada deputado"
+    )
+    commands.add_parser(
+        "mandatos-filiacoes", help="constrói mandatos e períodos de filiação por pessoa"
     )
     commands.add_parser(
         "resolver-pessoas", help="casa registros de TSE, Câmara e Senado numa mesma pessoa"
@@ -152,6 +192,10 @@ def main(argv: list[str] | None = None) -> int:
         return _check_storage(settings)
     if args.command == "check-db":
         return _check_db(settings)
+    if args.command == "camara-historico":
+        return _camara_historico(settings)
+    if args.command == "mandatos-filiacoes":
+        return _mandatos_filiacoes(settings)
     if args.command == "resolver-pessoas":
         return _resolver_pessoas(settings)
     if args.command == "partidos":

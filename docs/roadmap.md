@@ -37,9 +37,11 @@ Objetivo: saber quem é quem, em todas as fontes, sem casar pessoas só pelo nom
 | [x] | `ingest/tse-candidaturas` | Candidaturas 2026 e histórico de eleições anteriores |
 | [x] | `ingest/partidos` | Partidos, números, siglas, fusões e renomeações |
 | [x] | `canon/resolucao-pessoas` | Casamento entre fontes por CPF (só hash), depois nome civil + data de nascimento; fila de revisão para casos incertos |
-| [ ] | `canon/mandatos-filiacoes` | Mandatos e histórico de partido por pessoa |
+| [x] | `canon/mandatos-filiacoes` | Mandatos e histórico de partido por pessoa |
 
 **Critério de saída:** 95% ou mais dos parlamentares casados sem erro, conferidos por amostragem.
+
+**Resultado (13/10/2026):** 648/648 deputados da legislatura 57 e 81/81 senadores em exercício ligados às suas candidaturas no TSE. Conferência completa (não amostral): datas de nascimento iguais em todos os deputados e nenhum casamento errado. 7 suplentes do Senado que nunca assumiram ficaram na fila de revisão.
 
 ## Fase 2 — Atividade legislativa
 

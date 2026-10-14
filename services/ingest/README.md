@@ -17,6 +17,7 @@ Baixa os dados públicos oficiais, guarda cada arquivo bruto sem alteração, no
 | `events/proposicoes.py` | `pauta`, `tramitacao` (etapas selecionadas), `mudanca_regime` e `proposta_parada` (180 dias) |
 | `events/presenca_gastos.py` | `presenca`, `ausencia` e `despesa_mensal` (cota por mês, marcada como incompleta) |
 | `events/dinheiro_campanha.py` | `fundo_recebido`, `repasse` e `doacao` (pessoa física só em totais; só para seguidores durante a campanha) |
+| `events/candidaturas.py` | `troca_partido` (sem contar renomeação, fusão ou incorporação), `situacao_candidatura` e `resultado` (cargos federais) |
 | `events/registro.py` | Geradores de eventos executados pelo comando `eventos` |
 | `cli.py` | Comando `vp-ingest` |
 

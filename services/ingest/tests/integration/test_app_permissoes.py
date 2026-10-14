@@ -15,7 +15,7 @@ from .test_banco_permissoes import _connect, _denied
 
 pytestmark = pytest.mark.integration
 
-TABELAS_APP = ("usuario", "identidade", "sessao", "refresh_token", "seguindo")
+TABELAS_APP = ("usuario", "identidade", "sessao", "refresh_token", "seguindo", "preferencias")
 
 
 @pytest.fixture
@@ -138,3 +138,20 @@ def test_api_le_doadores_pf_pela_visao_sem_hash(api):
 
 def test_api_usa_normalizacao_da_busca(api):
     assert api.run("SELECT canon.normaliza('Ação TRIBUTÁRIA')") == [["acao tributaria"]]
+
+
+def test_preferencias_validadas_no_banco(api):
+    usuario, _ = _usuario_com_sessao(api)
+    api.run("INSERT INTO app.preferencias (usuario_id, uf) VALUES (:u, 'PE')", u=usuario)
+    for coluna, valor in (("uf", "XX"), ("max_por_dia", "50"), ("fuso", "Europe/Lisbon")):
+        with pytest.raises(pg8000.native.DatabaseError) as error:
+            api.run(
+                f"UPDATE app.preferencias SET {coluna} = :v WHERE usuario_id = :u",  # noqa: S608
+                v=valor,
+                u=usuario,
+            )
+        assert error.value.args[0]["C"] in ("23514", "22P02")
+    api.run("DELETE FROM app.usuario WHERE id = :u", u=usuario)
+    assert api.run("SELECT count(*) FROM app.preferencias WHERE usuario_id = :u", u=usuario) == [
+        [0]
+    ]

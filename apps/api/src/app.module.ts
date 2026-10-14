@@ -4,9 +4,11 @@ import { LoggerModule } from 'nestjs-pino';
 import { AuthModule } from './auth/auth.module';
 import { BuscaModule } from './busca/busca.module';
 import { Env, validateEnv } from './config/env';
+import { ContaModule } from './conta/conta.module';
 import { DbModule } from './db/db.module';
 import { FeedModule } from './feed/feed.module';
 import { HealthModule } from './health/health.module';
+import { LimiteModule } from './limite/limite.module';
 import { PerfisModule } from './perfis/perfis.module';
 import { PropostasModule } from './propostas/propostas.module';
 import { SeguirModule } from './seguir/seguir.module';
@@ -31,11 +33,13 @@ import { SeguirModule } from './seguir/seguir.module';
     DbModule,
     HealthModule,
     AuthModule,
+    LimiteModule,
     SeguirModule,
     FeedModule,
     PerfisModule,
     PropostasModule,
     BuscaModule,
+    ContaModule,
   ],
 })
 export class AppModule {}

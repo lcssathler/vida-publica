@@ -17,6 +17,10 @@ describe('validateEnv', () => {
       REFRESH_DIAS: 60,
       APPLE_CLIENT_IDS: [],
       GOOGLE_CLIENT_IDS: [],
+      LIMITE_POR_MINUTO: 120,
+      LIMITE_IP_POR_MINUTO: 30,
+      LIMITE_CONTAS_POR_IP: 10,
+      TRUST_PROXY: 0,
     });
   });
 

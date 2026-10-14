@@ -29,6 +29,14 @@ const envSchema = z.object({
   // Identificadores do app nos provedores (audiência dos tokens). Vazio desliga o login.
   APPLE_CLIENT_IDS: lista,
   GOOGLE_CLIENT_IDS: lista,
+  // Limite de requisições: por usuário (rotas autenticadas), por IP (rotas
+  // públicas) e contas anônimas novas por IP a cada 10 minutos.
+  LIMITE_POR_MINUTO: z.coerce.number().int().min(1).default(120),
+  LIMITE_IP_POR_MINUTO: z.coerce.number().int().min(1).default(30),
+  LIMITE_CONTAS_POR_IP: z.coerce.number().int().min(1).default(10),
+  // Proxies confiáveis à frente da API (balanceador): o IP real vem do
+  // X-Forwarded-For. 0 = conexão direta.
+  TRUST_PROXY: z.coerce.number().int().min(0).max(5).default(0),
 });
 
 export type Env = z.infer<typeof envSchema>;

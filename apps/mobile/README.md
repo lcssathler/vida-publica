@@ -110,7 +110,37 @@ pnpm install
 pnpm --filter @vida-publica/mobile run start
 ```
 
-Abra no Expo Go, num emulador ou na web (tecla `w`). A versão web serve para conferir as telas no desenvolvimento: a API precisa aceitar a origem dela por CORS (`VP_API_CORS_ORIGENS=http://localhost:8081` no `infra/.env` antes de subir o compose). Na web não há armazenamento seguro: o refresh fica no `sessionStorage` da aba.
+Abra no build de desenvolvimento (abaixo), num emulador ou na web (tecla `w`). Com o `expo-dev-client` instalado, `start` serve o build de desenvolvimento; a tecla `s` troca para o Expo Go, que não recebe push nem tem os logins nativos. A versão web serve para conferir as telas no desenvolvimento: a API precisa aceitar a origem dela por CORS (`VP_API_CORS_ORIGENS=http://localhost:8081` no `infra/.env` antes de subir o compose). Na web não há armazenamento seguro: o refresh fica no `sessionStorage` da aba.
+
+## Build de desenvolvimento (EAS)
+
+Push, logins nativos e os módulos do Firebase só funcionam num build de desenvolvimento, não no Expo Go. O `eas.json` tem o perfil `development` (APK de distribuição interna com o `expo-dev-client`, ambiente `development` do EAS) e o `production` (para as lojas, Fase 9). No plano gratuito do EAS cabem até 15 builds Android.
+
+Uma vez, dentro de `apps/mobile`:
+
+1. Conta Expo (gratuita) e login: `npx eas-cli@latest login`.
+2. Ligar o projeto: `npx eas-cli@latest init`. Como a configuração é dinâmica (`app.config.ts`), o comando mostra o `projectId` para pôr em `expo.extra.eas.projectId` no `app.json` (não é segredo; vai versionado).
+3. Enviar o `google-services.json` ao EAS como variável do tipo arquivo, sem passar pelo git (o EAS grava o arquivo no build e põe o caminho na variável que o `app.config.ts` lê):
+
+```bash
+npx eas-cli@latest env:create --environment development --name VP_FIREBASE_ANDROID_JSON --type file --value ./google-services.json --visibility sensitive
+```
+
+A cada build:
+
+```bash
+npx eas-cli@latest build --profile development --platform android
+```
+
+No primeiro build, o EAS oferece gerar a chave de assinatura do Android (aceite: ela fica guardada no EAS). No fim, ele mostra um link e um QR code do APK para instalar no celular (permita instalar de fontes desconhecidas).
+
+Para usar o app no celular com a API e o Metro do computador, na mesma rede Wi-Fi:
+
+- `.env.local` com `EXPO_PUBLIC_API_URL=http://<ip do computador na rede>:3000`;
+- portas 3000 (API do compose) e 8081 (Metro) liberadas no firewall do computador para a rede privada;
+- `pnpm --filter @vida-publica/mobile run start` e, no app, abrir o servidor pelo QR code ou pelo endereço `http://<ip do computador>:8081`.
+
+Ao aceitar os avisos no app, o token do FCM vai para `PUT /dispositivo` e aparece em `app.dispositivo`. O iOS fica para a Fase 9: precisa da conta Apple Developer, da chave APNs no Firebase e do `GoogleService-Info.plist`; sem o plist, o React Native Firebase nem entra no build do iOS (`react-native.config.js`).
 
 ## Verificações
 

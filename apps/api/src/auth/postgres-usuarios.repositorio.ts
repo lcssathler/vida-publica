@@ -9,8 +9,15 @@ import {
   UsuariosRepositorio,
 } from './usuarios.repositorio';
 
-/** Tabelas do usuário que passam para a conta de destino numa fusão. */
-const FUSOES: readonly string[] = [];
+/**
+ * O que passa da conta anônima para a conta de destino numa fusão ($1 =
+ * origem, $2 = destino). O resto da origem some com ela, em cascata.
+ */
+const FUSOES: readonly string[] = [
+  `INSERT INTO app.seguindo (usuario_id, alvo_tipo, alvo_id, criado_em)
+   SELECT $2, alvo_tipo, alvo_id, criado_em FROM app.seguindo WHERE usuario_id = $1
+   ON CONFLICT DO NOTHING`,
+];
 
 @Injectable()
 export class PostgresUsuariosRepositorio extends UsuariosRepositorio {

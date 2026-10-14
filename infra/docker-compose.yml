@@ -53,6 +53,10 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
+      DATABASE_URL: postgres://vp_api:${VP_API_DB_PASSWORD:?rode node infra/scripts/init-env.mjs}@postgres:5432/${POSTGRES_DB:-vida_publica}
+      JWT_SECRET: ${VP_API_JWT_SECRET:?rode node infra/scripts/init-env.mjs}
+      APPLE_CLIENT_IDS: ${VP_APPLE_CLIENT_IDS:-}
+      GOOGLE_CLIENT_IDS: ${VP_GOOGLE_CLIENT_IDS:-}
     ports:
       - "${API_PORT:-3000}:3000"
     depends_on:

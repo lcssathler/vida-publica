@@ -37,6 +37,12 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: ['src/**/*.spec.ts', 'test/**/*.e2e-spec.ts'],
-    env: { NODE_ENV: 'test', LOG_LEVEL: 'silent' },
+    env: {
+      NODE_ENV: 'test',
+      LOG_LEVEL: 'silent',
+      // Valores fictícios: os testes unitários e e2e usam adaptadores em memória.
+      DATABASE_URL: 'postgres://teste:teste@127.0.0.1:1/teste',
+      JWT_SECRET: 'segredo-de-teste-'.repeat(3),
+    },
   },
 });

@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { LoggerModule } from 'nestjs-pino';
+import { AuthModule } from './auth/auth.module';
 import { Env, validateEnv } from './config/env';
+import { DbModule } from './db/db.module';
 import { HealthModule } from './health/health.module';
 
 @Module({
@@ -21,7 +23,9 @@ import { HealthModule } from './health/health.module';
         },
       }),
     }),
+    DbModule,
     HealthModule,
+    AuthModule,
   ],
 })
 export class AppModule {}

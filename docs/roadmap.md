@@ -90,7 +90,7 @@ Objetivo: saber quem é quem, em todas as fontes, sem casar pessoas só pelo nom
 
 | | Branch | Entrega |
 | --- | --- | --- |
-| [ ] | `api/auth` | Conta anônima por aparelho, JWT curto com refresh rotativo, login Apple e Google |
+| [x] | `api/auth` | Conta anônima por aparelho, JWT curto com refresh rotativo, login Apple e Google |
 | [ ] | `api/seguir` | Seguir pessoa, partido, proposta e assunto |
 | [ ] | `api/feed` | Feed com paginação por cursor e filtros por tipo e assunto |
 | [ ] | `api/perfis` | Perfis de pessoa e partido por categoria |

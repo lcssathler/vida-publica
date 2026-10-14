@@ -18,6 +18,7 @@ async function bootstrap(): Promise<void> {
     const openApi = new DocumentBuilder()
       .setTitle('Vida Pública API')
       .setVersion('0.1.0')
+      .addBearerAuth()
       .build();
     SwaggerModule.setup(
       'docs',

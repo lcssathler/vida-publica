@@ -7,9 +7,11 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "br.org.vidapublica"
     },
     "android": {
+      "package": "br.org.vidapublica",
       "adaptiveIcon": {
         "backgroundColor": "#F3EFE6",
         "foregroundImage": "./assets/android-icon-foreground.png",

@@ -90,6 +90,8 @@ Até concluir, só as telas do onboarding ficam acessíveis (`Stack.Protected` e
 
 ## Configuração
 
+Identificador do app nas lojas: `br.org.vidapublica` (domínio `vidapublica.org.br` ao contrário), igual no Android (`android.package`) e no iOS (`ios.bundleIdentifier`), no `app.json`. É o mesmo nome dos apps no Firebase (`google-services.json` e `GoogleService-Info.plist`), do App ID na Apple, de `APPLE_CLIENT_IDS` na API e dos client IDs OAuth do Google. Depois de publicado, não muda.
+
 Logins opcionais (identificadores públicos, não segredos), lidos por `app.config.ts`: `VP_LOGIN_APPLE=1` liga "Sign in with Apple" no build iOS; `VP_GOOGLE_IOS_URL_SCHEME`, `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` e `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` ligam o Google (biblioteca nativa: precisa de build de desenvolvimento, não roda no Expo Go). Sem elas, os botões não aparecem. A API precisa dos mesmos ids em `APPLE_CLIENT_IDS` e `GOOGLE_CLIENT_IDS`.
 
 Avisos pelo FCM: `VP_FIREBASE_ANDROID_JSON` (caminho do `google-services.json`) e `VP_FIREBASE_IOS_PLIST` (caminho do `GoogleService-Info.plist`), baixados do console do Firebase e guardados fora do repositório (o `.gitignore` bloqueia os dois nomes). Sem eles, o app funciona sem token de envio.

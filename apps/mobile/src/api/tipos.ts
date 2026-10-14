@@ -65,3 +65,50 @@ export interface Preferencias {
   silencioFim: string;
   fuso: string;
 }
+
+/** Os 15 tipos de evento da regra v1. */
+export const TIPOS_EVENTO = [
+  'voto_nominal',
+  'voto_contra_orientacao',
+  'pauta',
+  'tramitacao',
+  'mudanca_regime',
+  'proposta_parada',
+  'presenca',
+  'ausencia',
+  'despesa_mensal',
+  'fundo_recebido',
+  'repasse',
+  'doacao',
+  'troca_partido',
+  'situacao_candidatura',
+  'resultado',
+] as const;
+export type TipoEvento = (typeof TIPOS_EVENTO)[number];
+
+export interface AlvoDoEvento extends Alvo {
+  papel: string;
+  nome: string;
+  seguindo: boolean;
+}
+
+/** Evento publicado, sempre com a fonte. */
+export interface EventoFeed {
+  id: string;
+  tipo: TipoEvento;
+  ocorridoEm: string;
+  titulo: string;
+  resumo: string | null;
+  valor: number | null;
+  payload: Record<string, unknown>;
+  visibilidade: 'geral' | 'seguidores';
+  publicadoEm: string;
+  fonte: { url: string; dadoEm: string | null; coletadoEm: string };
+  regra: { versao: number; descricao?: string };
+  alvos: AlvoDoEvento[];
+}
+
+export interface RespostaFeed {
+  itens: EventoFeed[];
+  proximoCursor: string | null;
+}

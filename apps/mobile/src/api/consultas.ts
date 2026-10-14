@@ -1,13 +1,25 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo } from 'react';
 import { useSessao } from '../sessao/Sessao';
-import type { Alvo, AlvoSeguido, Assunto, Parlamentar, Preferencias, Uf } from './tipos';
+import { CATEGORIAS, type Categoria } from '../feed/rotulos';
+import type {
+  Alvo,
+  AlvoSeguido,
+  Assunto,
+  EventoFeed,
+  Parlamentar,
+  Preferencias,
+  RespostaFeed,
+  Uf,
+} from './tipos';
 
 export const chaves = {
   seguindo: ['seguindo'] as const,
   assuntos: ['assuntos'] as const,
   parlamentares: (uf: Uf) => ['parlamentares', uf] as const,
   preferencias: ['preferencias'] as const,
+  feed: ['feed'] as const,
+  evento: (id: string) => ['evento', id] as const,
 };
 
 const chaveAlvo = (alvo: Alvo) => `${alvo.tipo}:${alvo.id}`;
@@ -63,7 +75,11 @@ export function useSeguir() {
     onError: (_erro, _pedido, contexto) => {
       consultas.setQueryData(chaves.seguindo, contexto?.antes);
     },
-    onSettled: () => consultas.invalidateQueries({ queryKey: chaves.seguindo }),
+    onSettled: async () => {
+      await consultas.invalidateQueries({ queryKey: chaves.seguindo });
+      // O feed "seguindo" e os eventos de campanha dependem de quem se segue.
+      await consultas.invalidateQueries({ queryKey: chaves.feed });
+    },
   });
 }
 
@@ -95,5 +111,45 @@ export function useSalvarPreferencias() {
     mutationFn: (mudancas: Partial<Preferencias>) =>
       cliente.patch<Preferencias>('/conta/preferencias', mudancas),
     onSuccess: (preferencias) => consultas.setQueryData(chaves.preferencias, preferencias),
+  });
+}
+
+export interface FiltrosFeed {
+  escopo: 'seguindo' | 'todos';
+  categorias: Categoria[];
+  assuntos: string[];
+}
+
+export const FILTROS_PADRAO: FiltrosFeed = { escopo: 'seguindo', categorias: [], assuntos: [] };
+
+export function semFiltros(f: FiltrosFeed): boolean {
+  return f.categorias.length === 0 && f.assuntos.length === 0;
+}
+
+/** /feed com escopo, tipos (das categorias) e assuntos repetidos (têm vírgula no nome). */
+export function caminhoFeed(f: FiltrosFeed, cursor: string | null, limite = 20): string {
+  const partes = [`escopo=${f.escopo}`, `limite=${limite}`];
+  const tipos = f.categorias.flatMap((c) => CATEGORIAS[c].tipos);
+  if (tipos.length) partes.push(`tipo=${tipos.join(',')}`);
+  for (const assunto of f.assuntos) partes.push(`assunto=${encodeURIComponent(assunto)}`);
+  if (cursor) partes.push(`cursor=${encodeURIComponent(cursor)}`);
+  return `/feed?${partes.join('&')}`;
+}
+
+export function useFeed(filtros: FiltrosFeed) {
+  const { cliente } = useSessao();
+  return useInfiniteQuery({
+    queryKey: [...chaves.feed, filtros],
+    queryFn: ({ pageParam }) => cliente.get<RespostaFeed>(caminhoFeed(filtros, pageParam)),
+    initialPageParam: null as string | null,
+    getNextPageParam: (ultima) => ultima.proximoCursor,
+  });
+}
+
+export function useEvento(id: string) {
+  const { cliente } = useSessao();
+  return useQuery({
+    queryKey: chaves.evento(id),
+    queryFn: () => cliente.get<EventoFeed>(`/eventos/${encodeURIComponent(id)}`),
   });
 }

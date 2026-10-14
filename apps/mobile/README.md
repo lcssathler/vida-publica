@@ -37,6 +37,14 @@ Cada ato público vira um registro numerado, datado e carimbado, como no Diário
 
 Até concluir, só as telas do onboarding ficam acessíveis (`Stack.Protected` em `src/app/_layout.tsx`).
 
+## Feed
+
+- Abas (`src/app/(abas)`): Feed e Seguindo, só com rótulo de texto.
+- `GET /feed` por cursor (`useInfiniteQuery`), de 20 em 20, com "Quem eu sigo" ou "Tudo" e filtros por tipo (as mesmas categorias dos perfis: votos, presença, gastos, propostas, campanha, eleições) e por assunto (os seguidos e os de mais propostas).
+- Registros agrupados por dia de Brasília. Fato só com data (meia-noite em Brasília) não mostra hora. Datas e valores formatados sem depender do `Intl` (`src/comum/formato.ts`).
+- "Você parou aqui": o registro do topo da última visita fica guardado no aparelho por escopo. Na volta, o que vem antes dele é grifado como novo e um divisor marca onde a pessoa parou (`src/feed/linhas.ts`).
+- Detalhe (`/evento/[id]`): fato, data, valor, envolvidos, fonte (carimbo, nome, endereço, data do dado e da coleta, botão para abrir a fonte oficial) e a regra que gerou o registro.
+
 ## Configuração
 
 O endereço da API vem de `EXPO_PUBLIC_API_URL`, definido na hora do empacotamento (copie `.env.example` para `.env.local`). Não é segredo e o app não guarda nenhuma chave. Sem a variável, usa `http://localhost:3000` (a API do compose). No emulador Android, use `http://10.0.2.2:3000`.

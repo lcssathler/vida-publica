@@ -35,6 +35,11 @@
       ]
     ],
     "scheme": "vidapublica",
+    "extra": {
+      "eas": {
+        "projectId": "63d36f1f-4f6b-4457-b5db-58eccc7812d0"
+      }
+    },
     "experiments": {
       "typedRoutes": true
     }

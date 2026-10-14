@@ -51,6 +51,17 @@ jobs:
           set -a; . ../../infra/.env; set +a
           uv sync --frozen
           uv run pytest -m integration
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - name: Testes de integração da API (adaptadores Postgres)
+        run: |
+          set -a; . infra/.env; set +a
+          pnpm install --frozen-lockfile --filter @vida-publica/api...
+          export VP_API_TEST_DATABASE_URL="postgres://vp_api:${VP_API_DB_PASSWORD}@127.0.0.1:${POSTGRES_PORT}/${POSTGRES_DB}"
+          pnpm --filter @vida-publica/api run test:int
       - name: Derruba o ambiente
         if: always()
         run: docker compose -f infra/docker-compose.yml down -v

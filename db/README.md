@@ -37,6 +37,19 @@ O arquivo aparece em `db/migrations/` com as seções `-- migrate:up` e `-- migr
 
 A API lê só eventos `publicado`; o admin revisa os `segurado`.
 
+## App
+
+Dados dos usuários, escritos só pela API. Nenhum e-mail, nome ou CPF.
+
+| Tabela | Conteúdo |
+| --- | --- |
+| `app.usuario` | Usuário do app; nasce anônimo, um por aparelho |
+| `app.identidade` | Login Apple ou Google vinculado: provedor e `sub` do token, nada mais |
+| `app.sessao` | Uma sessão por aparelho, com revogação (saída, reuso de refresh, exclusão) |
+| `app.refresh_token` | Hash SHA-256 de cada refresh token, com validade e uso (cada um vale uma vez) |
+
+Excluir o usuário apaga em cascata tudo o que é dele.
+
 ## Papéis
 
 Cada componente conecta com um usuário próprio, membro de um papel de grupo:

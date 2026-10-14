@@ -68,7 +68,8 @@ services:
   # Notificador: lê os eventos recém-publicados, monta a fila de avisos de quem
   # segue cada alvo e envia (teto diário e horário de silêncio de cada conta).
   # Mesma imagem da API, outro processo e outro usuário do banco (vp_notify).
-  # Sem credenciais do FCM, usa o adaptador falso, que só registra os envios.
+  # Com a conta de serviço do Firebase (VP_FCM_CREDENCIAIS_JSON no infra/.env),
+  # envia pelo FCM; sem ela, usa o adaptador falso, que só registra os envios.
   # Uma rodada só: docker compose -f infra/docker-compose.yml run --rm notificador ciclo
   notificador:
     build:
@@ -79,6 +80,9 @@ services:
     environment:
       NODE_ENV: production
       DATABASE_URL: postgres://vp_notify:${VP_NOTIFY_DB_PASSWORD:?rode node infra/scripts/init-env.mjs}@postgres:5432/${POSTGRES_DB:-vida_publica}
+      # Conta de serviço do Firebase (JSON numa linha, só no infra/.env). Vazia: adaptador falso.
+      FCM_CREDENCIAIS_JSON: ${VP_FCM_CREDENCIAIS_JSON:-}
+      FCM_VALIDAR_APENAS: ${VP_FCM_VALIDAR_APENAS:-false}
     # Saudável enquanto o laço do modo contínuo roda (sinal de vida a cada ciclo).
     healthcheck:
       test: ["CMD-SHELL", "test -n \"$$(find /tmp/notificador-vivo -mmin -5 2>/dev/null)\""]

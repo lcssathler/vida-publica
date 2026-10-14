@@ -100,7 +100,10 @@ O registro do aparelho é da API; a fila e o envio são do **notificador**, um p
   - teto diário (`maxPorDia`, contado desde a meia-noite no fuso da conta): o que passa do teto não é enviado e fica com status `resumo`, para o resumo semanal;
   - só aparelhos de sessões ativas; sem aparelho, descartado sem gastar o teto; token que o FCM diz inválido é apagado; falha passageira tenta de novo depois de 1, 2, 4 e 8 minutos e desiste na 5ª.
 - **Texto:** o título do evento (o mesmo do feed, factual e sem adjetivos, gerado pelo motor), o resumo cortado na palavra e "Toque para ver a fonte."; os dados levam `url: vidapublica://evento/{id}`, que abre o registro com a fonte no app. Doador pessoa física nunca é nomeado (doações não viram push e o motor não nomeia) e um texto com algo parecido com CPF não sai. O texto enviado fica gravado no aviso.
-- **Adaptador:** a porta `Enviador` tem o adaptador falso, que registra cada envio no log (com só o começo do token).
+- **Adaptadores** (porta `Enviador`):
+  - **FCM HTTP v1** (`enviador-fcm.ts`), para Android e iOS: uma mensagem por token, com `notification` (título e corpo), `data` (`url`, `eventoId`), canal `avisos` no Android e `apns` com prioridade 5. O token de acesso OAuth 2.0 vem de um JWT assinado com a chave da conta de serviço (`jose`, sem binário nativo), trocado no Google e reaproveitado até 5 minutos antes de vencer. Respostas: `UNREGISTERED` (404), `SENDER_ID_MISMATCH` e `INVALID_ARGUMENT` citando o token → token inválido, apagado de `app.dispositivo`; 429, 5xx, falha de rede e 401 (renova o token de acesso) → nova tentativa; o resto → falha registrada no log, sem a chave nem o token;
+  - **falso** (`enviador-falso.ts`): registra cada envio no log, com só o começo do token. É o que roda sem credenciais.
+- **Credenciais do FCM** nunca no repositório: a conta de serviço do Firebase vem de `FCM_CREDENCIAIS_JSON` (o JSON numa linha; no compose, `VP_FCM_CREDENCIAIS_JSON` do `infra/.env`) ou de `FCM_CREDENCIAIS_ARQUIVO` (caminho de um arquivo fora do git). Sem nenhuma, o adaptador real fica desligado e o notificador usa o falso. Credencial malformada derruba a subida com o nome do campo, nunca com o conteúdo. `FCM_VALIDAR_APENAS=true` manda tudo com `validate_only` (o FCM confere credenciais, mensagem e token sem entregar).
 
 Rodar com o compose (`docker compose -f infra/docker-compose.yml run --rm notificador node dist/notificacoes/notificador.js <comando>`):
 
@@ -109,6 +112,7 @@ Rodar com o compose (`docker compose -f infra/docker-compose.yml run --rm notifi
 | `ciclo` | Enfileira os recém-publicados e envia o que estiver na vez; imprime as contagens |
 | `enfileirar` / `enviar` | Só uma das etapas |
 | `continuo` | Um ciclo a cada `NOTIF_INTERVALO_SEGUNDOS`; erro num ciclo vai para o log e o próximo tenta de novo (é o comando do serviço `notificador` no compose) |
+| `testar-fcm <token> [android\|ios] [--entregar]` | Aviso de teste para um token pelo FCM, sem banco: por padrão só valida (`validate_only`); com `--entregar`, chega ao aparelho |
 
 ## Verificações
 
@@ -165,6 +169,9 @@ O notificador valida as próprias variáveis (`src/notificacoes/env-notificador.
 | `NOTIF_FRESCOR_DIAS` | `7` | Fato mais antigo que isso quando foi publicado não vira aviso |
 | `NOTIF_LOTE` | `200` | Usuários por consulta da fila |
 | `NOTIF_MAX_TENTATIVAS` | `5` | Tentativas de envio antes de desistir |
+| `FCM_CREDENCIAIS_JSON` | vazio | Conta de serviço do Firebase (JSON). Vazio, com `FCM_CREDENCIAIS_ARQUIVO` também vazio: adaptador falso |
+| `FCM_CREDENCIAIS_ARQUIVO` | vazio | Caminho da conta de serviço, fora do repositório |
+| `FCM_VALIDAR_APENAS` | `false` | `true`: o FCM só valida (`validate_only`), sem entregar |
 
 ## Imagem Docker
 

@@ -142,6 +142,21 @@ describe('Conta', () => {
     'DELETE /conta': { status: 204 },
   };
 
+  it('ligar avisos pede a permissão e liga o registro; desligar apaga o token na API', async () => {
+    jest.mocked(pedirPermissaoDoSistema).mockResolvedValue(true);
+    const { api, local } = await renderizar(<ContaTela />, {
+      rotas: { ...rotas, 'DELETE /dispositivo': { status: 204 } },
+    });
+    await fireEvent.press(await screen.findByRole('switch', { name: 'Avisos do que você segue' }));
+    await waitFor(() => expect(api.pedidos.at(-1)).toMatchObject({ metodo: 'PATCH', corpo: { notificacoes: true } }));
+    expect(local().avisos).toBe(true);
+    await waitFor(() => expect(screen.getByRole('switch', { name: 'Avisos do que você segue' })).toBeChecked());
+    await fireEvent.press(screen.getByRole('switch', { name: 'Avisos do que você segue' }));
+    await waitFor(() => expect(api.pedidos.some((p) => p.metodo === 'DELETE' && p.caminho === '/dispositivo')).toBe(true));
+    expect(api.pedidos.some((p) => p.metodo === 'PATCH' && (p.corpo as { notificacoes?: boolean }).notificacoes === false)).toBe(true);
+    expect(local().avisos).toBe(false);
+  });
+
   it('altera só o campo mexido', async () => {
     const { api } = await renderizar(<ContaTela />, { rotas });
     await fireEvent.press(await screen.findByRole('button', { name: 'Aumentar máximo por dia' }));
@@ -164,7 +179,7 @@ describe('Conta', () => {
     await fireEvent.press(await screen.findByRole('button', { name: 'Excluir conta' }));
     expect(api.pedidos.some((p) => p.metodo === 'DELETE')).toBe(false);
     await fireEvent.press(screen.getByRole('button', { name: 'Excluir de vez' }));
-    await waitFor(() => expect(local()).toEqual({ onboardingConcluido: false, uf: null, parouAqui: {} }));
+    await waitFor(() => expect(local()).toEqual({ onboardingConcluido: false, uf: null, avisos: false, parouAqui: {} }));
     expect(api.pedidos.some((p) => p.metodo === 'DELETE' && p.caminho === '/conta')).toBe(true);
   });
 });

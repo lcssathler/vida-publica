@@ -11,6 +11,7 @@ google-services.json
 GoogleService-Info.plist
 credentials*.json
 service-account*.json
+*firebase-adminsdk*.json
 
 # Dados brutos baixados das fontes (contêm dados pessoais)
 data/

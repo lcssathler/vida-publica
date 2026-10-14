@@ -7,7 +7,9 @@ import { dataCurta, diaIso, diaPorExtenso, hora, reais } from '../../comum/forma
 import { Botao } from '../../components/Botao';
 import { CarimboFonte } from '../../components/CarimboFonte';
 import { Carregando, Falha } from '../../components/Estado';
+import { LinkTexto } from '../../components/Secao';
 import { Tela } from '../../components/Tela';
+import { rotaDoAlvo } from '../../perfis/rotas';
 import { NOME_TIPO, fonteDaUrl, protocolo } from '../../feed/rotulos';
 import { rules, space, typography } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
@@ -70,11 +72,20 @@ export default function DetalheDoEvento() {
             Envolvidos
           </Text>
           {alvos.map((a) => (
-            <View key={`${a.tipo}:${a.id}`} accessible style={[styles.alvo, { borderBottomColor: theme.rule }]}>
+            <View key={`${a.tipo}:${a.id}`} style={[styles.alvo, { borderBottomColor: theme.rule }]}>
               <Text style={[typography.overline, { color: theme.ink3 }]}>
                 {[NOME_ALVO[a.tipo], a.papel].filter(Boolean).join(' · ')}
               </Text>
-              <Text style={[typography.bodyStrong, { color: theme.ink }]}>{a.nome}</Text>
+              {rotaDoAlvo(a) ? (
+                <LinkTexto
+                  rotulo={a.nome}
+                  estilo="bodyStrong"
+                  descricao={`${NOME_ALVO[a.tipo]}: ${a.nome}`}
+                  aoTocar={() => router.push(rotaDoAlvo(a)!)}
+                />
+              ) : (
+                <Text style={[typography.bodyStrong, { color: theme.ink }]}>{a.nome}</Text>
+              )}
             </View>
           ))}
         </View>

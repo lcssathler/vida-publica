@@ -1,10 +1,13 @@
+import { useRouter } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 import { useSeguindo } from '../../api/consultas';
 import { mensagemDeErro } from '../../api/erros';
 import type { AlvoTipo } from '../../api/tipos';
 import { Botao } from '../../components/Botao';
 import { Carregando, Falha, Vazio } from '../../components/Estado';
+import { LinkTexto } from '../../components/Secao';
 import { Tela } from '../../components/Tela';
+import { rotaDoAlvo } from '../../perfis/rotas';
 import { NOME_ESTADO } from '../../onboarding/estados';
 import { useSessao } from '../../sessao/Sessao';
 import { rules, space, typography } from '../../theme/tokens';
@@ -22,6 +25,7 @@ export default function Seguindo() {
   const theme = useTheme();
   const { local, atualizarLocal } = useSessao();
   const seguindo = useSeguindo();
+  const router = useRouter();
 
   if (seguindo.isPending) return <Carregando />;
   if (seguindo.isError) {
@@ -47,11 +51,19 @@ export default function Seguindo() {
           {seguindo.data.map((s) => (
             <View
               key={`${s.tipo}:${s.id}`}
-              accessible
               style={[styles.item, { borderBottomColor: theme.rule }]}
             >
               <Text style={[typography.overline, { color: theme.ink2 }]}>{NOME_TIPO[s.tipo]}</Text>
-              <Text style={[typography.bodyStrong, { color: theme.ink }]}>{s.nome}</Text>
+              {rotaDoAlvo(s) ? (
+                <LinkTexto
+                  rotulo={s.nome}
+                  estilo="bodyStrong"
+                  descricao={`${NOME_TIPO[s.tipo]}: ${s.nome}`}
+                  aoTocar={() => router.push(rotaDoAlvo(s)!)}
+                />
+              ) : (
+                <Text style={[typography.bodyStrong, { color: theme.ink }]}>{s.nome}</Text>
+              )}
               {s.detalhe ? (
                 <Text style={[typography.caption, { color: theme.ink2 }]} numberOfLines={2}>
                   {s.detalhe}

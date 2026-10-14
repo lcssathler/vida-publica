@@ -79,3 +79,29 @@ export function reais(valor: number): string {
 export function inteiro(n: number): string {
   return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 }
+
+const MINUSCULAS = new Set([
+  'a', 'à', 'ao', 'aos', 'as', 'às', 'com', 'da', 'das', 'de', 'do', 'dos', 'e', 'em',
+  'na', 'nas', 'no', 'nos', 'o', 'os', 'ou', 'para', 'pela', 'pelo', 'por',
+]);
+
+/** "DEPUTADO FEDERAL" → "Deputado Federal" (textos em caixa alta das fontes). */
+export function capitalizar(texto: string): string {
+  return texto
+    .replace(/\s+,/g, ', ')
+    .toLowerCase()
+    .split(/\s+/)
+    .map((p, i) => (i > 0 && MINUSCULAS.has(p) ? p : p.charAt(0).toUpperCase() + p.slice(1)))
+    .join(' ');
+}
+
+/** "2023-02-01" (data sem hora) → "01/02/2023". */
+export function dataSimples(data: string): string {
+  const [ano, mes, dia] = data.slice(0, 10).split('-');
+  return `${dia}/${mes}/${ano}`;
+}
+
+/** "1 repasse", "2 repasses". */
+export function plural(n: number, um: string, varios: string): string {
+  return `${inteiro(n)} ${n === 1 ? um : varios}`;
+}

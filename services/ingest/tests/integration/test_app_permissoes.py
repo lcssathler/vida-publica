@@ -15,7 +15,7 @@ from .test_banco_permissoes import _connect, _denied
 
 pytestmark = pytest.mark.integration
 
-TABELAS_APP = ("usuario", "identidade", "sessao", "refresh_token")
+TABELAS_APP = ("usuario", "identidade", "sessao", "refresh_token", "seguindo")
 
 
 @pytest.fixture
@@ -101,3 +101,20 @@ def test_admin_le_mas_nao_escreve_app(tabela):
 def test_api_nao_altera_feed_nem_canon(api):
     assert _denied(api, "UPDATE feed.evento SET status = 'publicado'")
     assert _denied(api, "DELETE FROM canon.pessoa")
+
+
+def test_api_segue_alvos_e_exclusao_apaga(api):
+    usuario, _ = _usuario_com_sessao(api)
+    api.run(
+        "INSERT INTO app.seguindo (usuario_id, alvo_tipo, alvo_id) VALUES (:u, 'assunto', 'Saúde')",
+        u=usuario,
+    )
+    with pytest.raises(pg8000.native.DatabaseError) as error:
+        api.run(
+            "INSERT INTO app.seguindo (usuario_id, alvo_tipo, alvo_id)"
+            " VALUES (:u, 'vereador', '1')",
+            u=usuario,
+        )
+    assert error.value.args[0]["C"] == "23514"
+    api.run("DELETE FROM app.usuario WHERE id = :u", u=usuario)
+    assert api.run("SELECT count(*) FROM app.seguindo WHERE usuario_id = :u", u=usuario) == [[0]]

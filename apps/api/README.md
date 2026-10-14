@@ -7,6 +7,7 @@ API do Vida Pública em NestJS 12. Monólito modular: cada pasta em `src/` é um
 | Módulo | Rotas | O que faz |
 | --- | --- | --- |
 | `auth` | `POST /auth/anonimo`, `/auth/renovar`, `/auth/sair`, `/auth/entrar/{apple,google}` | Conta anônima por aparelho, token de acesso JWT curto (15 min), refresh token rotativo com detecção de reuso, login Apple e Google |
+| `seguir` | `GET /seguindo`, `PUT`/`DELETE /seguindo/{tipo}/{id}`, `GET /assuntos` | Seguir pessoa, partido, proposta e assunto (os mesmos alvos de `feed.evento_alvo`), até 500 itens |
 | `health` | `GET /health` | Saúde da API |
 
 Toda rota exige `Authorization: Bearer <token de acesso>`, salvo as marcadas com `@Publico()` (saúde, criação de conta anônima e renovação). A guarda confere também se a sessão continua ativa.
@@ -51,8 +52,10 @@ Os testes usam Vitest. Os decorators do NestJS são compilados pelo próprio Typ
 Os adaptadores Postgres têm testes de integração em `test/integracao`, contra um banco descartável já migrado, com o usuário `vp_api` (no CI, o banco do job `infra`):
 
 ```bash
-VP_API_TEST_DATABASE_URL=postgres://vp_api:<senha>@127.0.0.1:5433/vida_publica_test pnpm --filter @vida-publica/api run test:int
+VP_API_TEST_DATABASE_URL=postgres://vp_api:<senha>@127.0.0.1:5433/vida_publica_test VP_API_TEST_OWNER_URL=postgres://vp_owner:<senha>@127.0.0.1:5433/vida_publica_test pnpm --filter @vida-publica/api run test:int
 ```
+
+`VP_API_TEST_OWNER_URL` (dono do banco) só grava os dados fictícios de `canon` e `feed` que os testes usam e apaga ao final; a API em si conecta sempre como `vp_api`.
 
 ## Configuração
 

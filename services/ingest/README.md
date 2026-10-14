@@ -14,6 +14,7 @@ Baixa os dados públicos oficiais, guarda cada arquivo bruto sem alteração, no
 | `events/engine.py` | Motor de eventos: regras versionadas, deduplicação, carga inicial segurada, revisão de dinheiro |
 | `events/comum.py` | Índices de pessoas, partidos, proposições e temas usados nos alvos; textos |
 | `events/votacoes.py` | `voto_nominal` e `voto_contra_orientacao` |
+| `events/proposicoes.py` | `pauta`, `tramitacao` (etapas selecionadas), `mudanca_regime` e `proposta_parada` (180 dias) |
 | `events/registro.py` | Geradores de eventos executados pelo comando `eventos` |
 | `cli.py` | Comando `vp-ingest` |
 

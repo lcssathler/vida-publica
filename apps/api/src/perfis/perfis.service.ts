@@ -11,6 +11,7 @@ import {
 import {
   DoadoresCandidatura,
   GastoAnual,
+  Parlamentar,
   PartidoDados,
   PerfisRepositorio,
   PessoaDados,
@@ -35,6 +36,10 @@ export interface PerfilPessoa extends PessoaDados {
 export interface PerfilPartido extends PartidoDados {
   seguindo: boolean;
   categorias: ContagemCategoria[];
+}
+
+export interface ParlamentarDoEstado extends Parlamentar {
+  seguindo: boolean;
 }
 
 export interface DoadoresPessoa {
@@ -81,6 +86,21 @@ export class PerfisService {
       this.seguir.segue(usuarioId, alvo),
     ]);
     return { ...dados, seguindo, categorias: porCategoria(contagem) };
+  }
+
+  /** Parlamentares em exercício do estado, com quem o usuário já segue. */
+  async parlamentares(
+    uf: string,
+    usuarioId: string,
+  ): Promise<ParlamentarDoEstado[]> {
+    const [lista, seguidos] = await Promise.all([
+      this.perfis.parlamentares(uf),
+      this.seguir.listar(usuarioId),
+    ]);
+    const pessoas = new Set(
+      seguidos.filter((s) => s.tipo === 'pessoa').map((s) => s.id),
+    );
+    return lista.map((p) => ({ ...p, seguindo: pessoas.has(p.id) }));
   }
 
   /** Linha do tempo do perfil numa categoria (ou em todas), com as regras do feed. */

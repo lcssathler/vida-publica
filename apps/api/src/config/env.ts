@@ -37,6 +37,9 @@ const envSchema = z.object({
   // Proxies confiáveis à frente da API (balanceador): o IP real vem do
   // X-Forwarded-For. 0 = conexão direta.
   TRUST_PROXY: z.coerce.number().int().min(0).max(5).default(0),
+  // Origens aceitas por CORS (versão web do app no desenvolvimento, ex.:
+  // http://localhost:8081). Vazio desliga: o app nativo não usa CORS.
+  CORS_ORIGENS: lista.pipe(z.array(z.url({ protocol: /^https?$/ }))),
 });
 
 export type Env = z.infer<typeof envSchema>;

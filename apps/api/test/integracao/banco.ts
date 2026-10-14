@@ -25,6 +25,8 @@ export class Semente {
   private readonly candidaturas: Array<[number, string]> = [];
   private readonly vinculos: Array<[string, string]> = [];
   private readonly despesas: string[] = [];
+  private readonly deputados: number[] = [];
+  private readonly senadores: number[] = [];
 
   constructor() {
     const url = process.env.VP_API_TEST_OWNER_URL;
@@ -245,6 +247,52 @@ export class Semente {
     this.vinculos.push([fonte, idFonte]);
   }
 
+  /** Deputado na tabela da Câmara, ligado à pessoa. */
+  async deputado(
+    pessoaId: string,
+    dados: {
+      uf: string;
+      situacao?: string;
+      sexo?: 'M' | 'F';
+      partido?: string;
+    },
+  ): Promise<number> {
+    const id = 900_000_000 + Math.floor(Math.random() * 1e8);
+    await this.db.query(
+      `INSERT INTO canon.camara_deputado (id_camara, nome_parlamentar, sexo, sigla_partido,
+                                          sigla_uf, situacao, url_foto, content_hash)
+       VALUES ($1, 'Deputada Fictícia', $2, $3, $4, $5, 'https://exemplo.invalid/d.jpg',
+               repeat('0', 64))`,
+      [
+        id,
+        dados.sexo ?? 'F',
+        dados.partido ?? 'TST',
+        dados.uf,
+        dados.situacao ?? 'Exercício',
+      ],
+    );
+    this.deputados.push(id);
+    await this.vinculo(pessoaId, 'camara', String(id));
+    return id;
+  }
+
+  /** Senador na tabela do Senado, ligado à pessoa. */
+  async senador(
+    pessoaId: string,
+    dados: { uf: string; emExercicio?: boolean; sexo?: 'M' | 'F' },
+  ): Promise<number> {
+    const id = 900_000_000 + Math.floor(Math.random() * 1e8);
+    await this.db.query(
+      `INSERT INTO canon.senado_senador (codigo_senado, nome_parlamentar, sexo, sigla_partido,
+                                         uf_parlamentar, em_exercicio, content_hash)
+       VALUES ($1, 'Senador Fictício', $2, 'TST', $3, $4, repeat('0', 64))`,
+      [id, dados.sexo ?? 'M', dados.uf, dados.emExercicio ?? true],
+    );
+    this.senadores.push(id);
+    await this.vinculo(pessoaId, 'senado', String(id));
+    return id;
+  }
+
   /** Receita de campanha; com `cpfHash`, o doador é pessoa física (hash em ident). */
   async receita(dados: {
     ano: number;
@@ -325,6 +373,14 @@ export class Semente {
         [fonte, idFonte],
       );
     }
+    await this.db.query(
+      'DELETE FROM canon.camara_deputado WHERE id_camara = ANY($1::int[])',
+      [this.deputados],
+    );
+    await this.db.query(
+      'DELETE FROM canon.senado_senador WHERE codigo_senado = ANY($1::int[])',
+      [this.senadores],
+    );
     await this.db.query(
       'DELETE FROM canon.filiacao WHERE pessoa_id = ANY($1::uuid[])',
       [this.pessoas],

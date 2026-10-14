@@ -35,10 +35,12 @@ export interface AppDeTeste {
 
 /**
  * Aplicação completa (guarda, validação, rotas) com os adaptadores de banco
- * trocados por versões em memória. `trocas` substitui outras portas.
+ * trocados por versões em memória. `trocas` substitui outras portas;
+ * `preparar` configura a aplicação antes de iniciar (como o main.ts).
  */
 export async function criarApp(
   trocas: Array<[abstract new (...args: never[]) => unknown, unknown]> = [],
+  preparar?: (app: INestApplication<App>) => void,
 ): Promise<AppDeTeste> {
   const usuarios = new MemoriaUsuarios();
   const seguindo = new MemoriaSeguindo();
@@ -70,6 +72,7 @@ export async function criarApp(
   }
   const modulo = await construtor.compile();
   const app = modulo.createNestApplication<INestApplication<App>>();
+  preparar?.(app);
   await app.init();
   return {
     app,

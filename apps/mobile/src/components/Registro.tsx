@@ -36,7 +36,7 @@ export function Registro(props: RegistroProps) {
   return (
     <View
       accessible
-      accessibilityLabel={frase}
+      aria-label={frase}
       style={[styles.registro, { borderBottomColor: theme.rule }]}
     >
       <View style={styles.margem}>

@@ -184,4 +184,44 @@ describe('perfis (e2e)', () => {
       .set('authorization', authorization)
       .expect(404);
   });
+
+  it('parlamentares do estado dizem quem o usuário já segue', async () => {
+    t.perfis.emExercicio.push(
+      {
+        id: pessoa,
+        nome: 'Fulana',
+        casa: 'camara',
+        cargo: 'Deputada Federal',
+        uf: 'SP',
+        partido: 'NOVO',
+        foto: null,
+      },
+      {
+        id: randomUUID(),
+        nome: 'Beltrano',
+        casa: 'senado',
+        cargo: 'Senador',
+        uf: 'RJ',
+        partido: null,
+        foto: null,
+      },
+    );
+    const { authorization } = await t.anonimo();
+    await http()
+      .put(`/seguindo/pessoa/${pessoa}`)
+      .set('authorization', authorization)
+      .expect(200);
+    const resposta = await http()
+      .get('/parlamentares?uf=SP')
+      .set('authorization', authorization)
+      .expect(200);
+    expect(resposta.body).toEqual({
+      itens: [expect.objectContaining({ nome: 'Fulana', seguindo: true })],
+    });
+    await http()
+      .get('/parlamentares?uf=XX')
+      .set('authorization', authorization)
+      .expect(400);
+    await http().get('/parlamentares?uf=SP').expect(401);
+  });
 });

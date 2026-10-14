@@ -6,6 +6,7 @@ import {
   Filiacao,
   GastoAnual,
   Mandato,
+  Parlamentar,
   PartidoDados,
   PerfisRepositorio,
   PessoaDados,
@@ -380,5 +381,60 @@ export class PostgresPerfisRepositorio extends PerfisRepositorio {
       emExercicio: emExercicio.sort((a, b) => a.nome.localeCompare(b.nome)),
       repasses,
     };
+  }
+
+  async parlamentares(uf: string): Promise<Parlamentar[]> {
+    const linhas = await this.db.query<{
+      id: string;
+      nome: string;
+      casa: Parlamentar['casa'];
+      cargo: string;
+      uf: string;
+      partido: string | null;
+      foto: string | null;
+      credito: string;
+    }>(
+      // Situação da própria Casa: canon.mandato não cobre todos em exercício.
+      `WITH casa AS (
+         SELECT v.pessoa_id, 'camara' AS casa,
+                CASE WHEN d.sexo = 'F' THEN 'Deputada Federal' ELSE 'Deputado Federal' END
+                  AS cargo,
+                d.sigla_uf AS uf, d.sigla_partido AS partido, d.url_foto AS foto,
+                'Câmara dos Deputados' AS credito
+           FROM canon.camara_deputado d
+           JOIN canon.pessoa_vinculo v
+             ON v.fonte = 'camara' AND v.id_fonte = d.id_camara::text
+          WHERE d.situacao = 'Exercício' AND d.sigla_uf = $1
+         UNION ALL
+         SELECT v.pessoa_id, 'senado',
+                CASE WHEN s.sexo = 'F' THEN 'Senadora' ELSE 'Senador' END,
+                s.uf_parlamentar, s.sigla_partido, s.url_foto, 'Senado Federal'
+           FROM canon.senado_senador s
+           JOIN canon.pessoa_vinculo v
+             ON v.fonte = 'senado' AND v.id_fonte = s.codigo_senado::text
+          WHERE s.em_exercicio AND s.uf_parlamentar = $1
+       )
+       SELECT DISTINCT ON (c.casa, p.id) p.id,
+              coalesce(p.nome_exibicao, p.nome_civil, 'Sem nome') AS nome,
+              c.casa, c.cargo, c.uf, c.partido, c.foto, c.credito
+         FROM casa c JOIN canon.pessoa p ON p.id = c.pessoa_id
+        ORDER BY c.casa, p.id`,
+      [uf],
+    );
+    return linhas
+      .map((l): Parlamentar => ({
+        id: l.id,
+        nome: l.nome,
+        casa: l.casa,
+        cargo: l.cargo,
+        uf: l.uf,
+        partido: l.partido,
+        foto: l.foto ? { url: l.foto, credito: l.credito } : null,
+      }))
+      .sort(
+        (a, b) =>
+          (a.casa === b.casa ? 0 : a.casa === 'senado' ? -1 : 1) ||
+          a.nome.localeCompare(b.nome, 'pt-BR'),
+      );
   }
 }

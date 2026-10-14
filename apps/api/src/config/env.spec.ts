@@ -21,6 +21,7 @@ describe('validateEnv', () => {
       LIMITE_IP_POR_MINUTO: 30,
       LIMITE_CONTAS_POR_IP: 10,
       TRUST_PROXY: 0,
+      CORS_ORIGENS: [],
     });
   });
 

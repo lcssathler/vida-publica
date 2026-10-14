@@ -121,6 +121,44 @@ describe('PostgresPerfisRepositorio (integração)', () => {
     await db.fechar();
   });
 
+  it('parlamentares em exercício do estado: senado primeiro, sem quem saiu', async () => {
+    const uf = 'ZZ';
+    const deputada = await semente.pessoa('Beatriz Fictícia');
+    await semente.deputado(deputada, { uf, partido: 'TST' });
+    const senador = await semente.pessoa('Carlos Fictício');
+    await semente.senador(senador, { uf });
+    const licenciado = await semente.pessoa('Ana Fictícia');
+    await semente.deputado(licenciado, { uf, situacao: 'Fim de Mandato' });
+    const exSenador = await semente.pessoa('Abel Fictício');
+    await semente.senador(exSenador, { uf, emExercicio: false });
+
+    const lista = await repo.parlamentares(uf);
+    expect(lista).toEqual([
+      {
+        id: senador,
+        nome: 'Carlos Fictício',
+        casa: 'senado',
+        cargo: 'Senador',
+        uf,
+        partido: 'TST',
+        foto: null,
+      },
+      {
+        id: deputada,
+        nome: 'Beatriz Fictícia',
+        casa: 'camara',
+        cargo: 'Deputada Federal',
+        uf,
+        partido: 'TST',
+        foto: {
+          url: 'https://exemplo.invalid/d.jpg',
+          credito: 'Câmara dos Deputados',
+        },
+      },
+    ]);
+    expect(await repo.parlamentares('ZY')).toEqual([]);
+  });
+
   it('dados da pessoa com filiações e candidaturas', async () => {
     const dados = await repo.pessoa(pessoa);
     expect(dados).toMatchObject({

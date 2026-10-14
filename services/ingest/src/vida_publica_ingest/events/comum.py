@@ -2,6 +2,7 @@
 
 import unicodedata
 from dataclasses import dataclass, field
+from decimal import Decimal
 
 import pg8000.native
 
@@ -23,6 +24,12 @@ def normalizar_sigla(sigla: str | None) -> str:
     texto = "".join(c for c in texto if not unicodedata.combining(c))
     texto = texto.upper().replace(" ", "")
     return _ALIAS_PARTIDO.get(texto, texto)
+
+
+def reais(valor: Decimal) -> str:
+    """Valor em reais no formato brasileiro: R$ 1.234,56."""
+    texto = f"{valor:,.2f}".replace(",", "_").replace(".", ",").replace("_", ".")
+    return f"R$ {texto}"
 
 
 def resumir(texto: str | None, limite: int = _RESUMO_MAX) -> str | None:

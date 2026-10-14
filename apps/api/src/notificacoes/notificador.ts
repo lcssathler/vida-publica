@@ -1,9 +1,15 @@
+import { writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { Logger } from 'nestjs-pino';
 import { EnvNotificador } from './env-notificador';
 import { FilaService } from './fila.service';
 import { NotificadorModule } from './notificador.module';
+
+/** Tocado a cada volta do modo contínuo; o healthcheck confere a idade. */
+const SINAL_DE_VIDA = join(tmpdir(), 'notificador-vivo');
 
 const USO = `Uso: node dist/notificacoes/notificador.js <comando>
   ciclo       enfileira os eventos recém-publicados e envia o que estiver na vez
@@ -47,7 +53,8 @@ async function main(): Promise<number> {
 /**
  * Um ciclo por intervalo. Erro num ciclo (banco fora do ar, migração ainda não
  * aplicada) fica no log e o próximo tenta de novo; SIGTERM espera o ciclo em
- * andamento terminar.
+ * andamento terminar. A cada volta, toca o arquivo de sinal de vida que o
+ * healthcheck do contêiner confere (o laço está rodando, com ou sem banco).
  */
 async function continuo(
   fila: FilaService,
@@ -63,6 +70,11 @@ async function continuo(
   process.once('SIGTERM', sinal);
   process.once('SIGINT', sinal);
   while (!parar) {
+    try {
+      writeFileSync(SINAL_DE_VIDA, new Date().toISOString());
+    } catch {
+      // Sem onde gravar, só o healthcheck fica sem o sinal.
+    }
     try {
       await fila.ciclo();
     } catch (erro) {

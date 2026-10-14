@@ -79,8 +79,13 @@ services:
     environment:
       NODE_ENV: production
       DATABASE_URL: postgres://vp_notify:${VP_NOTIFY_DB_PASSWORD:?rode node infra/scripts/init-env.mjs}@postgres:5432/${POSTGRES_DB:-vida_publica}
+    # Saudável enquanto o laço do modo contínuo roda (sinal de vida a cada ciclo).
     healthcheck:
-      disable: true
+      test: ["CMD-SHELL", "test -n \"$$(find /tmp/notificador-vivo -mmin -5 2>/dev/null)\""]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 20s
     depends_on:
       postgres:
         condition: service_healthy

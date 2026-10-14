@@ -80,7 +80,7 @@ Objetivo: saber quem é quem, em todas as fontes, sem casar pessoas só pelo nom
 | [x] | `events/pauta-tramitacao` | Pauta, etapas de tramitação selecionadas, mudança de regime, proposta parada há 180 dias |
 | [x] | `events/presenca-gastos` | Presença e ausência; despesas agrupadas por mês, marcadas como incompletas |
 | [x] | `events/dinheiro-campanha` | Fundo recebido, repasses, doações (revisão acima de R$ 500 mil) |
-| [ ] | `events/candidaturas` | Troca de partido, situação de candidatura, resultado |
+| [x] | `events/candidaturas` | Troca de partido, situação de candidatura, resultado |
 
 ## Fase 5 — API do app
 

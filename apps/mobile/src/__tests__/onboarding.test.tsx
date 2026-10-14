@@ -137,6 +137,7 @@ describe('Passo 4: pré-pergunta de notificação', () => {
     await waitFor(() => expect(local().onboardingConcluido).toBe(true));
     expect(pedirPermissaoDoSistema).not.toHaveBeenCalled();
     expect(api.pedidos[0].corpo).toEqual({ notificacoes: false });
+    expect(local().avisos).toBe(false);
   });
 
   it('"Quero avisos" chama o pedido do sistema e grava o que o sistema permitiu', async () => {
@@ -148,7 +149,19 @@ describe('Passo 4: pré-pergunta de notificação', () => {
     await waitFor(() => expect(local().onboardingConcluido).toBe(true));
     expect(pedirPermissaoDoSistema).toHaveBeenCalledTimes(1);
     expect(api.pedidos[0].corpo).toEqual({ notificacoes: true });
-    // Nenhum token de envio é registrado nesta fase.
+    // O token de envio é registrado depois, pelo app (useAvisos), com os avisos aceitos.
+    expect(local().avisos).toBe(true);
     expect(api.pedidos.map((p) => p.caminho)).toEqual(['/conta/preferencias']);
+  });
+
+  it('sistema negou: avisos desligados e nada a registrar', async () => {
+    jest.mocked(pedirPermissaoDoSistema).mockResolvedValue(false);
+    const { api, local } = await renderizar(<PrePerguntaNotificacoes />, {
+      rotas: { 'PATCH /conta/preferencias': { corpo: preferencias(null, false) } },
+    });
+    await fireEvent.press(screen.getByRole('button', { name: 'Quero avisos' }));
+    await waitFor(() => expect(local().onboardingConcluido).toBe(true));
+    expect(api.pedidos[0].corpo).toEqual({ notificacoes: false });
+    expect(local().avisos).toBe(false);
   });
 });

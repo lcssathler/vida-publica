@@ -33,7 +33,7 @@ Cada ato público vira um registro numerado, datado e carimbado, como no Diário
 1. Estado, pela lista ou pelo CEP. O CEP é convertido em estado no aparelho (`src/onboarding/estados.ts`, faixas dos Correios) e nunca vai para a API nem para o armazenamento: só a sigla do estado vai para as preferências da conta.
 2. Quem seguir: senadores e deputados federais em exercício no estado (`GET /parlamentares?uf=`), com foto oficial e crédito.
 3. Assuntos: os temas oficiais das propostas (`GET /assuntos`).
-4. Pré-pergunta de notificação: o pedido do sistema só aparece se a pessoa aceitar; a preferência fica com o que o sistema permitiu. O registro do token de envio é da Fase 7.
+4. Pré-pergunta de notificação: o pedido do sistema só aparece se a pessoa aceitar; a preferência fica com o que o sistema permitiu. Com a permissão, o app registra o token de envio (ver Avisos).
 
 Até concluir, só as telas do onboarding ficam acessíveis (`Stack.Protected` em `src/app/_layout.tsx`).
 
@@ -65,6 +65,15 @@ Até concluir, só as telas do onboarding ficam acessíveis (`Stack.Protected` e
 - Conta (`GET /conta`, `PATCH /conta/preferencias`): estado, avisos (ligar pede a permissão do sistema; negada, a preferência fica desligada e o app oferece abrir os ajustes), resumo semanal, máximo por dia, horário de silêncio, fuso; "Refazer o início"; sair do aparelho (contas com login); excluir a conta com confirmação (`DELETE /conta`), que apaga o refresh do cofre, limpa o estado local e volta ao onboarding com uma conta anônima nova.
 - Login opcional com Apple (iOS, quando o aparelho oferece) e Google (só quando configurado), em `src/conta/login.ts`: o app pega o token de identidade do provedor sem pedir nome nem e-mail e troca em `POST /auth/entrar/{provedor}`. Se a identidade já tinha conta, o que o aparelho seguia é juntado a ela.
 
+## Avisos
+
+- O token de envio do FCM só é pedido e registrado depois que a pessoa aceitou a pré-pergunta (ou ligou os avisos na Conta) **e** o sistema permitiu (`avisos` no estado local, conferido com `getPermissionsAsync` a cada abertura). Vai para `PUT /dispositivo` só com a plataforma; é registrado de novo a cada abertura e quando o FCM troca o token (`src/notificacoes/avisos.ts`).
+- Android: o token nativo do `expo-notifications` já é o token do FCM; o build precisa do `google-services.json` do projeto no Firebase (`VP_FIREBASE_ANDROID_JSON`). O canal `avisos` é criado antes do pedido de permissão.
+- iOS: o token nativo é da APNs, que o FCM não aceita. Com o `GoogleService-Info.plist` no build (`VP_FIREBASE_IOS_PLIST`), o React Native Firebase Messaging registra o aparelho e devolve o token do FCM (`src/notificacoes/token.ios.ts`); sem ele, o iOS não registra token. O React Native Firebase só é ligado no iOS (`react-native.config.js`): no Android, um segundo serviço de mensagens disputaria os avisos com o do `expo-notifications`. Precisa de build de desenvolvimento.
+- Web (só desenvolvimento): não há token; registro e remoção ficam desligados (`*.web.ts`).
+- Desligar os avisos na Conta grava a preferência (a API para de enfileirar) e apaga o token (`DELETE /dispositivo`); sair e excluir a conta apagam o token na própria API.
+- Tocar num aviso abre o registro com a fonte: os dados trazem `url: vidapublica://evento/{id}`, lido onde cada plataforma o entrega (`src/notificacoes/link.ts`). Com o app aberto, o aviso aparece na faixa, sem som.
+
 ## Offline
 
 - As consultas ficam guardadas no aparelho (TanStack Query persistido em AsyncStorage, `src/offline/cache.ts`) por 3 dias: feed, registros, perfis, propostas, o que a pessoa segue e as listas do onboarding. A busca não fica guardada. Listas com cursor guardam só as 3 primeiras páginas.
@@ -82,6 +91,8 @@ Até concluir, só as telas do onboarding ficam acessíveis (`Stack.Protected` e
 ## Configuração
 
 Logins opcionais (identificadores públicos, não segredos), lidos por `app.config.ts`: `VP_LOGIN_APPLE=1` liga "Sign in with Apple" no build iOS; `VP_GOOGLE_IOS_URL_SCHEME`, `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` e `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` ligam o Google (biblioteca nativa: precisa de build de desenvolvimento, não roda no Expo Go). Sem elas, os botões não aparecem. A API precisa dos mesmos ids em `APPLE_CLIENT_IDS` e `GOOGLE_CLIENT_IDS`.
+
+Avisos pelo FCM: `VP_FIREBASE_ANDROID_JSON` (caminho do `google-services.json`) e `VP_FIREBASE_IOS_PLIST` (caminho do `GoogleService-Info.plist`), baixados do console do Firebase e guardados fora do repositório (o `.gitignore` bloqueia os dois nomes). Sem eles, o app funciona sem token de envio.
 
 O endereço da API vem de `EXPO_PUBLIC_API_URL`, definido na hora do empacotamento (copie `.env.example` para `.env.local`). Não é segredo e o app não guarda nenhuma chave. Sem a variável, usa `http://localhost:3000` (a API do compose). No emulador Android, use `http://10.0.2.2:3000`.
 

@@ -174,6 +174,14 @@ export class EnviadorFcm extends Enviador {
     mensagem: MensagemPush,
     dispositivo: Dispositivo,
   ): Promise<ResultadoEnvio> {
+    let acesso: string;
+    try {
+      acesso = await this.tokenDeAcesso();
+    } catch (erro) {
+      // Conta de serviço recusada ou Google fora do ar: tenta de novo depois.
+      this.log.error({ msg: 'FCM sem token de acesso', erro: String(erro) });
+      return 'temporario';
+    }
     let resposta: Response;
     try {
       resposta = await this.http(
@@ -181,7 +189,7 @@ export class EnviadorFcm extends Enviador {
         {
           method: 'POST',
           headers: {
-            authorization: `Bearer ${await this.tokenDeAcesso()}`,
+            authorization: `Bearer ${acesso}`,
             'content-type': 'application/json',
           },
           body: JSON.stringify(this.mensagemV1(mensagem, dispositivo)),

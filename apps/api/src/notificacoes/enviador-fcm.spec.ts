@@ -143,6 +143,18 @@ describe('EnviadorFcm', () => {
     expect(chamadas.filter((c) => c.url === conta.token_uri)).toHaveLength(2);
   });
 
+  it('conta de serviço recusada pelo Google: passageira, sem chamar o FCM', async () => {
+    const chamadas: string[] = [];
+    const recusa = ((url: string) => {
+      chamadas.push(url);
+      return Promise.resolve(resposta(400, { error: 'invalid_grant' }));
+    }) as unknown as typeof fetch;
+    await expect(
+      new EnviadorFcm(conta, { fetch: recusa }).enviar(MENSAGEM, APARELHO),
+    ).resolves.toBe('temporario');
+    expect(chamadas).toEqual([conta.token_uri]);
+  });
+
   it('falha de rede é passageira', async () => {
     const { fetchFalso } = falso([new Error('ECONNRESET')]);
     await expect(

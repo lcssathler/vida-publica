@@ -71,14 +71,23 @@ export class Semente {
   }
 
   /** Proposição da Câmara com id da fonte numérico (como o real). */
-  async proposicaoComFonte(temas: string[] = []) {
+  async proposicaoComFonte(
+    temas: string[] = [],
+    extra: { numero?: number; ementa?: string } = {},
+  ) {
+    const numero = extra.numero ?? 1;
     const idFonte = String(800_000_000 + Math.floor(Math.random() * 1e8));
     const [linha] = await this.db.query<{ id: string }>(
       `INSERT INTO canon.proposicao (casa, id_fonte, sigla_tipo, numero, ano, identificacao,
                                      ementa, content_hash)
-       VALUES ('camara', $1, 'PL', 1, 10001, 'PL 1/10001', 'Ementa fictícia', repeat('0', 64))
+       VALUES ('camara', $1, 'PL', $2, 10001, $4, $3, repeat('0', 64))
        RETURNING id`,
-      [idFonte],
+      [
+        idFonte,
+        numero,
+        extra.ementa ?? 'Ementa fictícia',
+        `PL ${numero}/10001`,
+      ],
     );
     this.proposicoes.push(linha.id);
     for (const tema of temas) {

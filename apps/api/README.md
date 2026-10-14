@@ -11,6 +11,7 @@ API do Vida Pública em NestJS 12. Monólito modular: cada pasta em `src/` é um
 | `feed` | `GET /feed`, `GET /eventos/{id}` | Feed de eventos publicados com cursor e filtros por tipo e assunto; detalhe com fonte e regra |
 | `perfis` | `GET /pessoas/{id}`, `/pessoas/{id}/eventos`, `/pessoas/{id}/doadores`, `GET /partidos/{id}`, `/partidos/{id}/eventos` | Perfis de pessoa e partido por categoria (votos, presença, gastos, propostas, campanha, eleições), com doadores de campanha |
 | `propostas` | `GET /propostas/{id}` | Proposta com autores, temas e linha do tempo (tramitações, votações com placar e eventos do feed) |
+| `busca` | `GET /busca?q=&tipo=&limite=` | Busca em português, sem acento: pessoas, partidos, propostas e assuntos |
 | `health` | `GET /health` | Saúde da API |
 
 Toda rota exige `Authorization: Bearer <token de acesso>`, salvo as marcadas com `@Publico()` (saúde, criação de conta anônima e renovação). A guarda confere também se a sessão continua ativa.
@@ -63,6 +64,17 @@ Cada evento traz `fonte` (`url`, `dadoEm`, `coletadoEm`), a versão da regra (e 
 - `tramitacao`: todas as etapas do canon, com hora de Brasília convertida para instante; `eventoId` liga a etapa ao evento publicado que o motor gerou para ela (relator, parecer, envio, mudança de regime...);
 - `votacao`: votações da Câmara e do Senado sobre a proposta, com resultado, placar (sim, não, abstenção, outros) quando nominal e a fonte;
 - `evento`: eventos publicados e visíveis da proposta que não são etapa nem voto individual (pauta e proposta parada).
+
+### Busca
+
+`GET /busca?q=` procura em quatro grupos (até 5 de cada; com `tipo=pessoa|partido|proposicao|assunto`, até 50 de um grupo só), sem acento e sem diferenciar maiúsculas (`canon.normaliza`, com `unaccent`):
+
+- pessoas por trigramas no nome de exibição e no nome civil: o nome inteiro parecido pesa mais que palavras soltas, e quem está em exercício e quem é candidato na eleição em curso sobem um pouco;
+- partidos pela sigla (exata ou começo) ou pelo nome, os em atividade primeiro, com o sucessor dos extintos;
+- propostas pela identificação ("PL 2338/2023", "pl2338", "PEC 45/19") ou por busca textual com radicais do português na identificação, apelido, ementa e palavras-chave, com a última palavra como prefixo (acha enquanto digita);
+- assuntos (temas oficiais) por trecho ou semelhança.
+
+Cada resultado diz se o usuário já segue. Os índices estão na migração `busca`; as consultas repetem as mesmas expressões para usá-los.
 
 ## Verificações
 

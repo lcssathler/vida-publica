@@ -134,6 +134,24 @@ export class MemoriaFeed extends FeedRepositorio {
     };
   }
 
+  async contarPorTipo(
+    alvo: Alvo,
+    usuarioId: string,
+  ): Promise<Partial<Record<TipoEvento, number>>> {
+    const { eventos } = await this.pagina({
+      usuarioId,
+      escopo: 'todos',
+      tipos: [],
+      assuntos: [],
+      alvo,
+      depoisDe: null,
+      limite: Number.MAX_SAFE_INTEGER,
+    });
+    const contagem: Partial<Record<TipoEvento, number>> = {};
+    for (const e of eventos) contagem[e.tipo] = (contagem[e.tipo] ?? 0) + 1;
+    return contagem;
+  }
+
   async evento(id: string, usuarioId: string): Promise<EventoFeed | null> {
     const g = this.eventos.find((e) => e.evento.id === id);
     if (!g || !(await this.visivel(usuarioId, g))) return null;

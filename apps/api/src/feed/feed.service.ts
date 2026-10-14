@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { codificarCursor, decodificarCursor } from './cursor';
-import { EventoFeed } from './evento';
+import { Alvo } from '../seguir/alvo';
+import { EventoFeed, TipoEvento } from './evento';
 import { ConsultaFeed, FeedRepositorio } from './feed.repositorio';
 
 export interface PedidoFeed extends Omit<ConsultaFeed, 'depoisDe'> {
@@ -30,6 +31,13 @@ export class FeedService {
       itens: pagina.eventos,
       proximoCursor: pagina.proximo ? codificarCursor(pagina.proximo) : null,
     };
+  }
+
+  contarPorTipo(
+    alvo: Alvo,
+    usuarioId: string,
+  ): Promise<Partial<Record<TipoEvento, number>>> {
+    return this.feed.contarPorTipo(alvo, usuarioId);
   }
 
   evento(id: string, usuarioId: string): Promise<EventoFeed | null> {

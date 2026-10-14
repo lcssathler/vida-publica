@@ -62,6 +62,10 @@ export class MemoriaSeguindo extends SeguindoRepositorio {
     return Promise.resolve(this.catalogo.has(chave(alvo)));
   }
 
+  segue(usuarioId: string, alvo: Alvo): Promise<boolean> {
+    return Promise.resolve(this.do(usuarioId).has(chave(alvo)));
+  }
+
   seguir(usuarioId: string, alvo: Alvo): Promise<boolean> {
     const mapa = this.do(usuarioId);
     if (mapa.has(chave(alvo))) return Promise.resolve(false);

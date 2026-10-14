@@ -28,6 +28,12 @@ export interface PaginaFeed {
 export abstract class FeedRepositorio {
   abstract pagina(consulta: ConsultaFeed): Promise<PaginaFeed>;
 
+  /** Quantos eventos visíveis ao usuário (na lista) o alvo tem, por tipo. */
+  abstract contarPorTipo(
+    alvo: Alvo,
+    usuarioId: string,
+  ): Promise<Partial<Record<TipoEvento, number>>>;
+
   /** Um evento visível ao usuário, com a descrição da regra; null se não. */
   abstract evento(id: string, usuarioId: string): Promise<EventoFeed | null>;
 }

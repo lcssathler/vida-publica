@@ -6,6 +6,7 @@ import { Env, validateEnv } from './config/env';
 import { DbModule } from './db/db.module';
 import { FeedModule } from './feed/feed.module';
 import { HealthModule } from './health/health.module';
+import { PerfisModule } from './perfis/perfis.module';
 import { SeguirModule } from './seguir/seguir.module';
 
 @Module({
@@ -30,6 +31,7 @@ import { SeguirModule } from './seguir/seguir.module';
     AuthModule,
     SeguirModule,
     FeedModule,
+    PerfisModule,
   ],
 })
 export class AppModule {}

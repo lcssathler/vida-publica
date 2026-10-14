@@ -9,6 +9,7 @@ API do Vida Pública em NestJS 12. Monólito modular: cada pasta em `src/` é um
 | `auth` | `POST /auth/anonimo`, `/auth/renovar`, `/auth/sair`, `/auth/entrar/{apple,google}` | Conta anônima por aparelho, token de acesso JWT curto (15 min), refresh token rotativo com detecção de reuso, login Apple e Google |
 | `seguir` | `GET /seguindo`, `PUT`/`DELETE /seguindo/{tipo}/{id}`, `GET /assuntos` | Seguir pessoa, partido, proposta e assunto (os mesmos alvos de `feed.evento_alvo`), até 500 itens |
 | `feed` | `GET /feed`, `GET /eventos/{id}` | Feed de eventos publicados com cursor e filtros por tipo e assunto; detalhe com fonte e regra |
+| `perfis` | `GET /pessoas/{id}`, `/pessoas/{id}/eventos`, `/pessoas/{id}/doadores`, `GET /partidos/{id}`, `/partidos/{id}/eventos` | Perfis de pessoa e partido por categoria (votos, presença, gastos, propostas, campanha, eleições), com doadores de campanha |
 | `health` | `GET /health` | Saúde da API |
 
 Toda rota exige `Authorization: Bearer <token de acesso>`, salvo as marcadas com `@Publico()` (saúde, criação de conta anônima e renovação). A guarda confere também se a sessão continua ativa.
@@ -46,6 +47,13 @@ O feed lê `feed.evento` (gerado pelo worker) e cumpre o contrato da Fase 4:
 - a lista mostra fatos até depois de amanhã (pauta marcada entra); datas mais à frente, como erro de digitação na fonte ou mês de despesa ainda aberto, não ficam presas no topo, mas o detalhe abre.
 
 Cada evento traz `fonte` (`url`, `dadoEm`, `coletadoEm`), a versão da regra (e a descrição dela no detalhe), `payload` do tipo e os alvos com nome e se o usuário os segue.
+
+### Perfis
+
+- Pessoa: nome, foto oficial com crédito (Câmara ou Senado), mandatos, filiações, partido atual, candidaturas, cota parlamentar dos dois anos mais recentes e a contagem de eventos por categoria. As categorias agrupam os 15 tipos do feed e seguem as mesmas regras de visibilidade (a de campanha aparece para quem segue).
+- `GET /pessoas/{id}/eventos?categoria=` e `GET /partidos/{id}/eventos?categoria=`: a linha do tempo do perfil, com cursor.
+- `GET /pessoas/{id}/doadores?ano=`: receitas da candidatura pela prestação de contas vigente, por origem; doadores com CNPJ (partidos, outros candidatos, plataformas) pelo nome; **doador pessoa física nomeado só acima de R$ 10 mil** somados na candidatura, o resto somado em "outras"; CPF nunca. Os nomes vêm da visão `canon.tse_doador_pessoa_fisica`, que agrupa pelo hash do CPF sem entregá-lo e só preenche o nome acima do limite.
+- Partido: número, nome, sucessor e antecessores, parlamentares em exercício filiados, repasses a candidatos por ano, fonte e esfera, e a contagem de eventos por categoria.
 
 ## Verificações
 

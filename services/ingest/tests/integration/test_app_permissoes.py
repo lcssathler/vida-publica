@@ -118,3 +118,19 @@ def test_api_segue_alvos_e_exclusao_apaga(api):
     assert error.value.args[0]["C"] == "23514"
     api.run("DELETE FROM app.usuario WHERE id = :u", u=usuario)
     assert api.run("SELECT count(*) FROM app.seguindo WHERE usuario_id = :u", u=usuario) == [[0]]
+
+
+def test_api_le_doadores_pf_pela_visao_sem_hash(api):
+    api.run("SELECT count(*) FROM canon.tse_doador_pessoa_fisica")
+    colunas = api.run(
+        "SELECT column_name FROM information_schema.columns"
+        " WHERE table_schema = 'canon' AND table_name = 'tse_doador_pessoa_fisica'"
+    )
+    assert sorted(c[0] for c in colunas) == [
+        "ano_eleicao",
+        "doacoes",
+        "doador_nome",
+        "sq_candidato",
+        "total",
+    ]
+    assert _denied(api, "SELECT count(*) FROM ident.tse_receita_doador")

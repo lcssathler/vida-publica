@@ -10,5 +10,6 @@ import { SeguirService } from './seguir.service';
     SeguirService,
     { provide: SeguindoRepositorio, useClass: PostgresSeguindoRepositorio },
   ],
+  exports: [SeguirService],
 })
 export class SeguirModule {}

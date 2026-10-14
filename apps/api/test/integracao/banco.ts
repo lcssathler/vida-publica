@@ -20,6 +20,10 @@ export class Semente {
   private readonly proposicoes: string[] = [];
   private readonly eventos: string[] = [];
   private regraCriada = false;
+  private readonly receitas: string[] = [];
+  private readonly candidaturas: Array<[number, string]> = [];
+  private readonly vinculos: Array<[string, string]> = [];
+  private readonly despesas: string[] = [];
 
   constructor() {
     const url = process.env.VP_API_TEST_OWNER_URL;
@@ -34,6 +38,21 @@ export class Semente {
     );
     this.pessoas.push(linha.id);
     return linha.id;
+  }
+
+  /** Filiação em aberto (ou fechada, com `ate`). */
+  async filiacao(
+    pessoaId: string,
+    partidoId: string,
+    sigla: string,
+    desde: string,
+    ate?: string,
+  ) {
+    await this.db.query(
+      `INSERT INTO canon.filiacao (pessoa_id, sigla, partido_id, desde, ate, fonte)
+       VALUES ($1, $2, $3, $4, $5, 'camara')`,
+      [pessoaId, sigla, partidoId, desde, ate ?? null],
+    );
   }
 
   async partido(sigla = `T${randomUUID().slice(0, 6).toUpperCase()}`) {
@@ -120,7 +139,125 @@ export class Semente {
     return linha.id;
   }
 
+  /** Candidatura no TSE (ano fictício) ligada à pessoa. */
+  async candidatura(
+    pessoaId: string,
+    ano: number,
+    dados: { cargo?: string; uf?: string; partido?: string } = {},
+  ): Promise<string> {
+    const sq = String(Math.floor(Math.random() * 1e12));
+    await this.db.query(
+      `INSERT INTO canon.tse_candidatura (ano_eleicao, sq_candidato, nr_turno, nm_candidato,
+                                          nm_urna_candidato, ds_cargo, sg_uf, sg_partido,
+                                          ds_sit_tot_turno, content_hash)
+       VALUES ($1, $2, 1, 'CANDIDATA FICTÍCIA', 'CANDIDATA', $3, $4, $5, 'ELEITO',
+               repeat('0', 64))`,
+      [
+        ano,
+        sq,
+        dados.cargo ?? 'DEPUTADO FEDERAL',
+        dados.uf ?? 'SP',
+        dados.partido ?? 'TST',
+      ],
+    );
+    this.candidaturas.push([ano, sq]);
+    await this.vinculo(pessoaId, 'tse', `${ano}:${sq}`);
+    return sq;
+  }
+
+  async vinculo(pessoaId: string, fonte: string, idFonte: string) {
+    await this.db.query(
+      `INSERT INTO canon.pessoa_vinculo (fonte, id_fonte, pessoa_id, metodo, confianca)
+       VALUES ($1, $2, $3, 'manual', 1)`,
+      [fonte, idFonte, pessoaId],
+    );
+    this.vinculos.push([fonte, idFonte]);
+  }
+
+  /** Receita de campanha; com `cpfHash`, o doador é pessoa física (hash em ident). */
+  async receita(dados: {
+    ano: number;
+    sq: string;
+    valor: number;
+    origem: [number, string];
+    nome: string;
+    sqReceita: number;
+    prestacao?: string;
+    cpfHash?: string;
+    cnpj?: string;
+  }): Promise<void> {
+    const id = randomUUID().replaceAll('-', '').padEnd(64, '0');
+    await this.db.query(
+      `INSERT INTO canon.tse_receita (id, ano_eleicao, sq_candidato, cd_origem, ds_origem,
+                                      doador_nome, doador_cnpj, valor, sq_receita,
+                                      tp_prestacao)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+      [
+        id,
+        dados.ano,
+        dados.sq,
+        dados.origem[0],
+        dados.origem[1],
+        dados.nome,
+        dados.cnpj ?? null,
+        dados.valor,
+        dados.sqReceita,
+        dados.prestacao ?? 'FINAL',
+      ],
+    );
+    this.receitas.push(id);
+    if (dados.cpfHash) {
+      await this.db.query(
+        'INSERT INTO ident.tse_receita_doador (linha_id, cpf_hash) VALUES ($1, $2)',
+        [id, dados.cpfHash],
+      );
+    }
+  }
+
+  /** Despesa da cota da Câmara para um id de deputado fictício. */
+  async despesaCamara(
+    idCamara: number,
+    ano: number,
+    descricao: string,
+    valor: number,
+  ) {
+    const id = randomUUID().replaceAll('-', '').padEnd(64, '0');
+    await this.db.query(
+      `INSERT INTO canon.camara_despesa (id, ano, mes, id_camara, nome_parlamentar,
+                                         num_subcota, descricao, valor_liquido)
+       VALUES ($1, $2, 1, $3, 'Deputada Fictícia', 1, $4, $5)`,
+      [id, ano, idCamara, descricao, valor],
+    );
+    this.despesas.push(id);
+  }
+
   async limpar(): Promise<void> {
+    await this.db.query('DELETE FROM canon.camara_despesa WHERE id = ANY($1)', [
+      this.despesas,
+    ]);
+    await this.db.query(
+      'DELETE FROM ident.tse_receita_doador WHERE linha_id = ANY($1)',
+      [this.receitas],
+    );
+    await this.db.query('DELETE FROM canon.tse_receita WHERE id = ANY($1)', [
+      this.receitas,
+    ]);
+    for (const [ano, sq] of this.candidaturas) {
+      await this.db.query(
+        'DELETE FROM canon.tse_candidatura WHERE ano_eleicao = $1 AND sq_candidato = $2',
+        [ano, sq],
+      );
+    }
+    for (const [fonte, idFonte] of this.vinculos) {
+      await this.db.query(
+        'DELETE FROM canon.pessoa_vinculo WHERE fonte = $1 AND id_fonte = $2',
+        [fonte, idFonte],
+      );
+    }
+    await this.db.query(
+      'DELETE FROM canon.filiacao WHERE pessoa_id = ANY($1::uuid[])',
+      [this.pessoas],
+    );
     await this.db.query('DELETE FROM feed.evento WHERE id = ANY($1::uuid[])', [
       this.eventos,
     ]);

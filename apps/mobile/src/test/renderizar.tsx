@@ -27,7 +27,7 @@ export async function renderizar(ui: ReactElement, { rotas = {}, local = {} }: O
   await cliente.iniciar();
   api.pedidos.length = 0;
   const consultas = new QueryClient({
-    defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { retry: false } },
+    defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { retry: false, gcTime: Infinity } },
   });
   const atual = { local: { ...ESTADO_INICIAL, ...local } };
 

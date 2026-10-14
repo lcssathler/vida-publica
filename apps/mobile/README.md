@@ -113,6 +113,12 @@ pnpm --filter @vida-publica/mobile run typecheck
 pnpm --filter @vida-publica/mobile run test
 ```
 
+Conferência do app contra a API real (o compose local com a carga publicada), com o próprio código do app: percorre o feed "Quem eu sigo" inteiro por cursor (sem repetir, em ordem, todo registro com fonte e com um alvo seguido), abre uma amostra de detalhes, confere a regra dos doadores, encerra a sessão por refresh reapresentado e estoura o limite da busca. Fica pulada sem `VP_CONFERIR_API`; cria contas anônimas (limite de 10 por IP a cada 10 minutos) e as exclui no fim:
+
+```bash
+VP_CONFERIR_API=http://127.0.0.1:3000 VP_CONFERIR_PESSOA=<uuid> VP_CONFERIR_PARTIDO=<id> pnpm --filter @vida-publica/mobile run conferir
+```
+
 Os testes usam jest-expo e Testing Library. As telas rodam com o cliente de verdade contra uma API falsa (`src/test/apiFalsa.ts`), que registra cada pedido.
 
 Para adicionar pacotes, use `npx expo install <pacote>` dentro de `apps/mobile`: ele escolhe a versão compatível com o SDK.

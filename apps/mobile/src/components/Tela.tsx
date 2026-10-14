@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AvisoSemConexao } from '../offline/AvisoSemConexao';
 import { rules, space, typography } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
 
@@ -21,6 +22,7 @@ export function Tela({ sobretitulo, titulo, descricao, children, rodape, rolavel
   const theme = useTheme();
   const cabecalho = titulo ? (
     <View style={[styles.cabecalho, { borderBottomColor: theme.ink }]}>
+      <AvisoSemConexao />
       {sobretitulo ? (
         <Text style={[typography.overline, { color: theme.ink2 }]}>{sobretitulo}</Text>
       ) : null}

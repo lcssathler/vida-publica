@@ -1,13 +1,24 @@
-import { QueryClientProvider } from '@tanstack/react-query';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import { useColorScheme } from 'react-native';
 import { novoQueryClient } from '../api/queryClient';
+import { deveGuardar, persistidor, VALIDADE_CACHE_MS } from '../offline/cache';
+import { ligarConexao } from '../offline/conexao';
 import { SessaoProvider, useSessao } from '../sessao/Sessao';
 import { fonts } from '../theme/fonts';
 import { useTheme } from '../theme/useTheme';
+
+ligarConexao();
+
+const persistencia = {
+  persister: persistidor,
+  maxAge: VALIDADE_CACHE_MS,
+  buster: 'v1',
+  dehydrateOptions: { shouldDehydrateQuery: deveGuardar },
+};
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts(fonts);
@@ -17,12 +28,12 @@ export default function RootLayout() {
   if (!fontsLoaded) return null;
 
   return (
-    <QueryClientProvider client={consultas}>
+    <PersistQueryClientProvider client={consultas} persistOptions={persistencia}>
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
       <SessaoProvider>
         <Rotas />
       </SessaoProvider>
-    </QueryClientProvider>
+    </PersistQueryClientProvider>
   );
 }
 

@@ -6,18 +6,26 @@ const schemes: ColorScheme[] = ['light', 'dark'];
 describe.each(schemes)('paleta %s', (scheme) => {
   const p = palettes[scheme];
 
-  it('texto principal e secundário atingem WCAG AA (4,5:1) sobre o papel', () => {
-    expect(contrastRatio(p.ink, p.paper)).toBeGreaterThanOrEqual(4.5);
-    expect(contrastRatio(p.ink2, p.paper)).toBeGreaterThanOrEqual(4.5);
+  it('todo texto (inclusive metadado em 11 pt) atinge WCAG AA (4,5:1) no papel e no papel elevado', () => {
+    for (const fundo of [p.paper, p.paperRaised]) {
+      expect(contrastRatio(p.ink, fundo)).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(p.ink2, fundo)).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(p.ink3, fundo)).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(p.stamp, fundo)).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(p.error, fundo)).toBeGreaterThanOrEqual(4.5);
+    }
   });
 
-  it('metadado (ink3) atinge ao menos 3:1, usado só em texto grande ou não essencial', () => {
-    expect(contrastRatio(p.ink3, p.paper)).toBeGreaterThanOrEqual(3);
-  });
-
-  it('carimbo e aviso de dado incompleto são legíveis', () => {
-    expect(contrastRatio(p.stamp, p.paper)).toBeGreaterThanOrEqual(4.5);
+  it('pares compostos: botão primário, item marcado, registro novo e aviso', () => {
+    expect(contrastRatio(p.paper, p.ink)).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(p.stamp, p.stampWash)).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(p.ink, p.highlight)).toBeGreaterThanOrEqual(4.5);
     expect(contrastRatio(p.caution, p.cautionBackground)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('contornos de controle (ink2) e do item marcado (stamp) passam 3:1 (WCAG 1.4.11)', () => {
+    expect(contrastRatio(p.ink2, p.paper)).toBeGreaterThanOrEqual(3);
+    expect(contrastRatio(p.stamp, p.paper)).toBeGreaterThanOrEqual(3);
   });
 });
 

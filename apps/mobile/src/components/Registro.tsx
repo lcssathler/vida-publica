@@ -1,5 +1,5 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { rules, space, typography } from '../theme/tokens';
+import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { rules, space, toque, typography } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
 import { CarimboFonte, type CarimboFonteProps } from './CarimboFonte';
 
@@ -30,6 +30,8 @@ export interface RegistroProps {
 export function Registro(props: RegistroProps) {
   const { tipo, hora, manchete, contexto, fonte, protocolo, coletadoEm, novo, aoTocar } = props;
   const theme = useTheme();
+  // Com fonte grande (acessibilidade), a hora sai da coluna de margem e vai para cima.
+  const empilhado = useWindowDimensions().fontScale > 1.3;
   const frase = [novo ? 'Novo' : null, tipo, manchete, contexto, `Fonte: ${fonte.nome}`]
     .filter((parte): parte is string => Boolean(parte))
     .map((parte) => parte.replace(/\.$/, ''))
@@ -37,11 +39,15 @@ export function Registro(props: RegistroProps) {
 
   const conteudo = (
     <>
-      <View style={styles.margem}>
-        <Text style={[typography.dataSmall, { color: theme.ink3 }]}>{hora ?? ''}</Text>
-      </View>
+      {empilhado ? null : (
+        <View style={styles.margem}>
+          <Text style={[typography.dataSmall, { color: theme.ink3 }]}>{hora ?? ''}</Text>
+        </View>
+      )}
       <View style={styles.corpo}>
-        <Text style={[typography.overline, { color: theme.ink2 }]}>{tipo}</Text>
+        <Text style={[typography.overline, { color: theme.ink2 }]}>
+          {empilhado && hora ? `${hora} · ${tipo}` : tipo}
+        </Text>
         <Text
           style={[
             typography.title,
@@ -93,6 +99,7 @@ export function Registro(props: RegistroProps) {
 const styles = StyleSheet.create({
   registro: {
     flexDirection: 'row',
+    minHeight: toque.minimo,
     paddingVertical: space.lg,
     borderBottomWidth: rules.hairline,
   },

@@ -111,7 +111,7 @@ Objetivo: saber quem é quem, em todas as fontes, sem casar pessoas só pelo nom
 | [x] | `mobile/perfis` | Perfis de pessoa e partido por categoria |
 | [x] | `mobile/propostas` | Proposta com linha do tempo |
 | [x] | `mobile/busca-seguindo` | Busca, explorar e gerenciar quem segue |
-| [ ] | `mobile/offline-a11y` | Cache offline básico e revisão de acessibilidade |
+| [x] | `mobile/offline-a11y` | Cache offline básico e revisão de acessibilidade |
 
 ## Fase 7 — Notificações
 

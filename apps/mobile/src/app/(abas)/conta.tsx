@@ -11,6 +11,7 @@ import { Carregando, Falha } from '../../components/Estado';
 import { Secao } from '../../components/Secao';
 import { Tela } from '../../components/Tela';
 import { appleDisponivel, entrar, googleDisponivel, LoginCancelado, type Provedor } from '../../conta/login';
+import { esquecerAparelho } from '../../notificacoes/aparelho';
 import { pedirPermissaoDoSistema } from '../../notificacoes/permissao';
 import { persistidor } from '../../offline/cache';
 import { NOME_ESTADO } from '../../onboarding/estados';
@@ -140,7 +141,7 @@ function SecaoConta({ anonima, identidades, criadaEm }: { anonima: boolean; iden
 
 function SecaoPreferencias({ p }: { p: Preferencias }) {
   const theme = useTheme();
-  const { atualizarLocal } = useSessao();
+  const { atualizarLocal, cliente } = useSessao();
   const salvar = useSalvarPreferencias();
   const [abrirEstados, setAbrirEstados] = useState(false);
   const [abrirFusos, setAbrirFusos] = useState(false);
@@ -150,10 +151,17 @@ function SecaoPreferencias({ p }: { p: Preferencias }) {
 
   const alternarNotificacoes = async () => {
     setSemPermissao(false);
-    if (p.notificacoes) return mudar({ notificacoes: false });
+    if (p.notificacoes) {
+      // Desligar para o envio (a API deixa de enfileirar) e apaga o token.
+      mudar({ notificacoes: false });
+      atualizarLocal({ avisos: false });
+      void esquecerAparelho(cliente).catch(() => {});
+      return;
+    }
     const permitido = await pedirPermissaoDoSistema().catch(() => false);
     if (!permitido) return setSemPermissao(true);
     mudar({ notificacoes: true });
+    atualizarLocal({ avisos: true });
   };
 
   return (
@@ -185,7 +193,7 @@ function SecaoPreferencias({ p }: { p: Preferencias }) {
       </Secao>
 
       <Secao titulo="Avisos">
-        <Linha rotulo="Avisos do que você segue" detalhe="Votos, gastos, pauta, troca de partido">
+        <Linha rotulo="Avisos do que você segue" detalhe="Votos, pauta, propostas e campanha">
           <Alternar papel="switch" rotulo="Desligados" rotuloMarcado="Ligados" descricao="Avisos do que você segue" marcado={p.notificacoes} aoAlternar={() => void alternarNotificacoes()} />
         </Linha>
         {semPermissao ? (

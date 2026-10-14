@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { useColorScheme } from 'react-native';
 import { novoQueryClient } from '../api/queryClient';
 import { deveGuardar, persistidor, VALIDADE_CACHE_MS } from '../offline/cache';
+import { useAvisos } from '../notificacoes/avisos';
 import { ligarConexao } from '../offline/conexao';
 import { SessaoProvider, useSessao } from '../sessao/Sessao';
 import { fonts } from '../theme/fonts';
@@ -41,6 +42,7 @@ export default function RootLayout() {
 function Rotas() {
   const theme = useTheme();
   const { local } = useSessao();
+  useAvisos(local.onboardingConcluido && local.avisos);
 
   return (
     <Stack

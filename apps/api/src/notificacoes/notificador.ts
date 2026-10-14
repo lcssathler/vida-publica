@@ -4,7 +4,8 @@ import { join } from 'node:path';
 import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { Logger } from 'nestjs-pino';
-import { EnvNotificador } from './env-notificador';
+import { EnviadorFcm, lerCredenciais } from './enviador-fcm';
+import { EnvNotificador, validarEnvNotificador } from './env-notificador';
 import { FilaService } from './fila.service';
 import { NotificadorModule } from './notificador.module';
 
@@ -15,10 +16,14 @@ const USO = `Uso: node dist/notificacoes/notificador.js <comando>
   ciclo       enfileira os eventos recém-publicados e envia o que estiver na vez
   enfileirar  só enfileira
   enviar      só envia o que estiver na vez
-  continuo    roda um ciclo a cada NOTIF_INTERVALO_SEGUNDOS até receber SIGTERM`;
+  continuo    roda um ciclo a cada NOTIF_INTERVALO_SEGUNDOS até receber SIGTERM
+  testar-fcm <token> [android|ios] [--entregar]
+              manda um aviso de teste a um token pelo FCM, só validando
+              (validate_only) ou, com --entregar, de verdade`;
 
 async function main(): Promise<number> {
   const comando = process.argv[2] ?? 'ciclo';
+  if (comando === 'testar-fcm') return testarFcm(process.argv.slice(3));
   if (!['ciclo', 'enfileirar', 'enviar', 'continuo'].includes(comando)) {
     process.stderr.write(`${USO}\n`);
     return 2;
@@ -48,6 +53,49 @@ async function main(): Promise<number> {
     await app.close();
   }
   return 0;
+}
+
+/**
+ * Aviso de teste para um token, direto pelo adaptador FCM (sem banco). Por
+ * padrão só valida (validate_only): o FCM confere credenciais, mensagem e
+ * token sem entregar nada.
+ */
+async function testarFcm(args: string[]): Promise<number> {
+  const token = args.find((a) => !a.startsWith('--') && a.length > 20);
+  const plataforma = args.includes('ios') ? 'ios' : 'android';
+  if (!token) {
+    process.stderr.write(`${USO}\n`);
+    return 2;
+  }
+  const env = validarEnvNotificador({
+    DATABASE_URL: 'postgres://sem-banco@127.0.0.1/x',
+    ...process.env,
+  });
+  const conta = lerCredenciais(env);
+  if (!conta) {
+    process.stderr.write(
+      'Defina FCM_CREDENCIAIS_JSON ou FCM_CREDENCIAIS_ARQUIVO (conta de serviço do Firebase).\n',
+    );
+    return 2;
+  }
+  const entregar = args.includes('--entregar');
+  const fcm = new EnviadorFcm(conta, { validarApenas: !entregar });
+  const resultado = await fcm.enviar(
+    {
+      titulo: 'Vida Pública: aviso de teste',
+      corpo: 'Teste do envio de avisos. Toque para abrir o app.',
+      dados: { url: 'vidapublica://' },
+    },
+    { sessaoId: 'teste', token, plataforma },
+  );
+  const saida = {
+    projeto: conta.project_id,
+    plataforma,
+    validarApenas: !entregar,
+    resultado,
+  };
+  process.stdout.write(`${JSON.stringify(saida)}\n`);
+  return resultado === 'ok' ? 0 : 1;
 }
 
 /**

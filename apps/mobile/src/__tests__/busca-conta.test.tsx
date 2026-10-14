@@ -164,7 +164,7 @@ describe('Conta', () => {
     await fireEvent.press(await screen.findByRole('button', { name: 'Excluir conta' }));
     expect(api.pedidos.some((p) => p.metodo === 'DELETE')).toBe(false);
     await fireEvent.press(screen.getByRole('button', { name: 'Excluir de vez' }));
-    await waitFor(() => expect(local()).toEqual({ onboardingConcluido: false, uf: null, parouAqui: {} }));
+    await waitFor(() => expect(local()).toEqual({ onboardingConcluido: false, uf: null, avisos: false, parouAqui: {} }));
     expect(api.pedidos.some((p) => p.metodo === 'DELETE' && p.caminho === '/conta')).toBe(true);
   });
 });

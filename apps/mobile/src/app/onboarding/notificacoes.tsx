@@ -10,7 +10,8 @@ import { rules, space, typography } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
 
 const REGRAS = [
-  'Só sobre quem e o que você segue: votos, gastos, pauta, troca de partido.',
+  'Só sobre quem e o que você segue: votos, pauta, propostas e campanha.',
+  'Dinheiro e despesas chegam juntos, num resumo por semana.',
   'No máximo 5 por dia, nunca entre 22h e 7h (dá para mudar depois).',
   'Cada aviso leva ao registro com a fonte oficial.',
 ];
@@ -33,7 +34,8 @@ export default function PrePerguntaNotificacoes() {
       const permitido = quer ? await pedirPermissaoDoSistema().catch(() => false) : false;
       // Sem a permissão do sistema, a preferência fica desligada.
       await salvar.mutateAsync({ notificacoes: permitido });
-      atualizarLocal({ onboardingConcluido: true });
+      // Com a permissão, o app registra o token de envio (useAvisos).
+      atualizarLocal({ onboardingConcluido: true, avisos: permitido });
     } catch (erro) {
       setAviso(mensagemDeErro(erro));
     } finally {

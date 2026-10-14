@@ -11,11 +11,21 @@ export interface Marco {
 export interface EstadoLocal {
   onboardingConcluido: boolean;
   uf: Uf | null;
+  /**
+   * A pessoa aceitou os avisos (pré-pergunta ou Conta) e o sistema permitiu:
+   * o app registra o token de envio na API.
+   */
+  avisos: boolean;
   /** "Você parou aqui": o registro do topo na última visita, por escopo do feed. */
   parouAqui: Partial<Record<'seguindo' | 'todos', Marco>>;
 }
 
-export const ESTADO_INICIAL: EstadoLocal = { onboardingConcluido: false, uf: null, parouAqui: {} };
+export const ESTADO_INICIAL: EstadoLocal = {
+  onboardingConcluido: false,
+  uf: null,
+  avisos: false,
+  parouAqui: {},
+};
 
 const CHAVE = 'vp.local.v1';
 

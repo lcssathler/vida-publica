@@ -23,6 +23,16 @@ const envSchema = z.object({
   NOTIF_FRESCOR_DIAS: z.coerce.number().int().min(1).max(60).default(7),
   NOTIF_LOTE: z.coerce.number().int().min(1).max(5000).default(200),
   NOTIF_MAX_TENTATIVAS: z.coerce.number().int().min(1).max(20).default(5),
+  // Conta de serviço do Firebase: o JSON (FCM_CREDENCIAIS_JSON) ou o caminho
+  // de um arquivo fora do repositório (FCM_CREDENCIAIS_ARQUIVO). Sem nenhuma,
+  // o FCM fica desligado e o adaptador falso só registra os envios.
+  FCM_CREDENCIAIS_JSON: z.string().optional(),
+  FCM_CREDENCIAIS_ARQUIVO: z.string().optional(),
+  // true: o FCM confere cada mensagem e token sem entregar (validate_only).
+  FCM_VALIDAR_APENAS: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((v) => v === 'true'),
 });
 
 export type EnvNotificador = z.infer<typeof envSchema>;

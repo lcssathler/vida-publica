@@ -7,6 +7,7 @@ import { DbModule } from './db/db.module';
 import { FeedModule } from './feed/feed.module';
 import { HealthModule } from './health/health.module';
 import { PerfisModule } from './perfis/perfis.module';
+import { PropostasModule } from './propostas/propostas.module';
 import { SeguirModule } from './seguir/seguir.module';
 
 @Module({
@@ -32,6 +33,7 @@ import { SeguirModule } from './seguir/seguir.module';
     SeguirModule,
     FeedModule,
     PerfisModule,
+    PropostasModule,
   ],
 })
 export class AppModule {}

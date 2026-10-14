@@ -7,9 +7,11 @@ import { UsuariosRepositorio } from '../../src/auth/usuarios.repositorio';
 import { VerificadorIdentidade } from '../../src/auth/verificador-identidade';
 import { FeedRepositorio } from '../../src/feed/feed.repositorio';
 import { PerfisRepositorio } from '../../src/perfis/perfis.repositorio';
+import { PropostasRepositorio } from '../../src/propostas/propostas.repositorio';
 import { SeguindoRepositorio } from '../../src/seguir/seguindo.repositorio';
 import { MemoriaFeed } from './memoria-feed';
 import { MemoriaPerfis } from './memoria-perfis';
+import { MemoriaPropostas } from './memoria-propostas';
 import { MemoriaSeguindo } from './memoria-seguindo';
 import { MemoriaUsuarios } from './memoria-usuarios';
 import { VerificadorFalso } from './verificador';
@@ -20,6 +22,7 @@ export interface AppDeTeste {
   seguindo: MemoriaSeguindo;
   feed: MemoriaFeed;
   perfis: MemoriaPerfis;
+  propostas: MemoriaPropostas;
   /** Cria uma conta anônima e devolve o cabeçalho de autorização dela. */
   anonimo(): Promise<{ authorization: string; usuarioId: string }>;
 }
@@ -36,6 +39,7 @@ export async function criarApp(
   usuarios.aoFundir.push(seguindo.fundir);
   const feed = new MemoriaFeed(seguindo);
   const perfis = new MemoriaPerfis();
+  const propostas = new MemoriaPropostas();
   let construtor = Test.createTestingModule({ imports: [AppModule] })
     .overrideProvider(UsuariosRepositorio)
     .useValue(usuarios)
@@ -45,6 +49,8 @@ export async function criarApp(
     .useValue(feed)
     .overrideProvider(PerfisRepositorio)
     .useValue(perfis)
+    .overrideProvider(PropostasRepositorio)
+    .useValue(propostas)
     .overrideProvider(VerificadorIdentidade)
     .useValue(new VerificadorFalso());
   for (const [porta, adaptador] of trocas) {
@@ -59,6 +65,7 @@ export async function criarApp(
     seguindo,
     feed,
     perfis,
+    propostas,
     async anonimo() {
       const resposta = await request(app.getHttpServer())
         .post('/auth/anonimo')

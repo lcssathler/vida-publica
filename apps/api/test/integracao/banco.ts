@@ -19,7 +19,8 @@ export class Semente {
   private readonly partidos: number[] = [];
   private readonly proposicoes: string[] = [];
   private readonly eventos: string[] = [];
-  private regraCriada = false;
+  private readonly regrasCriadas: string[] = [];
+  private readonly votacoes: string[] = [];
   private readonly receitas: string[] = [];
   private readonly candidaturas: Array<[number, string]> = [];
   private readonly vinculos: Array<[string, string]> = [];
@@ -66,7 +67,12 @@ export class Semente {
   }
 
   async proposicao(temas: string[] = []) {
-    const idFonte = `teste-${randomUUID()}`;
+    return (await this.proposicaoComFonte(temas)).id;
+  }
+
+  /** Proposição da Câmara com id da fonte numérico (como o real). */
+  async proposicaoComFonte(temas: string[] = []) {
+    const idFonte = String(800_000_000 + Math.floor(Math.random() * 1e8));
     const [linha] = await this.db.query<{ id: string }>(
       `INSERT INTO canon.proposicao (casa, id_fonte, sigla_tipo, numero, ano, identificacao,
                                      ementa, content_hash)
@@ -81,11 +87,64 @@ export class Semente {
         [linha.id, tema],
       );
     }
-    return linha.id;
+    return { id: linha.id, idFonte };
+  }
+
+  /** Etapa de tramitação (hora local de Brasília, como a fonte). */
+  async tramitacao(
+    proposicaoId: string,
+    dados: {
+      idFonte: string;
+      dataHora: string;
+      descricao: string;
+      orgao?: string;
+    },
+  ) {
+    await this.db.query(
+      `INSERT INTO canon.proposicao_tramitacao (proposicao_id, id_fonte, sequencia, data_hora,
+                                                sigla_orgao, descricao)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [
+        proposicaoId,
+        dados.idFonte,
+        Number(dados.idFonte),
+        dados.dataHora,
+        dados.orgao ?? 'PLEN',
+        dados.descricao,
+      ],
+    );
+  }
+
+  /** Votação nominal da Câmara sobre a proposição, com os votos dados. */
+  async votacaoCamara(
+    idFonteProposicao: string,
+    dados: { registradoEm: string; aprovacao: boolean; votos: string[] },
+  ) {
+    const id = `teste-${randomUUID()}`;
+    await this.db.query(
+      `INSERT INTO canon.camara_votacao (id, data, registrado_em, sigla_orgao, descricao,
+                                         aprovacao, nominal, content_hash)
+       VALUES ($1, $2::timestamp::date, $2, 'PLEN', 'Votação fictícia', $3, true,
+               repeat('0', 64))`,
+      [id, dados.registradoEm, dados.aprovacao],
+    );
+    this.votacoes.push(id);
+    await this.db.query(
+      `INSERT INTO canon.camara_votacao_proposicao (votacao_id, proposicao_id, papel)
+       VALUES ($1, $2, 'objeto')`,
+      [id, Number(idFonteProposicao)],
+    );
+    for (const [i, voto] of dados.votos.entries()) {
+      await this.db.query(
+        'INSERT INTO canon.camara_voto (votacao_id, id_camara, voto) VALUES ($1, $2, $3)',
+        [id, 900_000_000 + i, voto],
+      );
+    }
+    return id;
   }
 
   /**
-   * Evento fictício (regra voto_nominal v99, só de teste). Alvos no formato
+   * Evento fictício (regra v99 do tipo, só de teste). Alvos no formato
    * do motor: pessoa, partido, proposicao ou assunto, com papel.
    */
   async evento(dados: {
@@ -96,22 +155,24 @@ export class Semente {
     fonteUrl?: string | null;
     payload?: Record<string, unknown>;
     valor?: number | null;
+    tipo?: string;
+    chaveFato?: string;
   }): Promise<string> {
-    if (!this.regraCriada) {
-      const criada = await this.db.query(
-        `INSERT INTO feed.regra (tipo, versao, descricao)
-         VALUES ('voto_nominal', 99, 'Regra fictícia dos testes da API')
-         ON CONFLICT DO NOTHING RETURNING 1`,
-      );
-      this.regraCriada = criada.length > 0;
-    }
+    const tipo = dados.tipo ?? 'voto_nominal';
+    const criada = await this.db.query(
+      `INSERT INTO feed.regra (tipo, versao, descricao)
+       VALUES ($1, 99, 'Regra fictícia dos testes da API')
+       ON CONFLICT DO NOTHING RETURNING 1`,
+      [tipo],
+    );
+    if (criada.length > 0) this.regrasCriadas.push(tipo);
     const status = dados.status ?? 'publicado';
-    const fato = randomUUID();
+    const fato = dados.chaveFato ?? randomUUID();
     const [linha] = await this.db.query<{ id: string }>(
       `INSERT INTO feed.evento (tipo, regra_versao, chave_fato, chave_dedup, ocorrido_em,
                                 fonte_url, fonte_dado_em, titulo, resumo, payload, valor,
                                 visibilidade, status, motivo, publicado_em, content_hash)
-       VALUES ('voto_nominal', 99, $1, 'voto_nominal:v99:' || $1, $2, $3, $2,
+       VALUES ($8, 99, $1, $8 || ':v99:' || $1, $2, $3, $2,
                'Evento fictício ' || $1, 'Resumo fictício', $4, $5, $6, $7,
                CASE WHEN $7 = 'publicado' THEN NULL ELSE 'carga_inicial' END,
                CASE WHEN $7 = 'publicado' THEN now() END, repeat('0', 64))
@@ -126,6 +187,7 @@ export class Semente {
         dados.valor ?? null,
         dados.visibilidade ?? 'geral',
         status,
+        tipo,
       ],
     );
     this.eventos.push(linha.id);
@@ -261,11 +323,13 @@ export class Semente {
     await this.db.query('DELETE FROM feed.evento WHERE id = ANY($1::uuid[])', [
       this.eventos,
     ]);
-    if (this.regraCriada) {
-      await this.db.query(
-        "DELETE FROM feed.regra WHERE tipo = 'voto_nominal' AND versao = 99",
-      );
-    }
+    await this.db.query(
+      'DELETE FROM feed.regra WHERE versao = 99 AND tipo = ANY($1::text[])',
+      [this.regrasCriadas],
+    );
+    await this.db.query('DELETE FROM canon.camara_votacao WHERE id = ANY($1)', [
+      this.votacoes,
+    ]);
     await this.db.query(
       'DELETE FROM canon.proposicao WHERE id = ANY($1::uuid[])',
       [this.proposicoes],

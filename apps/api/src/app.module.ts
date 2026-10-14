@@ -4,6 +4,7 @@ import { LoggerModule } from 'nestjs-pino';
 import { AuthModule } from './auth/auth.module';
 import { Env, validateEnv } from './config/env';
 import { DbModule } from './db/db.module';
+import { FeedModule } from './feed/feed.module';
 import { HealthModule } from './health/health.module';
 import { SeguirModule } from './seguir/seguir.module';
 
@@ -28,6 +29,7 @@ import { SeguirModule } from './seguir/seguir.module';
     HealthModule,
     AuthModule,
     SeguirModule,
+    FeedModule,
   ],
 })
 export class AppModule {}

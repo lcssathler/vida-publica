@@ -8,6 +8,7 @@ API do Vida Pública em NestJS 12. Monólito modular: cada pasta em `src/` é um
 | --- | --- | --- |
 | `auth` | `POST /auth/anonimo`, `/auth/renovar`, `/auth/sair`, `/auth/entrar/{apple,google}` | Conta anônima por aparelho, token de acesso JWT curto (15 min), refresh token rotativo com detecção de reuso, login Apple e Google |
 | `seguir` | `GET /seguindo`, `PUT`/`DELETE /seguindo/{tipo}/{id}`, `GET /assuntos` | Seguir pessoa, partido, proposta e assunto (os mesmos alvos de `feed.evento_alvo`), até 500 itens |
+| `feed` | `GET /feed`, `GET /eventos/{id}` | Feed de eventos publicados com cursor e filtros por tipo e assunto; detalhe com fonte e regra |
 | `health` | `GET /health` | Saúde da API |
 
 Toda rota exige `Authorization: Bearer <token de acesso>`, salvo as marcadas com `@Publico()` (saúde, criação de conta anônima e renovação). A guarda confere também se a sessão continua ativa.
@@ -32,6 +33,19 @@ pnpm --filter @vida-publica/api run start:dev
 ```
 
 A API sobe em `http://localhost:3000`. Em desenvolvimento, a documentação OpenAPI fica em `/docs` (desligada em produção).
+
+### Feed
+
+O feed lê `feed.evento` (gerado pelo worker) e cumpre o contrato da Fase 4:
+
+- só eventos com `status = 'publicado'` e com fonte (`fonte_url`); segurados e arquivados nunca saem da API;
+- `visibilidade = 'seguidores'` (em campanha, os eventos de candidatos) só para quem segue algum alvo do evento (`feed.evento_alvo`);
+- `escopo=seguindo` (padrão) traz os eventos de alvos seguidos; `escopo=todos`, o feed geral;
+- filtros: `tipo` (um dos 15 tipos, repetido ou separado por vírgula) e `assunto` (tema oficial, repetido: temas têm vírgula no nome);
+- ordem por `(ocorrido_em, id)` decrescente; `proximoCursor` é opaco e preserva os microssegundos, então a página seguinte começa exatamente onde a anterior parou;
+- a lista mostra fatos até depois de amanhã (pauta marcada entra); datas mais à frente, como erro de digitação na fonte ou mês de despesa ainda aberto, não ficam presas no topo, mas o detalhe abre.
+
+Cada evento traz `fonte` (`url`, `dadoEm`, `coletadoEm`), a versão da regra (e a descrição dela no detalhe), `payload` do tipo e os alvos com nome e se o usuário os segue.
 
 ## Verificações
 

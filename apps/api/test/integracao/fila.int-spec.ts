@@ -195,10 +195,13 @@ describe('PostgresFilaRepositorio (integração)', () => {
     expect(ciclo.enfileiramento.enfileiradas).toBeGreaterThanOrEqual(9);
 
     const daSeguidora = await avisos(seguidora.usuarioId);
-    expect(daSeguidora.map((a) => [a.evento_id, a.status])).toEqual([
-      [voto, 'enviada'],
-      [segundo, 'enviada'],
-    ]);
+    // Os dois têm o mesmo instante: a ordem entre eles não importa.
+    expect(daSeguidora.map((a) => [a.evento_id, a.status]).sort()).toEqual(
+      [
+        [voto, 'enviada'],
+        [segundo, 'enviada'],
+      ].sort(),
+    );
     expect(daSeguidora[0]).toMatchObject({
       motivo: null,
       dispositivos: 1,

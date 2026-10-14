@@ -98,6 +98,10 @@ Objetivo: saber quem é quem, em todas as fontes, sem casar pessoas só pelo nom
 | [x] | `api/busca` | Busca textual em português |
 | [x] | `api/conta` | Preferências, exclusão de conta, limite de requisições |
 
+**Critério de saída:** toda rota exige token de acesso, salvo saúde, criação de conta anônima e renovação; refresh token reapresentado encerra a sessão; o app só recebe eventos publicados e com fonte, e os de visibilidade "seguidores" só quem segue algum alvo do evento; a paginação por cursor percorre o feed inteiro sem pular nem repetir; nenhum doador pessoa física é nomeado com até R$ 10 mil e nenhum CPF ou hash sai da API; a API não lê `raw` nem `ident` e só escreve em `app`; excluir a conta apaga tudo do usuário e derruba o token; limite de requisições ativo.
+
+**Resultado (14/10/2026):** API com sete módulos novos (auth, seguir, feed, perfis, propostas, busca, conta) e o limite de requisições, em portas e adaptadores, contra o banco local com a carga inicial liberada (129.473 eventos publicados, 2.167 segurados por valor). Conferência completa com chamadas reais (4.118 respostas): as 13 rotas autenticadas respondem 401 sem token; o feed geral de uma conta que não segue nada, percorrido de 50 em 50, trouxe 70.544 eventos, exatamente os publicados com fonte, visibilidade geral e data até depois de amanhã contados no banco, sem repetição, em ordem e nenhum "seguidores"; o feed de quem segue uma candidata e um partido trouxe os 5.841 eventos esperados (3.419 "seguidores"); nenhum dos 2.167 segurados nem de 300 eventos "seguidores" abriu no detalhe para quem não segue; nos doadores de 2026 das 100 pessoas com mais doadores pessoa física, 880 nomeados (igual à visão do canon), nenhum com até R$ 10 mil, 12.601 somados em "outras"; nenhuma resposta com CPF ou hash; depois de excluir a conta, o token responde 401. Em toda a visão de doadores, 4.045 nomeados e o menor com R$ 10.000,01. Permissões cobertas por testes no CI (a API não lê `raw` nem `ident`, não altera `canon` nem `feed`; o worker não enxerga `app`). Busca em 7 a 170 ms; feed em menos de 100 ms.
+
 ## Fase 6 — App mobile
 
 | | Branch | Entrega |

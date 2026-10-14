@@ -192,4 +192,8 @@ async function revogar(
       WHERE id = $1 AND revogada_em IS NULL`,
     [sessaoId, motivo],
   );
+  // Sessão encerrada não recebe mais avisos: o token de envio sai junto.
+  await executor.query('DELETE FROM app.dispositivo WHERE sessao_id = $1', [
+    sessaoId,
+  ]);
 }

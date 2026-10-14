@@ -14,6 +14,7 @@ API do Vida Pública em NestJS 12. Monólito modular: cada pasta em `src/` é um
 | `busca` | `GET /busca?q=&tipo=&limite=` | Busca em português, sem acento: pessoas, partidos, propostas e assuntos |
 | `conta` | `GET /conta`, `GET`/`PATCH /conta/preferencias`, `DELETE /conta` | Conta, preferências (estado, notificações, silêncio, teto diário, fuso) e exclusão definitiva |
 | `limite` | (guarda global) | Limite de requisições por usuário e por IP |
+| `notificacoes` | `GET`/`PUT`/`DELETE /dispositivo` | Registro do aparelho que recebe avisos (token do FCM e plataforma, por sessão); a fila e o envio rodam no notificador, outro processo |
 | `health` | `GET /health` | Saúde da API |
 
 Toda rota exige `Authorization: Bearer <token de acesso>`, salvo as marcadas com `@Publico()` (saúde, criação de conta anônima e renovação). A guarda confere também se a sessão continua ativa.
@@ -86,6 +87,29 @@ Cada resultado diz se o usuário já segue. Os índices estão na migração `bu
 - `DELETE /conta`: exclusão definitiva, em cascata no banco (sessões, refresh tokens, logins, o que segue, preferências); o token de acesso cai na hora, porque a guarda confere a sessão.
 - Limite de requisições (guarda global, depois da autenticação): por usuário nas rotas autenticadas (120/min; busca 30/min), por IP nas públicas (30/min) e contas anônimas novas por IP (10 a cada 10 min). Respostas trazem `RateLimit-Limit`, `RateLimit-Remaining` e `RateLimit-Reset`; acima do limite, 429 com `Retry-After`. `/health` fica de fora. O contador é em memória (uma instância); com mais de uma, troca-se o adaptador `ContadorRequisicoes` por um compartilhado. Atrás de balanceador, `TRUST_PROXY` diz quantos proxies confiar para ler o IP real.
 
+### Notificações
+
+O registro do aparelho é da API; a fila e o envio são do **notificador**, um processo separado com o mesmo código (`src/notificacoes/notificador.ts`) e outro usuário do banco (`vp_notify`): o envio fica separado da gravação dos eventos e de quem atende o app, como pede a referência técnica (fila em tabela do Postgres atrás de uma porta, trocável por RabbitMQ ou SQS).
+
+- `PUT /dispositivo` (`{ token, plataforma: "android" | "ios" }`): grava só o token de envio do FCM e a plataforma, um por sessão (refazer troca o anterior; o mesmo token em outra sessão sai de lá). `DELETE /dispositivo` apaga. Sair (`/auth/sair`), refresh reapresentado e exclusão da conta apagam o token junto com a sessão.
+- **Enfileirar:** a cada rodada, o notificador lê os eventos publicados desde a anterior (`feed.evento.publicado_em`, relendo 2 h antes do cursor para pegar transações demoradas do motor; o cursor fica em `app.notificacao_cursor`) e grava em `app.notificacao` um aviso por usuário e evento (chave única: rodar de novo não reenvia) para quem já seguia um alvo do evento quando ele foi publicado (`feed.evento_alvo` × `app.seguindo`) e não desligou os avisos. Só eventos publicados e com fonte; segurados e arquivados nunca. A visibilidade "seguidores" fica coberta porque só entra quem segue um alvo. A primeira rodada só marca o instante: a carga inicial e o que já estava publicado não geram aviso, e quem passa a seguir depois não recebe o passado. Fato com mais de 7 dias na publicação (dado que chegou atrasado) ou marcado para depois de amanhã também não.
+- **Que tipos viram push:** votos (`voto_nominal`, `voto_contra_orientacao`), `pauta`, `tramitacao`, `mudanca_regime`, `ausencia`, `troca_partido`, `situacao_candidatura` e `resultado`. Dinheiro e despesas (`despesa_mensal`, `repasse`, `doacao`, `fundo_recebido`) vão para o resumo semanal; `presenca` e `proposta_parada` ficam só no feed.
+- **Enviar:** por usuário, travado para os outros notificadores (`pg_try_advisory_xact_lock`), na ordem da fila:
+  - avisos desligados, evento despublicado depois ou alvo deixado de seguir: descartado;
+  - horário de silêncio no fuso da conta (início igual ao fim desliga): o aviso espera o fim do silêncio (`enviar_apos`) e sai na primeira rodada depois dele;
+  - teto diário (`maxPorDia`, contado desde a meia-noite no fuso da conta): o que passa do teto não é enviado e fica com status `resumo`, para o resumo semanal;
+  - só aparelhos de sessões ativas; sem aparelho, descartado sem gastar o teto; token que o FCM diz inválido é apagado; falha passageira tenta de novo depois de 1, 2, 4 e 8 minutos e desiste na 5ª.
+- **Texto:** o título do evento (o mesmo do feed, factual e sem adjetivos, gerado pelo motor), o resumo cortado na palavra e "Toque para ver a fonte."; os dados levam `url: vidapublica://evento/{id}`, que abre o registro com a fonte no app. Doador pessoa física nunca é nomeado (doações não viram push e o motor não nomeia) e um texto com algo parecido com CPF não sai. O texto enviado fica gravado no aviso.
+- **Adaptador:** a porta `Enviador` tem o adaptador falso, que registra cada envio no log (com só o começo do token).
+
+Rodar com o compose (`docker compose -f infra/docker-compose.yml run --rm notificador node dist/notificacoes/notificador.js <comando>`):
+
+| Comando | O que faz |
+| --- | --- |
+| `ciclo` | Enfileira os recém-publicados e envia o que estiver na vez; imprime as contagens |
+| `enfileirar` / `enviar` | Só uma das etapas |
+| `continuo` | Um ciclo a cada `NOTIF_INTERVALO_SEGUNDOS`; erro num ciclo vai para o log e o próximo tenta de novo (é o comando do serviço `notificador` no compose) |
+
 ## Verificações
 
 ```bash
@@ -105,10 +129,10 @@ Os testes usam Vitest. Os decorators do NestJS são compilados pelo próprio Typ
 Os adaptadores Postgres têm testes de integração em `test/integracao`, contra um banco descartável já migrado, com o usuário `vp_api` (no CI, o banco do job `infra`):
 
 ```bash
-VP_API_TEST_DATABASE_URL=postgres://vp_api:<senha>@127.0.0.1:5433/vida_publica_test VP_API_TEST_OWNER_URL=postgres://vp_owner:<senha>@127.0.0.1:5433/vida_publica_test pnpm --filter @vida-publica/api run test:int
+VP_API_TEST_DATABASE_URL=postgres://vp_api:<senha>@127.0.0.1:5433/vida_publica_test VP_NOTIFY_TEST_DATABASE_URL=postgres://vp_notify:<senha>@127.0.0.1:5433/vida_publica_test VP_API_TEST_OWNER_URL=postgres://vp_owner:<senha>@127.0.0.1:5433/vida_publica_test pnpm --filter @vida-publica/api run test:int
 ```
 
-`VP_API_TEST_OWNER_URL` (dono do banco) só grava os dados fictícios de `canon` e `feed` que os testes usam e apaga ao final; a API em si conecta sempre como `vp_api`.
+`VP_API_TEST_OWNER_URL` (dono do banco) só grava os dados fictícios de `canon` e `feed` que os testes usam e apaga ao final; a API em si conecta sempre como `vp_api`, e o notificador como `vp_notify`.
 
 ## Configuração
 
@@ -131,6 +155,16 @@ Variáveis de ambiente validadas na subida (`src/config/env.ts`). A API não sob
 | `LIMITE_CONTAS_POR_IP` | `10` | Contas anônimas novas por IP a cada 10 minutos |
 | `TRUST_PROXY` | `0` | Proxies confiáveis à frente da API (para ler o IP real em `X-Forwarded-For`) |
 | `CORS_ORIGENS` | vazio | Origens aceitas por CORS, separadas por vírgula (só a versão web do app no desenvolvimento, ex.: `http://localhost:8081`; no compose, `VP_API_CORS_ORIGENS`). Vazio desliga: o app nativo não usa CORS. `Retry-After` e `RateLimit-*` ficam expostos |
+
+O notificador valida as próprias variáveis (`src/notificacoes/env-notificador.ts`): `NODE_ENV`, `LOG_LEVEL`, `DATABASE_URL` (usuário `vp_notify`), `DB_POOL_MAX` (padrão 4) e:
+
+| Variável | Padrão | Descrição |
+| --- | --- | --- |
+| `NOTIF_INTERVALO_SEGUNDOS` | `60` | Intervalo entre ciclos no modo contínuo |
+| `NOTIF_MARGEM_MINUTOS` | `120` | Releitura antes do cursor (publicações de transações demoradas do motor) |
+| `NOTIF_FRESCOR_DIAS` | `7` | Fato mais antigo que isso quando foi publicado não vira aviso |
+| `NOTIF_LOTE` | `200` | Usuários por consulta da fila |
+| `NOTIF_MAX_TENTATIVAS` | `5` | Tentativas de envio antes de desistir |
 
 ## Imagem Docker
 

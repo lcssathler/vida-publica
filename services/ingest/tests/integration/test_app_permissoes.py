@@ -1,7 +1,8 @@
 """Permissões das tabelas de usuário do app (esquema app).
 
-Só a API escreve em app; o admin lê; o worker não enxerga. A API nunca lê os
-hashes de CPF do esquema ident.
+Só a API e o notificador escrevem em app (o notificador, só a fila de avisos);
+o admin lê; o worker não enxerga. A API nunca lê os hashes de CPF do esquema
+ident.
 """
 
 import hashlib
@@ -15,7 +16,17 @@ from .test_banco_permissoes import _connect, _denied
 
 pytestmark = pytest.mark.integration
 
-TABELAS_APP = ("usuario", "identidade", "sessao", "refresh_token", "seguindo", "preferencias")
+TABELAS_APP = (
+    "usuario",
+    "identidade",
+    "sessao",
+    "refresh_token",
+    "seguindo",
+    "preferencias",
+    "dispositivo",
+    "notificacao",
+    "notificacao_cursor",
+)
 
 
 @pytest.fixture
@@ -153,5 +164,105 @@ def test_preferencias_validadas_no_banco(api):
         assert error.value.args[0]["C"] in ("23514", "22P02")
     api.run("DELETE FROM app.usuario WHERE id = :u", u=usuario)
     assert api.run("SELECT count(*) FROM app.preferencias WHERE usuario_id = :u", u=usuario) == [
+        [0]
+    ]
+
+
+@pytest.fixture
+def notify() -> Iterator[pg8000.native.Connection]:
+    connection = _connect("notify")
+    yield connection
+    connection.close()
+
+
+def test_notificador_le_o_minimo(notify):
+    # Lê eventos, alvos, quem segue o quê, preferências e aparelhos.
+    for tabela in (
+        "feed.evento",
+        "feed.evento_alvo",
+        "app.seguindo",
+        "app.preferencias",
+        "app.dispositivo",
+        "app.notificacao",
+        "app.notificacao_cursor",
+    ):
+        notify.run(f"SELECT count(*) FROM {tabela}")  # noqa: S608
+    notify.run("SELECT id, usuario_id, revogada_em FROM app.sessao LIMIT 1")
+    # Não enxerga dados públicos brutos, hashes, logins nem refresh tokens.
+    for consulta in (
+        "SELECT count(*) FROM canon.pessoa",
+        "SELECT count(*) FROM raw.raw_object",
+        "SELECT count(*) FROM ident.pessoa",
+        "SELECT count(*) FROM app.identidade",
+        "SELECT count(*) FROM app.refresh_token",
+        "SELECT count(*) FROM app.usuario",
+        "SELECT motivo_revogacao FROM app.sessao LIMIT 1",
+        "SELECT plataforma FROM app.sessao LIMIT 1",
+    ):
+        assert _denied(notify, consulta), consulta
+
+
+def test_notificador_so_escreve_a_fila(notify):
+    for comando in (
+        "UPDATE feed.evento SET status = 'publicado'",
+        "DELETE FROM app.seguindo",
+        "UPDATE app.preferencias SET notificacoes = true",
+        "INSERT INTO app.dispositivo (sessao_id, token, plataforma)"
+        " VALUES (gen_random_uuid(), repeat('a', 40), 'ios')",
+        "DELETE FROM app.notificacao",
+        "DELETE FROM app.sessao",
+    ):
+        assert _denied(notify, comando), comando
+
+
+def test_api_nao_ve_a_fila_mas_registra_aparelho(api):
+    assert _denied(api, "SELECT count(*) FROM app.notificacao")
+    assert _denied(api, "SELECT count(*) FROM app.notificacao_cursor")
+    _, sessao = _usuario_com_sessao(api)
+    api.run(
+        "INSERT INTO app.dispositivo (sessao_id, token, plataforma) VALUES (:s, :t, 'android')",
+        s=sessao,
+        t=f"fcm:{uuid.uuid4()}-{'x' * 20}",
+    )
+    with pytest.raises(pg8000.native.DatabaseError) as error:
+        api.run(
+            "UPDATE app.dispositivo SET token = 'tem espaço e é curto' WHERE sessao_id = :s",
+            s=sessao,
+        )
+    assert error.value.args[0]["C"] == "23514"
+    # Sair encerra a sessão; excluir a conta apaga o aparelho em cascata.
+    api.run("DELETE FROM app.sessao WHERE id = :s", s=sessao)
+    assert api.run("SELECT count(*) FROM app.dispositivo WHERE sessao_id = :s", s=sessao) == [[0]]
+
+
+def test_notificador_apaga_token_invalido_e_fila_some_com_a_conta(api, notify):
+    usuario, sessao = _usuario_com_sessao(api)
+    token = f"fcm:{uuid.uuid4()}-{'x' * 20}"
+    api.run(
+        "INSERT INTO app.dispositivo (sessao_id, token, plataforma) VALUES (:s, :t, 'ios')",
+        s=sessao,
+        t=token,
+    )
+    evento = str(uuid.uuid4())
+    notify.run(
+        "INSERT INTO app.notificacao (usuario_id, evento_id, tipo) VALUES (:u, :e, 'pauta')",
+        u=usuario,
+        e=evento,
+    )
+    # Um aviso por usuário e evento.
+    with pytest.raises(pg8000.native.DatabaseError) as error:
+        notify.run(
+            "INSERT INTO app.notificacao (usuario_id, evento_id, tipo) VALUES (:u, :e, 'pauta')",
+            u=usuario,
+            e=evento,
+        )
+    assert error.value.args[0]["C"] == "23505"  # unique_violation
+    # Enviada exige texto, aparelhos e data.
+    with pytest.raises(pg8000.native.DatabaseError) as error:
+        notify.run("UPDATE app.notificacao SET status = 'enviada' WHERE usuario_id = :u", u=usuario)
+    assert error.value.args[0]["C"] == "23514"
+    notify.run("DELETE FROM app.dispositivo WHERE token = :t", t=token)
+    api.run("DELETE FROM app.usuario WHERE id = :u", u=usuario)
+    assert notify.run("SELECT count(*) FROM app.notificacao WHERE usuario_id = :u", u=usuario) == [
         [0]
     ]

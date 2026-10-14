@@ -10,6 +10,7 @@ API do Vida Pública em NestJS 12. Monólito modular: cada pasta em `src/` é um
 | `seguir` | `GET /seguindo`, `PUT`/`DELETE /seguindo/{tipo}/{id}`, `GET /assuntos` | Seguir pessoa, partido, proposta e assunto (os mesmos alvos de `feed.evento_alvo`), até 500 itens |
 | `feed` | `GET /feed`, `GET /eventos/{id}` | Feed de eventos publicados com cursor e filtros por tipo e assunto; detalhe com fonte e regra |
 | `perfis` | `GET /pessoas/{id}`, `/pessoas/{id}/eventos`, `/pessoas/{id}/doadores`, `GET /partidos/{id}`, `/partidos/{id}/eventos` | Perfis de pessoa e partido por categoria (votos, presença, gastos, propostas, campanha, eleições), com doadores de campanha |
+| `propostas` | `GET /propostas/{id}` | Proposta com autores, temas e linha do tempo (tramitações, votações com placar e eventos do feed) |
 | `health` | `GET /health` | Saúde da API |
 
 Toda rota exige `Authorization: Bearer <token de acesso>`, salvo as marcadas com `@Publico()` (saúde, criação de conta anônima e renovação). A guarda confere também se a sessão continua ativa.
@@ -54,6 +55,14 @@ Cada evento traz `fonte` (`url`, `dadoEm`, `coletadoEm`), a versão da regra (e 
 - `GET /pessoas/{id}/eventos?categoria=` e `GET /partidos/{id}/eventos?categoria=`: a linha do tempo do perfil, com cursor.
 - `GET /pessoas/{id}/doadores?ano=`: receitas da candidatura pela prestação de contas vigente, por origem; doadores com CNPJ (partidos, outros candidatos, plataformas) pelo nome; **doador pessoa física nomeado só acima de R$ 10 mil** somados na candidatura, o resto somado em "outras"; CPF nunca. Os nomes vêm da visão `canon.tse_doador_pessoa_fisica`, que agrupa pelo hash do CPF sem entregá-lo e só preenche o nome acima do limite.
 - Partido: número, nome, sucessor e antecessores, parlamentares em exercício filiados, repasses a candidatos por ano, fonte e esfera, e a contagem de eventos por categoria.
+
+### Propostas
+
+`GET /propostas/{id}` traz os dados da proposta (ementa, situação, regime, órgão, inteiro teor, autores ligados à pessoa quando são parlamentares da própria casa, temas, proposta principal, fonte) e a linha do tempo completa, do mais recente ao mais antigo:
+
+- `tramitacao`: todas as etapas do canon, com hora de Brasília convertida para instante; `eventoId` liga a etapa ao evento publicado que o motor gerou para ela (relator, parecer, envio, mudança de regime...);
+- `votacao`: votações da Câmara e do Senado sobre a proposta, com resultado, placar (sim, não, abstenção, outros) quando nominal e a fonte;
+- `evento`: eventos publicados e visíveis da proposta que não são etapa nem voto individual (pauta e proposta parada).
 
 ## Verificações
 

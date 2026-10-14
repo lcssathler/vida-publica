@@ -95,7 +95,7 @@ Objetivo: saber quem é quem, em todas as fontes, sem casar pessoas só pelo nom
 | [x] | `api/feed` | Feed com paginação por cursor e filtros por tipo e assunto |
 | [x] | `api/perfis` | Perfis de pessoa e partido por categoria |
 | [x] | `api/propostas` | Proposta com linha do tempo |
-| [ ] | `api/busca` | Busca textual em português |
+| [x] | `api/busca` | Busca textual em português |
 | [ ] | `api/conta` | Preferências, exclusão de conta, limite de requisições |
 
 ## Fase 6 — App mobile

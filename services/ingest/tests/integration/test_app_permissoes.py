@@ -134,3 +134,7 @@ def test_api_le_doadores_pf_pela_visao_sem_hash(api):
         "total",
     ]
     assert _denied(api, "SELECT count(*) FROM ident.tse_receita_doador")
+
+
+def test_api_usa_normalizacao_da_busca(api):
+    assert api.run("SELECT canon.normaliza('Ação TRIBUTÁRIA')") == [["acao tributaria"]]

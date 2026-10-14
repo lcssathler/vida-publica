@@ -37,6 +37,8 @@ O arquivo aparece em `db/migrations/` com as seções `-- migrate:up` e `-- migr
 
 A visão `canon.tse_doador_pessoa_fisica` entrega à API os doadores pessoa física de cada candidatura agrupados pelo hash do CPF (que fica em `ident` e não sai da visão), com o nome só acima de R$ 10 mil somados.
 
+A busca do app usa as extensões `unaccent` e `pg_trgm`, a função `canon.normaliza` (sem acento, minúsculas, imutável) e índices sobre ela: trigramas no nome das pessoas e nos temas, busca textual em português nas proposições.
+
 A API lê só eventos `publicado`; o admin revisa os `segurado`. O índice parcial `evento_feed_idx (ocorrido_em DESC, id DESC) WHERE status = 'publicado'` serve à paginação por cursor do app.
 
 ## App

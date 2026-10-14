@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { LoggerModule } from 'nestjs-pino';
 import { AuthModule } from './auth/auth.module';
+import { BuscaModule } from './busca/busca.module';
 import { Env, validateEnv } from './config/env';
 import { DbModule } from './db/db.module';
 import { FeedModule } from './feed/feed.module';
@@ -34,6 +35,7 @@ import { SeguirModule } from './seguir/seguir.module';
     FeedModule,
     PerfisModule,
     PropostasModule,
+    BuscaModule,
   ],
 })
 export class AppModule {}

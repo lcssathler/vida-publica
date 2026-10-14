@@ -22,6 +22,9 @@ export abstract class SeguindoRepositorio {
   /** O alvo existe no canon (pessoa, partido, proposição ou tema oficial)? */
   abstract existe(alvo: Alvo): Promise<boolean>;
 
+  /** O usuário segue este alvo? */
+  abstract segue(usuarioId: string, alvo: Alvo): Promise<boolean>;
+
   /** Segue; devolve false se já seguia. */
   abstract seguir(usuarioId: string, alvo: Alvo): Promise<boolean>;
 

@@ -78,6 +78,15 @@ export class PostgresSeguindoRepositorio extends SeguindoRepositorio {
     return linhas.length > 0;
   }
 
+  async segue(usuarioId: string, alvo: Alvo): Promise<boolean> {
+    const linhas = await this.db.query(
+      `SELECT 1 FROM app.seguindo
+        WHERE usuario_id = $1 AND alvo_tipo = $2 AND alvo_id = $3`,
+      [usuarioId, alvo.tipo, alvo.id],
+    );
+    return linhas.length > 0;
+  }
+
   async seguir(usuarioId: string, alvo: Alvo): Promise<boolean> {
     const linhas = await this.db.query(
       `INSERT INTO app.seguindo (usuario_id, alvo_tipo, alvo_id) VALUES ($1, $2, $3)

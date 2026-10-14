@@ -33,6 +33,10 @@ export class SeguirService {
     return this.seguindo.seguir(usuarioId, alvo);
   }
 
+  segue(usuarioId: string, alvo: Alvo): Promise<boolean> {
+    return this.seguindo.segue(usuarioId, alvo);
+  }
+
   deixar(usuarioId: string, alvo: Alvo): Promise<boolean> {
     return this.seguindo.deixar(usuarioId, alvo);
   }

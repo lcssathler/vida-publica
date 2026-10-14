@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Db } from '../db/db';
-import { AlvoTipo } from '../seguir/alvo';
+import { Alvo, AlvoTipo } from '../seguir/alvo';
 import { AlvoDoEvento, EventoFeed, TipoEvento } from './evento';
 import { ConsultaFeed, FeedRepositorio, PaginaFeed } from './feed.repositorio';
 
@@ -98,6 +98,22 @@ export class PostgresFeedRepositorio extends FeedRepositorio {
           ? { ocorridoEm: ultima.cursor_em, id: ultima.id }
           : null,
     };
+  }
+
+  async contarPorTipo(
+    alvo: Alvo,
+    usuarioId: string,
+  ): Promise<Partial<Record<TipoEvento, number>>> {
+    const linhas = await this.db.query<{ tipo: TipoEvento; n: number }>(
+      `SELECT e.tipo, count(*)::integer AS n
+         FROM feed.evento_alvo fa
+         JOIN feed.evento e ON e.id = fa.evento_id
+        WHERE fa.alvo_tipo = $2 AND fa.alvo_id = $3
+          AND ${VISIVEL} AND ${HORIZONTE}
+        GROUP BY e.tipo`,
+      [usuarioId, alvo.tipo, alvo.id],
+    );
+    return Object.fromEntries(linhas.map((l) => [l.tipo, l.n]));
   }
 
   async evento(id: string, usuarioId: string): Promise<EventoFeed | null> {

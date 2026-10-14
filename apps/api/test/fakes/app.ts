@@ -8,12 +8,14 @@ import { BuscaRepositorio } from '../../src/busca/busca.repositorio';
 import { ContaRepositorio } from '../../src/conta/conta.repositorio';
 import { VerificadorIdentidade } from '../../src/auth/verificador-identidade';
 import { FeedRepositorio } from '../../src/feed/feed.repositorio';
+import { DispositivosRepositorio } from '../../src/notificacoes/dispositivos.repositorio';
 import { PerfisRepositorio } from '../../src/perfis/perfis.repositorio';
 import { PropostasRepositorio } from '../../src/propostas/propostas.repositorio';
 import { SeguindoRepositorio } from '../../src/seguir/seguindo.repositorio';
 import { MemoriaFeed } from './memoria-feed';
 import { MemoriaBusca } from './memoria-busca';
 import { MemoriaConta } from './memoria-conta';
+import { MemoriaDispositivos } from './memoria-dispositivos';
 import { MemoriaPerfis } from './memoria-perfis';
 import { MemoriaPropostas } from './memoria-propostas';
 import { MemoriaSeguindo } from './memoria-seguindo';
@@ -29,6 +31,7 @@ export interface AppDeTeste {
   propostas: MemoriaPropostas;
   busca: MemoriaBusca;
   conta: MemoriaConta;
+  dispositivos: MemoriaDispositivos;
   /** Cria uma conta anônima e devolve o cabeçalho de autorização dela. */
   anonimo(): Promise<{ authorization: string; usuarioId: string }>;
 }
@@ -50,6 +53,7 @@ export async function criarApp(
   const propostas = new MemoriaPropostas();
   const busca = new MemoriaBusca();
   const conta = new MemoriaConta(usuarios, seguindo);
+  const dispositivos = new MemoriaDispositivos(usuarios);
   let construtor = Test.createTestingModule({ imports: [AppModule] })
     .overrideProvider(UsuariosRepositorio)
     .useValue(usuarios)
@@ -65,6 +69,8 @@ export async function criarApp(
     .useValue(busca)
     .overrideProvider(ContaRepositorio)
     .useValue(conta)
+    .overrideProvider(DispositivosRepositorio)
+    .useValue(dispositivos)
     .overrideProvider(VerificadorIdentidade)
     .useValue(new VerificadorFalso());
   for (const [porta, adaptador] of trocas) {
@@ -83,6 +89,7 @@ export async function criarApp(
     propostas,
     busca,
     conta,
+    dispositivos,
     async anonimo() {
       const resposta = await request(app.getHttpServer())
         .post('/auth/anonimo')

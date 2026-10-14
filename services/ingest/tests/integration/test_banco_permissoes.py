@@ -20,6 +20,7 @@ ROLES = {
     "ingest": (None, "VP_INGEST_DB_PASSWORD"),
     "api": (None, "VP_API_DB_PASSWORD"),
     "admin": (None, "VP_ADMIN_DB_PASSWORD"),
+    "notify": (None, "VP_NOTIFY_DB_PASSWORD"),
 }
 
 

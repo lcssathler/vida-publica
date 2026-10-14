@@ -40,6 +40,11 @@ jobs:
         run: docker compose -f infra/docker-compose.yml run --rm migrate
       - name: API responde no compose
         run: curl -fsS http://localhost:3000/health
+      - name: Notificador roda um ciclo com o usuário vp_notify
+        run: |
+          docker compose -f infra/docker-compose.yml run --rm notificador node dist/notificacoes/notificador.js ciclo
+          # O contínuo para aqui: os testes de integração controlam o relógio da fila.
+          docker compose -f infra/docker-compose.yml stop notificador
       - name: Worker acessa o armazenamento
         run: |
           docker compose -f infra/docker-compose.yml run --rm worker check-storage
@@ -61,6 +66,7 @@ jobs:
           set -a; . infra/.env; set +a
           pnpm install --frozen-lockfile --filter @vida-publica/api...
           export VP_API_TEST_DATABASE_URL="postgres://vp_api:${VP_API_DB_PASSWORD}@127.0.0.1:${POSTGRES_PORT}/${POSTGRES_DB}"
+          export VP_NOTIFY_TEST_DATABASE_URL="postgres://vp_notify:${VP_NOTIFY_DB_PASSWORD}@127.0.0.1:${POSTGRES_PORT}/${POSTGRES_DB}"
           export VP_API_TEST_OWNER_URL="postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@127.0.0.1:${POSTGRES_PORT}/${POSTGRES_DB}"
           pnpm --filter @vida-publica/api run test:int
       - name: Derruba o ambiente

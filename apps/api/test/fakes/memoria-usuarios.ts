@@ -28,6 +28,8 @@ export class MemoriaUsuarios extends UsuariosRepositorio {
   readonly identidades = new Map<string, string>();
   /** Chamado na fusão de contas (os outros módulos registram o que mover). */
   readonly aoFundir: Array<(origem: string, destino: string) => void> = [];
+  /** Chamado quando uma sessão é encerrada (saída ou reuso de refresh). */
+  readonly aoRevogar: Array<(sessaoId: string) => void> = [];
 
   criarAnonimo(
     plataforma: Plataforma | null,
@@ -58,6 +60,7 @@ export class MemoriaUsuarios extends UsuariosRepositorio {
     }
     if (token.usado) {
       sessao.revogada = 'reuso';
+      for (const f of this.aoRevogar) f(token.sessaoId);
       return Promise.resolve({ status: 'reusado' });
     }
     token.usado = true;
@@ -86,6 +89,7 @@ export class MemoriaUsuarios extends UsuariosRepositorio {
   revogarSessao(sessaoId: string, motivo: MotivoRevogacao): Promise<void> {
     const sessao = this.sessoes.get(sessaoId);
     if (sessao && !sessao.revogada) sessao.revogada = motivo;
+    for (const f of this.aoRevogar) f(sessaoId);
     return Promise.resolve();
   }
 

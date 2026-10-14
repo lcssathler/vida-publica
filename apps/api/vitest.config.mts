@@ -43,6 +43,10 @@ export default defineConfig({
       // Valores fictícios: os testes unitários e e2e usam adaptadores em memória.
       DATABASE_URL: 'postgres://teste:teste@127.0.0.1:1/teste',
       JWT_SECRET: 'segredo-de-teste-'.repeat(3),
+      // Limites altos: cada arquivo de teste cria muitas contas do mesmo IP.
+      LIMITE_POR_MINUTO: '10000',
+      LIMITE_IP_POR_MINUTO: '10000',
+      LIMITE_CONTAS_POR_IP: '10000',
     },
   },
 });

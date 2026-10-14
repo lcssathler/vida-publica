@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { UsuarioAtual } from '../auth/auth.guard';
 import type { Identificacao } from '../auth/tokens';
 import { ZodPipe } from '../comum/zod.pipe';
+import { Limite } from '../limite/politicas';
 import { BuscaService, type ResultadoBusca } from './busca.service';
 
 const buscaSchema = z
@@ -25,6 +26,7 @@ export class BuscaController {
   constructor(@Inject(BuscaService) private readonly busca: BuscaService) {}
 
   @Get()
+  @Limite('busca')
   @ApiOperation({
     summary:
       'Busca pessoas, partidos, propostas e assuntos, em português, sem acento',

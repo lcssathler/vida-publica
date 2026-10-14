@@ -12,6 +12,7 @@ import {
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { z } from 'zod';
 import { ZodPipe } from '../comum/zod.pipe';
+import { Limite } from '../limite/politicas';
 import { Publico, UsuarioAtual } from './auth.guard';
 import {
   AuthService,
@@ -45,6 +46,7 @@ export class AuthController {
   constructor(@Inject(AuthService) private readonly auth: AuthService) {}
 
   @Publico()
+  @Limite('contas')
   @Post('anonimo')
   @ApiOperation({ summary: 'Cria a conta anônima do aparelho' })
   anonimo(

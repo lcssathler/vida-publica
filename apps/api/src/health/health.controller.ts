@@ -1,6 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { Publico } from '../auth/auth.guard';
+import { Limite } from '../limite/politicas';
 
 export interface HealthStatus {
   status: 'ok';
@@ -9,6 +10,7 @@ export interface HealthStatus {
 
 @ApiTags('saúde')
 @Publico()
+@Limite(null)
 @Controller('health')
 export class HealthController {
   @Get()

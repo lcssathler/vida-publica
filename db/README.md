@@ -51,6 +51,7 @@ Dados dos usuários, escritos só pela API. Nenhum e-mail, nome ou CPF.
 | `app.identidade` | Login Apple ou Google vinculado: provedor e `sub` do token, nada mais |
 | `app.sessao` | Uma sessão por aparelho, com revogação (saída, reuso de refresh, exclusão) |
 | `app.refresh_token` | Hash SHA-256 de cada refresh token, com validade e uso (cada um vale uma vez) |
+| `app.preferencias` | Estado, notificações, resumo semanal, teto diário, horário de silêncio e fuso; validados por `CHECK` |
 | `app.seguindo` | O que cada usuário segue: pessoa, partido, proposição ou assunto, com os mesmos ids de `feed.evento_alvo` |
 
 Excluir o usuário apaga em cascata tudo o que é dele.

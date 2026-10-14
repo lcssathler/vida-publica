@@ -12,6 +12,8 @@ API do Vida Pública em NestJS 12. Monólito modular: cada pasta em `src/` é um
 | `perfis` | `GET /pessoas/{id}`, `/pessoas/{id}/eventos`, `/pessoas/{id}/doadores`, `GET /partidos/{id}`, `/partidos/{id}/eventos` | Perfis de pessoa e partido por categoria (votos, presença, gastos, propostas, campanha, eleições), com doadores de campanha |
 | `propostas` | `GET /propostas/{id}` | Proposta com autores, temas e linha do tempo (tramitações, votações com placar e eventos do feed) |
 | `busca` | `GET /busca?q=&tipo=&limite=` | Busca em português, sem acento: pessoas, partidos, propostas e assuntos |
+| `conta` | `GET /conta`, `GET`/`PATCH /conta/preferencias`, `DELETE /conta` | Conta, preferências (estado, notificações, silêncio, teto diário, fuso) e exclusão definitiva |
+| `limite` | (guarda global) | Limite de requisições por usuário e por IP |
 | `health` | `GET /health` | Saúde da API |
 
 Toda rota exige `Authorization: Bearer <token de acesso>`, salvo as marcadas com `@Publico()` (saúde, criação de conta anônima e renovação). A guarda confere também se a sessão continua ativa.
@@ -76,6 +78,13 @@ Cada evento traz `fonte` (`url`, `dadoEm`, `coletadoEm`), a versão da regra (e 
 
 Cada resultado diz se o usuário já segue. Os índices estão na migração `busca`; as consultas repetem as mesmas expressões para usá-los.
 
+### Conta e limite de requisições
+
+- `GET /conta`: logins vinculados (vazio = anônima), quantos itens segue, sessões ativas e preferências.
+- `PATCH /conta/preferencias`: altera só os campos enviados (`uf`, `notificacoes`, `resumoSemanal`, `maxPorDia`, `silencioInicio`, `silencioFim`, `fuso`); campo desconhecido é recusado. Sem alteração, valem os padrões (notificações ligadas, até 5 por dia, silêncio das 22:00 às 07:00, horário de Brasília). O CEP do onboarding é convertido em estado no aparelho e nunca chega à API.
+- `DELETE /conta`: exclusão definitiva, em cascata no banco (sessões, refresh tokens, logins, o que segue, preferências); o token de acesso cai na hora, porque a guarda confere a sessão.
+- Limite de requisições (guarda global, depois da autenticação): por usuário nas rotas autenticadas (120/min; busca 30/min), por IP nas públicas (30/min) e contas anônimas novas por IP (10 a cada 10 min). Respostas trazem `RateLimit-Limit`, `RateLimit-Remaining` e `RateLimit-Reset`; acima do limite, 429 com `Retry-After`. `/health` fica de fora. O contador é em memória (uma instância); com mais de uma, troca-se o adaptador `ContadorRequisicoes` por um compartilhado. Atrás de balanceador, `TRUST_PROXY` diz quantos proxies confiar para ler o IP real.
+
 ## Verificações
 
 ```bash
@@ -116,6 +125,10 @@ Variáveis de ambiente validadas na subida (`src/config/env.ts`). A API não sob
 | `REFRESH_DIAS` | `60` | Validade do refresh token |
 | `APPLE_CLIENT_IDS` | vazio | Bundle ids aceitos como audiência do token da Apple; vazio desliga o login Apple |
 | `GOOGLE_CLIENT_IDS` | vazio | Client ids OAuth aceitos como audiência do token do Google; vazio desliga o login Google |
+| `LIMITE_POR_MINUTO` | `120` | Requisições por usuário por minuto (a busca tem um quarto disso) |
+| `LIMITE_IP_POR_MINUTO` | `30` | Requisições por IP por minuto nas rotas públicas |
+| `LIMITE_CONTAS_POR_IP` | `10` | Contas anônimas novas por IP a cada 10 minutos |
+| `TRUST_PROXY` | `0` | Proxies confiáveis à frente da API (para ler o IP real em `X-Forwarded-For`) |
 
 ## Imagem Docker
 

@@ -16,6 +16,7 @@ Baixa os dados públicos oficiais, guarda cada arquivo bruto sem alteração, no
 | `events/votacoes.py` | `voto_nominal` e `voto_contra_orientacao` |
 | `events/proposicoes.py` | `pauta`, `tramitacao` (etapas selecionadas), `mudanca_regime` e `proposta_parada` (180 dias) |
 | `events/presenca_gastos.py` | `presenca`, `ausencia` e `despesa_mensal` (cota por mês, marcada como incompleta) |
+| `events/dinheiro_campanha.py` | `fundo_recebido`, `repasse` e `doacao` (pessoa física só em totais; só para seguidores durante a campanha) |
 | `events/registro.py` | Geradores de eventos executados pelo comando `eventos` |
 | `cli.py` | Comando `vp-ingest` |
 
@@ -97,6 +98,8 @@ Regras do motor:
 - **Deduplicação:** `chave_dedup` = tipo, versão da regra e ids da fonte; rodar de novo não duplica nem altera nada.
 - **Regra versionada:** mudar a lógica ou um parâmetro de uma regra sem subir a versão é erro. A versão nova herda o status de cada fato já publicado e arquiva os eventos da versão anterior (`regra_substituida`).
 - **Revisão humana:** eventos de dinheiro acima de R$ 500 mil ficam `segurado` (`revisao_valor`) até o admin revisar; se o valor muda depois da revisão, voltam para a fila.
+- **Campanha:** eventos de candidatos (repasses, doações, candidaturas) ficam com `visibilidade = 'seguidores'` do início da propaganda ao segundo turno; depois, voltam a `geral`.
+- **Doador pessoa física:** nunca é nomeado no feed, só o total e o número de doações.
 - **Fonte removeu:** fato que some da fonte tem o evento arquivado (`fonte_removeu`); se voltar, o evento recupera o status.
 
 ## Regra de ouro

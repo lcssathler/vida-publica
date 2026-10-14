@@ -8,7 +8,7 @@ import { apiFalsa, cofreEmMemoria } from '../../test/apiFalsa';
 import { esquecerAparelho, registrarAparelho } from '../aparelho';
 import { useAvisos } from '../avisos';
 import { categoriasDoLink, eventoDoLink, rotaDoAviso, rotaDoLink } from '../link';
-import { tokenDeEnvio } from '../token';
+import { ouvirTrocaDeToken, tokenDeEnvio } from '../token';
 
 jest.mock('expo-notifications', () => ({
   getPermissionsAsync: jest.fn(),
@@ -137,6 +137,30 @@ describe('useAvisos', () => {
     const api = await montar(true, { 'PUT /dispositivo': { status: 204 } });
     await waitFor(() => expect(api.pedidos).toHaveLength(1));
     expect(api.pedidos[0]).toMatchObject({ metodo: 'PUT', caminho: '/dispositivo' });
+  });
+
+  it('o evento de token que o próprio pedido dispara (Android) não vira laço; token novo registra de novo', async () => {
+    permissao(true);
+    let aoTrocar: (token: string) => void = () => {};
+    jest.mocked(ouvirTrocaDeToken).mockImplementation((f: (token: string) => void) => {
+      aoTrocar = f;
+      return () => {};
+    });
+    // Como no Android: pedir o token também avisa os ouvintes com o mesmo token.
+    jest.mocked(tokenDeEnvio).mockImplementation(async () => {
+      aoTrocar(TOKEN);
+      aoTrocar(TOKEN);
+      return TOKEN;
+    });
+    const api = await montar(true, { 'PUT /dispositivo': { status: 204 } });
+    await waitFor(() => expect(api.pedidos).toHaveLength(1));
+    aoTrocar(TOKEN);
+    await new Promise((r) => setTimeout(r, 50));
+    expect(api.pedidos).toHaveLength(1);
+    expect(tokenDeEnvio).toHaveBeenCalledTimes(1);
+    aoTrocar(`${TOKEN}-novo`);
+    await waitFor(() => expect(api.pedidos).toHaveLength(2));
+    expect(api.pedidos[1].corpo).toEqual({ token: `${TOKEN}-novo`, plataforma: 'ios' });
   });
 
   it('sem aceitar os avisos, não pede nem registra token', async () => {

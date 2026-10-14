@@ -11,6 +11,8 @@ Baixa os dados públicos oficiais, guarda cada arquivo bruto sem alteração, no
 | `raw.py` | Guarda cada conteúdo uma única vez por fonte, dataset e hash, em caminho imutável |
 | `snapshot.py` | Sincroniza arquivos que são fotografias completas: linhas novas entram, ausentes ganham `removido_em` |
 | `jobs.py` | Executa jobs registrando início, fim e erro |
+| `events/engine.py` | Motor de eventos: regras versionadas, deduplicação, carga inicial segurada, revisão de dinheiro |
+| `events/registro.py` | Geradores de eventos executados pelo comando `eventos` |
 | `cli.py` | Comando `vp-ingest` |
 
 As dependências são em Python puro sempre que possível (driver `pg8000`, `csv` da biblioteca padrão), para o worker rodar igual em qualquer máquina, sem binários nativos.
@@ -75,6 +77,23 @@ Cada comando roda como job registrado em `raw.job_run`. Pelo Docker: `docker com
 | 17 | `repasses` | Repasses partido → candidato (`canon.repasse`): uma linha por receita de partido, com diretório (esfera e UF), fonte (fundo especial, fundo partidário, outros) e prestação vigente; totais em `canon.repasse_total` nunca somam esferas nem fontes |
 
 Todos são idempotentes: rodar de novo só grava o que mudou.
+
+## Eventos do feed
+
+Depois da coleta, `eventos` transforma o esquema `canon` em eventos do feed (`feed.evento`). Cada tipo de evento tem uma regra versionada em `feed.regra`; cada gerador devolve todos os fatos do seu tipo e o motor grava só a diferença:
+
+| Comando | O que faz |
+| --- | --- |
+| `eventos` | Gera os eventos de todos os tipos (`--tipo` para um só). Na primeira execução de cada tipo (carga inicial, ou com `--carga-inicial`), os eventos ficam segurados sem publicar |
+| `eventos-liberar` | Publica os eventos segurados pela carga inicial (`--tipo`); os segurados por valor esperam a revisão do admin |
+| `eventos-resumo` | Eventos por tipo, versão, status e motivo |
+
+Regras do motor:
+
+- **Deduplicação:** `chave_dedup` = tipo, versão da regra e ids da fonte; rodar de novo não duplica nem altera nada.
+- **Regra versionada:** mudar a lógica ou um parâmetro de uma regra sem subir a versão é erro. A versão nova herda o status de cada fato já publicado e arquiva os eventos da versão anterior (`regra_substituida`).
+- **Revisão humana:** eventos de dinheiro acima de R$ 500 mil ficam `segurado` (`revisao_valor`) até o admin revisar; se o valor muda depois da revisão, voltam para a fila.
+- **Fonte removeu:** fato que some da fonte tem o evento arquivado (`fonte_removeu`); se voltar, o evento recupera o status.
 
 ## Regra de ouro
 

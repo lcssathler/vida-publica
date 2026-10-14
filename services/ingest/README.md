@@ -12,6 +12,8 @@ Baixa os dados públicos oficiais, guarda cada arquivo bruto sem alteração, no
 | `snapshot.py` | Sincroniza arquivos que são fotografias completas: linhas novas entram, ausentes ganham `removido_em` |
 | `jobs.py` | Executa jobs registrando início, fim e erro |
 | `events/engine.py` | Motor de eventos: regras versionadas, deduplicação, carga inicial segurada, revisão de dinheiro |
+| `events/comum.py` | Índices de pessoas, partidos, proposições e temas usados nos alvos; textos |
+| `events/votacoes.py` | `voto_nominal` e `voto_contra_orientacao` |
 | `events/registro.py` | Geradores de eventos executados pelo comando `eventos` |
 | `cli.py` | Comando `vp-ingest` |
 

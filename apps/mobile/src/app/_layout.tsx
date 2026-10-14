@@ -39,7 +39,8 @@ function Rotas() {
       }}
     >
       <Stack.Protected guard={local.onboardingConcluido}>
-        <Stack.Screen name="index" />
+        <Stack.Screen name="(abas)" />
+        <Stack.Screen name="evento/[id]" />
       </Stack.Protected>
       <Stack.Protected guard={!local.onboardingConcluido}>
         <Stack.Screen name="onboarding" />

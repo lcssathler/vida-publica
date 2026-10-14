@@ -1,14 +1,14 @@
 import { StyleSheet, Text, View } from 'react-native';
-import { useSeguindo } from '../api/consultas';
-import { mensagemDeErro } from '../api/erros';
-import type { AlvoTipo } from '../api/tipos';
-import { Botao } from '../components/Botao';
-import { Carregando, Falha, Vazio } from '../components/Estado';
-import { Tela } from '../components/Tela';
-import { NOME_ESTADO } from '../onboarding/estados';
-import { useSessao } from '../sessao/Sessao';
-import { rules, space, typography } from '../theme/tokens';
-import { useTheme } from '../theme/useTheme';
+import { useSeguindo } from '../../api/consultas';
+import { mensagemDeErro } from '../../api/erros';
+import type { AlvoTipo } from '../../api/tipos';
+import { Botao } from '../../components/Botao';
+import { Carregando, Falha, Vazio } from '../../components/Estado';
+import { Tela } from '../../components/Tela';
+import { NOME_ESTADO } from '../../onboarding/estados';
+import { useSessao } from '../../sessao/Sessao';
+import { rules, space, typography } from '../../theme/tokens';
+import { useTheme } from '../../theme/useTheme';
 
 const NOME_TIPO: Record<AlvoTipo, string> = {
   pessoa: 'Pessoa',
@@ -17,8 +17,8 @@ const NOME_TIPO: Record<AlvoTipo, string> = {
   assunto: 'Assunto',
 };
 
-/** Início depois do onboarding: o que a pessoa segue. O feed entra no lugar. */
-export default function Inicio() {
+/** O que a pessoa segue. */
+export default function Seguindo() {
   const theme = useTheme();
   const { local, atualizarLocal } = useSessao();
   const seguindo = useSeguindo();
@@ -31,7 +31,7 @@ export default function Inicio() {
   return (
     <Tela
       sobretitulo={local.uf ? NOME_ESTADO[local.uf] : undefined}
-      titulo="Você acompanha"
+      titulo="Seguindo"
       rodape={
         <Botao
           rotulo="Refazer escolhas"

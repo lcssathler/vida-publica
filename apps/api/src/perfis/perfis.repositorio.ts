@@ -115,6 +115,18 @@ export interface PartidoDados {
   }>;
 }
 
+/** Deputado ou senador em exercício, para escolher quem seguir por estado. */
+export interface Parlamentar {
+  id: string;
+  nome: string;
+  casa: 'camara' | 'senado';
+  cargo: string;
+  uf: string;
+  /** Sigla do partido segundo a Casa. */
+  partido: string | null;
+  foto: Foto | null;
+}
+
 /** Porta de leitura dos perfis no canon. Nunca lê o esquema ident. */
 export abstract class PerfisRepositorio {
   abstract pessoa(id: string): Promise<PessoaDados | null>;
@@ -130,4 +142,7 @@ export abstract class PerfisRepositorio {
   ): Promise<DoadoresCandidatura[]>;
 
   abstract partido(id: string): Promise<PartidoDados | null>;
+
+  /** Senadores e deputados federais em exercício pelo estado, senado primeiro. */
+  abstract parlamentares(uf: string): Promise<Parlamentar[]>;
 }

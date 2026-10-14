@@ -15,9 +15,11 @@ import { ZodPipe } from '../comum/zod.pipe';
 import { CursorInvalido } from '../feed/cursor';
 import type { RespostaFeed } from '../feed/feed.service';
 import type { Alvo } from '../seguir/alvo';
+import { UFS } from '../conta/conta.repositorio';
 import { NOMES_CATEGORIAS } from './categorias';
 import {
   type DoadoresPessoa,
+  type ParlamentarDoEstado,
   type PerfilPartido,
   type PerfilPessoa,
   PerfisService,
@@ -34,6 +36,8 @@ const doadoresSchema = z.object({
   ano: z.coerce.number().int().min(1990).max(2100).optional(),
 });
 
+const parlamentaresSchema = z.object({ uf: z.enum(UFS) });
+
 const idPessoa = new ZodPipe(z.uuid());
 const idPartido = new ZodPipe(z.string().regex(/^[1-9][0-9]{0,8}$/));
 
@@ -42,6 +46,21 @@ const idPartido = new ZodPipe(z.string().regex(/^[1-9][0-9]{0,8}$/));
 @Controller()
 export class PerfisController {
   constructor(@Inject(PerfisService) private readonly perfis: PerfisService) {}
+
+  @Get('parlamentares')
+  @ApiOperation({
+    summary:
+      'Senadores e deputados federais em exercício pelo estado, para escolher quem seguir',
+  })
+  async parlamentares(
+    @UsuarioAtual() usuario: Identificacao,
+    @Query(new ZodPipe(parlamentaresSchema))
+    consulta: z.infer<typeof parlamentaresSchema>,
+  ): Promise<{ itens: ParlamentarDoEstado[] }> {
+    return {
+      itens: await this.perfis.parlamentares(consulta.uf, usuario.usuarioId),
+    };
+  }
 
   @Get('pessoas/:id')
   @ApiOperation({

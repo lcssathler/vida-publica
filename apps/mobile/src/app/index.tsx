@@ -1,58 +1,70 @@
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Registro } from '../components/Registro';
+import { StyleSheet, Text, View } from 'react-native';
+import { useSeguindo } from '../api/consultas';
+import { mensagemDeErro } from '../api/erros';
+import type { AlvoTipo } from '../api/tipos';
+import { Botao } from '../components/Botao';
+import { Carregando, Falha, Vazio } from '../components/Estado';
+import { Tela } from '../components/Tela';
+import { NOME_ESTADO } from '../onboarding/estados';
+import { useSessao } from '../sessao/Sessao';
 import { rules, space, typography } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
 
-/**
- * Tela inicial provisória: mostra a linguagem visual do feed com registros de
- * exemplo. Pessoas e números abaixo são fictícios; o feed real entra na Fase 6.
- */
-export default function Feed() {
+const NOME_TIPO: Record<AlvoTipo, string> = {
+  pessoa: 'Pessoa',
+  partido: 'Partido',
+  proposicao: 'Proposta',
+  assunto: 'Assunto',
+};
+
+/** Início depois do onboarding: o que a pessoa segue. O feed entra no lugar. */
+export default function Inicio() {
   const theme = useTheme();
+  const { local, atualizarLocal } = useSessao();
+  const seguindo = useSeguindo();
+
+  if (seguindo.isPending) return <Carregando />;
+  if (seguindo.isError) {
+    return <Falha mensagem={mensagemDeErro(seguindo.error)} aoTentar={() => void seguindo.refetch()} />;
+  }
 
   return (
-    <SafeAreaView style={[styles.tela, { backgroundColor: theme.paper }]}>
-      <ScrollView contentContainerStyle={styles.conteudo}>
-        <Text style={[typography.headline, { color: theme.ink }]}>Vida Pública</Text>
-        <View style={[styles.folio, { borderColor: theme.ink }]}>
-          <Text style={[typography.dataSmall, { color: theme.ink }]}>REGISTROS DE EXEMPLO</Text>
-          <Text style={[typography.caption, { color: theme.ink2 }]}>
-            Pessoas e números fictícios
-          </Text>
+    <Tela
+      sobretitulo={local.uf ? NOME_ESTADO[local.uf] : undefined}
+      titulo="Você acompanha"
+      rodape={
+        <Botao
+          rotulo="Refazer escolhas"
+          variante="secundario"
+          aoTocar={() => void atualizarLocal({ onboardingConcluido: false })}
+        />
+      }
+    >
+      {seguindo.data.length === 0 ? (
+        <Vazio mensagem="Você ainda não segue ninguém." />
+      ) : (
+        <View>
+          {seguindo.data.map((s) => (
+            <View
+              key={`${s.tipo}:${s.id}`}
+              accessible
+              style={[styles.item, { borderBottomColor: theme.rule }]}
+            >
+              <Text style={[typography.overline, { color: theme.ink2 }]}>{NOME_TIPO[s.tipo]}</Text>
+              <Text style={[typography.bodyStrong, { color: theme.ink }]}>{s.nome}</Text>
+              {s.detalhe ? (
+                <Text style={[typography.caption, { color: theme.ink2 }]} numberOfLines={2}>
+                  {s.detalhe}
+                </Text>
+              ) : null}
+            </View>
+          ))}
         </View>
-
-        <Registro
-          novo
-          tipo="Votação nominal · Trabalho e Emprego"
-          hora="14:32"
-          manchete="Maria Exemplo votou Não na PEC 0/2026"
-          contexto="Contra a orientação do [XYZ], que orientou Sim."
-          fonte={{ sigla: 'Câmara', nome: 'Câmara dos Deputados', data: '2026-10-08' }}
-          protocolo="2026·1008·0001"
-          coletadoEm="2026-10-13"
-        />
-        <Registro
-          tipo="Pauta do Plenário"
-          hora="09:10"
-          manchete="PL 0000/2026 entra na pauta de quarta, 14h"
-          fonte={{ sigla: 'Câmara', nome: 'Câmara dos Deputados', data: '2026-10-13' }}
-          protocolo="2026·1013·0002"
-          coletadoEm="2026-10-13"
-        />
-      </ScrollView>
-    </SafeAreaView>
+      )}
+    </Tela>
   );
 }
 
 const styles = StyleSheet.create({
-  tela: { flex: 1 },
-  conteudo: { paddingHorizontal: space.xl, paddingVertical: space.lg },
-  folio: {
-    marginTop: space.md,
-    paddingVertical: space.sm,
-    borderTopWidth: rules.double.top,
-    borderBottomWidth: rules.double.top,
-    gap: space.xxs,
-  },
+  item: { paddingVertical: space.md, gap: space.xxs, borderBottomWidth: rules.hairline },
 });

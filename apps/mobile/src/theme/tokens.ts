@@ -109,5 +109,8 @@ export const space = {
 /** Papel cortado: raio pequeno; avatar 3×4 nunca é círculo. */
 export const radius = { paper: 2, sheet: 14 } as const;
 
+/** Alvo de toque mínimo (48 dp do Material; acima dos 44 pt da Apple). */
+export const toque = { minimo: 48 } as const;
+
 /** Fio fino entre itens e fio duplo entre seções, como no Diário Oficial. */
 export const rules = { hairline: 0.5, double: { top: 1, gap: 2, bottom: 0.5 } } as const;

@@ -31,7 +31,7 @@ export function CarimboFonte({ sigla, nome, data }: CarimboFonteProps) {
   return (
     <View
       accessible
-      accessibilityLabel={`Fonte: ${nome}, dado de ${dia} de ${MESES_EXTENSO[mes]} de ${ano}`}
+      aria-label={`Fonte: ${nome}, dado de ${dia} de ${MESES_EXTENSO[mes]} de ${ano}`}
       style={[styles.carimbo, { borderColor: theme.stamp }]}
     >
       <Text style={[typography.dataSmall, styles.texto, { color: theme.stamp }]}>{rotulo}</Text>

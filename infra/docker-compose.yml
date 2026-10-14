@@ -57,6 +57,7 @@ services:
       JWT_SECRET: ${VP_API_JWT_SECRET:?rode node infra/scripts/init-env.mjs}
       APPLE_CLIENT_IDS: ${VP_APPLE_CLIENT_IDS:-}
       GOOGLE_CLIENT_IDS: ${VP_GOOGLE_CLIENT_IDS:-}
+      CORS_ORIGENS: ${VP_API_CORS_ORIGENS:-}
     ports:
       - "${API_PORT:-3000}:3000"
     depends_on:

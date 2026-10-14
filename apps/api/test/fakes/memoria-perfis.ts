@@ -1,6 +1,7 @@
 import {
   DoadoresCandidatura,
   GastoAnual,
+  Parlamentar,
   PartidoDados,
   PerfisRepositorio,
   PessoaDados,
@@ -10,6 +11,7 @@ import {
 export class MemoriaPerfis extends PerfisRepositorio {
   readonly pessoas = new Map<string, PessoaDados>();
   readonly partidos = new Map<string, PartidoDados>();
+  readonly emExercicio: Parlamentar[] = [];
   readonly gastosPorPessoa = new Map<string, GastoAnual[]>();
   readonly doadoresPorPessoa = new Map<
     string,
@@ -39,5 +41,9 @@ export class MemoriaPerfis extends PerfisRepositorio {
 
   partido(id: string): Promise<PartidoDados | null> {
     return Promise.resolve(this.partidos.get(id) ?? null);
+  }
+
+  parlamentares(uf: string): Promise<Parlamentar[]> {
+    return Promise.resolve(this.emExercicio.filter((p) => p.uf === uf));
   }
 }

@@ -5,6 +5,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
+import { opcoesCors } from './comum/cors';
 import { Env } from './config/env';
 
 async function bootstrap(): Promise<void> {
@@ -17,6 +18,8 @@ async function bootstrap(): Promise<void> {
 
   const config = app.get<ConfigService<Env, true>>(ConfigService);
   app.set('trust proxy', config.get('TRUST_PROXY', { infer: true }));
+  const cors = opcoesCors(config.get('CORS_ORIGENS', { infer: true }));
+  if (cors) app.enableCors(cors);
 
   if (config.get('NODE_ENV', { infer: true }) !== 'production') {
     const openApi = new DocumentBuilder()

@@ -106,7 +106,7 @@ Objetivo: saber quem é quem, em todas as fontes, sem casar pessoas só pelo nom
 
 | | Branch | Entrega |
 | --- | --- | --- |
-| [ ] | `mobile/onboarding` | Estado ou CEP (convertido no aparelho), quem seguir, assuntos, pré-pergunta de notificação |
+| [x] | `mobile/onboarding` | Estado ou CEP (convertido no aparelho), quem seguir, assuntos, pré-pergunta de notificação |
 | [ ] | `mobile/feed` | Feed, filtros, "Você parou aqui", detalhe do evento com fonte |
 | [ ] | `mobile/perfis` | Perfis de pessoa e partido por categoria |
 | [ ] | `mobile/propostas` | Proposta com linha do tempo |

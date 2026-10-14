@@ -25,7 +25,9 @@ export default function Abas() {
       }}
     >
       <Tabs.Screen name="index" options={{ title: 'Feed' }} />
+      <Tabs.Screen name="busca" options={{ title: 'Busca' }} />
       <Tabs.Screen name="seguindo" options={{ title: 'Seguindo' }} />
+      <Tabs.Screen name="conta" options={{ title: 'Conta' }} />
     </Tabs>
   );
 }

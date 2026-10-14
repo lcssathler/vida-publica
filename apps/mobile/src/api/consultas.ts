@@ -7,6 +7,7 @@ import type {
   AlvoSeguido,
   Assunto,
   CategoriaPerfil,
+  Conta,
   DoadoresPessoa,
   EventoFeed,
   Parlamentar,
@@ -14,7 +15,9 @@ import type {
   PerfilPessoa,
   Preferencias,
   Proposta,
+  GrupoBusca,
   RespostaFeed,
+  ResultadoBusca,
   Uf,
 } from './tipos';
 
@@ -28,6 +31,8 @@ export const chaves = {
   pessoa: (id: string) => ['pessoa', id] as const,
   partido: (id: string) => ['partido', id] as const,
   proposta: (id: string) => ['proposta', id] as const,
+  conta: ['conta'] as const,
+  busca: ['busca'] as const,
 };
 
 const chaveAlvo = (alvo: Alvo) => `${alvo.tipo}:${alvo.id}`;
@@ -91,6 +96,7 @@ export function useSeguir() {
       await consultas.invalidateQueries({ queryKey: ['pessoa'] });
       await consultas.invalidateQueries({ queryKey: ['partido'] });
       await consultas.invalidateQueries({ queryKey: ['proposta'] });
+      await consultas.invalidateQueries({ queryKey: chaves.busca });
     },
   });
 }
@@ -122,7 +128,10 @@ export function useSalvarPreferencias() {
   return useMutation({
     mutationFn: (mudancas: Partial<Preferencias>) =>
       cliente.patch<Preferencias>('/conta/preferencias', mudancas),
-    onSuccess: (preferencias) => consultas.setQueryData(chaves.preferencias, preferencias),
+    onSuccess: (preferencias) => {
+      consultas.setQueryData(chaves.preferencias, preferencias);
+      consultas.setQueryData<Conta>(chaves.conta, (conta) => (conta ? { ...conta, preferencias } : conta));
+    },
   });
 }
 
@@ -218,5 +227,26 @@ export function useProposta(id: string) {
   return useQuery({
     queryKey: chaves.proposta(id),
     queryFn: () => cliente.get<Proposta>(`/propostas/${encodeURIComponent(id)}`),
+  });
+}
+
+export function useConta() {
+  const { cliente } = useSessao();
+  return useQuery({ queryKey: chaves.conta, queryFn: () => cliente.get<Conta>('/conta') });
+}
+
+/** Busca com no mínimo 2 letras; com grupo, até 50 itens dele. */
+export function useBusca(texto: string, grupo: GrupoBusca | null) {
+  const { cliente } = useSessao();
+  const q = texto.trim();
+  return useQuery({
+    queryKey: [...chaves.busca, q, grupo],
+    queryFn: () =>
+      cliente.get<ResultadoBusca>(
+        `/busca?q=${encodeURIComponent(q)}${grupo ? `&tipo=${grupo}&limite=50` : ''}`,
+      ),
+    enabled: q.length >= 2,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (anterior) => anterior,
   });
 }

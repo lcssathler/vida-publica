@@ -12,8 +12,8 @@ export interface AlternarProps {
   marcado: boolean;
   aoAlternar: () => void;
   desabilitado?: boolean;
-  /** radio quando só um do grupo pode ser escolhido (estado). */
-  papel?: 'checkbox' | 'radio';
+  /** radio quando só um do grupo pode ser escolhido (estado); switch para ligar e desligar. */
+  papel?: 'checkbox' | 'radio' | 'switch';
 }
 
 /**

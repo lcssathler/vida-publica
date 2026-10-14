@@ -39,7 +39,7 @@ Até concluir, só as telas do onboarding ficam acessíveis (`Stack.Protected` e
 
 ## Feed
 
-- Abas (`src/app/(abas)`): Feed e Seguindo, só com rótulo de texto.
+- Abas (`src/app/(abas)`): Feed, Busca, Seguindo e Conta, só com rótulo de texto.
 - `GET /feed` por cursor (`useInfiniteQuery`), de 20 em 20, com "Quem eu sigo" ou "Tudo" e filtros por tipo (as mesmas categorias dos perfis: votos, presença, gastos, propostas, campanha, eleições) e por assunto (os seguidos e os de mais propostas).
 - Registros agrupados por dia de Brasília. Fato só com data (meia-noite em Brasília) não mostra hora. Datas e valores formatados sem depender do `Intl` (`src/comum/formato.ts`).
 - "Você parou aqui": o registro do topo da última visita fica guardado no aparelho por escopo. Na volta, o que vem antes dele é grifado como novo e um divisor marca onde a pessoa parou (`src/feed/linhas.ts`).
@@ -58,7 +58,16 @@ Até concluir, só as telas do onboarding ficam acessíveis (`Stack.Protected` e
 - Linha do tempo da mais recente à mais antiga, num trilho: tramitações (despacho, documento, "Ver registro" quando a etapa virou evento do feed, e a situação só onde ela mudou), votações (aprovada, rejeitada ou sem resultado, nominal ou simbólica, placar escrito e uma barra só em tons de tinta, fonte) e os registros de pauta e de proposta parada.
 - Propostas aparecem como links nos envolvidos do registro e na aba Seguindo.
 
+## Busca, Seguindo e Conta
+
+- Busca (`GET /busca`): resultados enquanto se digita (a partir de 2 letras, com espera de 350 ms para não gastar o limite de 30 buscas por minuto), agrupados em pessoas, partidos, propostas e assuntos, com seguir em cada linha e "Ver mais" por grupo (`tipo=` e até 50). Com o campo vazio, "Explorar": quem representa o estado escolhido e os assuntos com mais propostas.
+- Seguindo: o que a pessoa segue agrupado por tipo, com o total diante do limite de 500, e "Desfazer" depois de deixar de seguir.
+- Conta (`GET /conta`, `PATCH /conta/preferencias`): estado, avisos (ligar pede a permissão do sistema; negada, a preferência fica desligada e o app oferece abrir os ajustes), resumo semanal, máximo por dia, horário de silêncio, fuso; "Refazer o início"; sair do aparelho (contas com login); excluir a conta com confirmação (`DELETE /conta`), que apaga o refresh do cofre, limpa o estado local e volta ao onboarding com uma conta anônima nova.
+- Login opcional com Apple (iOS, quando o aparelho oferece) e Google (só quando configurado), em `src/conta/login.ts`: o app pega o token de identidade do provedor sem pedir nome nem e-mail e troca em `POST /auth/entrar/{provedor}`. Se a identidade já tinha conta, o que o aparelho seguia é juntado a ela.
+
 ## Configuração
+
+Logins opcionais (identificadores públicos, não segredos), lidos por `app.config.ts`: `VP_LOGIN_APPLE=1` liga "Sign in with Apple" no build iOS; `VP_GOOGLE_IOS_URL_SCHEME`, `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` e `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` ligam o Google (biblioteca nativa: precisa de build de desenvolvimento, não roda no Expo Go). Sem elas, os botões não aparecem. A API precisa dos mesmos ids em `APPLE_CLIENT_IDS` e `GOOGLE_CLIENT_IDS`.
 
 O endereço da API vem de `EXPO_PUBLIC_API_URL`, definido na hora do empacotamento (copie `.env.example` para `.env.local`). Não é segredo e o app não guarda nenhuma chave. Sem a variável, usa `http://localhost:3000` (a API do compose). No emulador Android, use `http://10.0.2.2:3000`.
 

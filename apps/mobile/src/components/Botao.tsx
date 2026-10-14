@@ -9,6 +9,8 @@ export interface BotaoProps {
   variante?: 'primario' | 'secundario' | 'texto';
   desabilitado?: boolean;
   ocupado?: boolean;
+  /** Nome lido pelo leitor de tela quando o rótulo visível não basta (ex.: "−"). */
+  descricao?: string;
   /** Descrição extra lida pelo leitor de tela (o que acontece ao tocar). */
   dica?: string;
   estilo?: StyleProp<ViewStyle>;
@@ -20,6 +22,7 @@ export function Botao({
   variante = 'primario',
   desabilitado,
   ocupado,
+  descricao,
   dica,
   estilo,
 }: BotaoProps) {
@@ -34,7 +37,7 @@ export function Botao({
   return (
     <Pressable
       role="button"
-      aria-label={rotulo}
+      aria-label={descricao ?? rotulo}
       accessibilityHint={dica}
       aria-disabled={!!inativo}
       aria-busy={!!ocupado}

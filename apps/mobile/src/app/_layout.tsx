@@ -43,6 +43,7 @@ function Rotas() {
         <Stack.Screen name="evento/[id]" />
         <Stack.Screen name="pessoa/[id]" />
         <Stack.Screen name="partido/[id]" />
+        <Stack.Screen name="proposta/[id]" />
       </Stack.Protected>
       <Stack.Protected guard={!local.onboardingConcluido}>
         <Stack.Screen name="onboarding" />

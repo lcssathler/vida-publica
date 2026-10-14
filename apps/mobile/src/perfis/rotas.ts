@@ -4,5 +4,6 @@ import type { Alvo } from '../api/tipos';
 export function rotaDoAlvo(alvo: Alvo) {
   if (alvo.tipo === 'pessoa') return { pathname: '/pessoa/[id]' as const, params: { id: alvo.id } };
   if (alvo.tipo === 'partido') return { pathname: '/partido/[id]' as const, params: { id: alvo.id } };
+  if (alvo.tipo === 'proposicao') return { pathname: '/proposta/[id]' as const, params: { id: alvo.id } };
   return null;
 }

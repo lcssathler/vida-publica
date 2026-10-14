@@ -52,6 +52,12 @@ Até concluir, só as telas do onboarding ficam acessíveis (`Stack.Protected` e
 - Os dois terminam na linha do tempo por categoria (`src/perfis/LinhaDoTempo.tsx`), com as contagens da API e cursor; só aparecem as categorias com registros.
 - Os envolvidos no detalhe do registro e os itens da aba Seguindo levam aos perfis.
 
+## Propostas
+
+- `/proposta/[id]` (`GET /propostas/{id}`): Casa e tipo, identificação, apelido, ementa, situação (desde quando, órgão, regime, data de apresentação), proposta principal quando tramita apensada, autores (parlamentar leva ao perfil), temas, inteiro teor e fonte oficial.
+- Linha do tempo da mais recente à mais antiga, num trilho: tramitações (despacho, documento, "Ver registro" quando a etapa virou evento do feed, e a situação só onde ela mudou), votações (aprovada, rejeitada ou sem resultado, nominal ou simbólica, placar escrito e uma barra só em tons de tinta, fonte) e os registros de pauta e de proposta parada.
+- Propostas aparecem como links nos envolvidos do registro e na aba Seguindo.
+
 ## Configuração
 
 O endereço da API vem de `EXPO_PUBLIC_API_URL`, definido na hora do empacotamento (copie `.env.example` para `.env.local`). Não é segredo e o app não guarda nenhuma chave. Sem a variável, usa `http://localhost:3000` (a API do compose). No emulador Android, use `http://10.0.2.2:3000`.

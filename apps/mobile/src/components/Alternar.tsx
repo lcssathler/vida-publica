@@ -56,6 +56,7 @@ export function Alternar({
 
 const styles = StyleSheet.create({
   alternar: {
+    alignSelf: 'flex-start',
     minHeight: toque.minimo,
     paddingHorizontal: space.md,
     borderWidth: 1,

@@ -225,3 +225,68 @@ export interface PerfilPartido {
   seguindo: boolean;
   categorias: ContagemCategoria[];
 }
+
+export interface AutorProposta {
+  nome: string;
+  tipo: string | null;
+  proponente: boolean | null;
+  pessoa: { id: string; nome: string } | null;
+}
+
+export interface ItemTramitacao {
+  tipo: 'tramitacao';
+  data: string;
+  orgao: string | null;
+  descricao: string;
+  situacao: string | null;
+  despacho: string | null;
+  url: string | null;
+  /** Evento publicado que destaca esta etapa (relator, parecer...). */
+  eventoId: string | null;
+}
+
+export interface ItemVotacao {
+  tipo: 'votacao';
+  data: string;
+  orgao: string | null;
+  descricao: string | null;
+  aprovada: boolean | null;
+  nominal: boolean;
+  placar: { sim: number; nao: number; abstencao: number; outros: number } | null;
+  fonte: { url: string };
+}
+
+export interface ItemEvento {
+  tipo: 'evento';
+  data: string;
+  evento: EventoFeed;
+}
+
+export type ItemLinhaDoTempo = ItemTramitacao | ItemVotacao | ItemEvento;
+
+export interface Proposta {
+  id: string;
+  casa: 'camara' | 'senado';
+  identificacao: string;
+  siglaTipo: string;
+  numero: number | null;
+  ano: number | null;
+  descricaoTipo: string | null;
+  ementa: string | null;
+  ementaDetalhada: string | null;
+  apelido: string | null;
+  apresentadaEm: string | null;
+  situacao: string | null;
+  situacaoEm: string | null;
+  orgao: string | null;
+  regime: string | null;
+  tramitando: boolean | null;
+  urlInteiroTeor: string | null;
+  autores: AutorProposta[];
+  temas: string[];
+  principal: { id: string; identificacao: string } | null;
+  fonte: { url: string };
+  seguindo: boolean;
+  /** Do mais recente ao mais antigo. */
+  linhaDoTempo: ItemLinhaDoTempo[];
+}

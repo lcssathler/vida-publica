@@ -13,6 +13,7 @@ import type {
   PerfilPartido,
   PerfilPessoa,
   Preferencias,
+  Proposta,
   RespostaFeed,
   Uf,
 } from './tipos';
@@ -26,6 +27,7 @@ export const chaves = {
   evento: (id: string) => ['evento', id] as const,
   pessoa: (id: string) => ['pessoa', id] as const,
   partido: (id: string) => ['partido', id] as const,
+  proposta: (id: string) => ['proposta', id] as const,
 };
 
 const chaveAlvo = (alvo: Alvo) => `${alvo.tipo}:${alvo.id}`;
@@ -88,6 +90,7 @@ export function useSeguir() {
       // Perfis trazem "seguindo" e contagens que dependem de quem se segue.
       await consultas.invalidateQueries({ queryKey: ['pessoa'] });
       await consultas.invalidateQueries({ queryKey: ['partido'] });
+      await consultas.invalidateQueries({ queryKey: ['proposta'] });
     },
   });
 }
@@ -207,5 +210,13 @@ export function useEventosDoPerfil(
     },
     initialPageParam: null as string | null,
     getNextPageParam: (ultima) => ultima.proximoCursor,
+  });
+}
+
+export function useProposta(id: string) {
+  const { cliente } = useSessao();
+  return useQuery({
+    queryKey: chaves.proposta(id),
+    queryFn: () => cliente.get<Proposta>(`/propostas/${encodeURIComponent(id)}`),
   });
 }

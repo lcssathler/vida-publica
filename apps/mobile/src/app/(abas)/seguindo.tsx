@@ -1,82 +1,108 @@
 import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { useSeguindo } from '../../api/consultas';
+import { useSeguindo, useSeguir, type PedidoSeguir } from '../../api/consultas';
 import { mensagemDeErro } from '../../api/erros';
-import type { AlvoTipo } from '../../api/tipos';
+import type { AlvoSeguido, AlvoTipo } from '../../api/tipos';
+import { inteiro } from '../../comum/formato';
 import { Botao } from '../../components/Botao';
 import { Carregando, Falha, Vazio } from '../../components/Estado';
-import { LinkTexto } from '../../components/Secao';
+import { LinhaDeAlvo } from '../../components/LinhaDeAlvo';
+import { Secao } from '../../components/Secao';
 import { Tela } from '../../components/Tela';
-import { rotaDoAlvo } from '../../perfis/rotas';
-import { NOME_ESTADO } from '../../onboarding/estados';
-import { useSessao } from '../../sessao/Sessao';
-import { rules, space, typography } from '../../theme/tokens';
+import { radius, space, typography } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
 
-const NOME_TIPO: Record<AlvoTipo, string> = {
-  pessoa: 'Pessoa',
-  partido: 'Partido',
-  proposicao: 'Proposta',
-  assunto: 'Assunto',
-};
+/** Limite da API (app.seguindo). */
+const LIMITE = 500;
 
-/** O que a pessoa segue. */
+const GRUPOS: { tipo: AlvoTipo; nome: string }[] = [
+  { tipo: 'pessoa', nome: 'Pessoas' },
+  { tipo: 'partido', nome: 'Partidos' },
+  { tipo: 'proposicao', nome: 'Propostas' },
+  { tipo: 'assunto', nome: 'Assuntos' },
+];
+
+/** Gerenciar o que se segue: agrupado por tipo, deixar de seguir com "Desfazer". */
 export default function Seguindo() {
   const theme = useTheme();
-  const { local, atualizarLocal } = useSessao();
-  const seguindo = useSeguindo();
   const router = useRouter();
+  const seguindo = useSeguindo();
+  const seguir = useSeguir();
+  const [desfeito, setDesfeito] = useState<PedidoSeguir | null>(null);
 
-  if (seguindo.isPending) return <Carregando />;
+  if (seguindo.isPending) return <Carregando rotulo="Carregando o que você segue" />;
   if (seguindo.isError) {
     return <Falha mensagem={mensagemDeErro(seguindo.error)} aoTentar={() => void seguindo.refetch()} />;
   }
 
+  const itens = seguindo.data;
+  const deixar = (s: AlvoSeguido) =>
+    setDesfeito({ alvo: { tipo: s.tipo, id: s.id }, seguir: true, nome: s.nome, detalhe: s.detalhe });
+
   return (
     <Tela
-      sobretitulo={local.uf ? NOME_ESTADO[local.uf] : undefined}
       titulo="Seguindo"
-      rodape={
-        <Botao
-          rotulo="Refazer escolhas"
-          variante="secundario"
-          aoTocar={() => void atualizarLocal({ onboardingConcluido: false })}
-        />
-      }
+      descricao={`${inteiro(itens.length)} de ${inteiro(LIMITE)} itens. O feed "Quem eu sigo" mostra o que acontece com eles.`}
     >
-      {seguindo.data.length === 0 ? (
-        <Vazio mensagem="Você ainda não segue ninguém." />
-      ) : (
-        <View>
-          {seguindo.data.map((s) => (
-            <View
-              key={`${s.tipo}:${s.id}`}
-              style={[styles.item, { borderBottomColor: theme.rule }]}
-            >
-              <Text style={[typography.overline, { color: theme.ink2 }]}>{NOME_TIPO[s.tipo]}</Text>
-              {rotaDoAlvo(s) ? (
-                <LinkTexto
-                  rotulo={s.nome}
-                  estilo="bodyStrong"
-                  descricao={`${NOME_TIPO[s.tipo]}: ${s.nome}`}
-                  aoTocar={() => router.push(rotaDoAlvo(s)!)}
-                />
-              ) : (
-                <Text style={[typography.bodyStrong, { color: theme.ink }]}>{s.nome}</Text>
-              )}
-              {s.detalhe ? (
-                <Text style={[typography.caption, { color: theme.ink2 }]} numberOfLines={2}>
-                  {s.detalhe}
-                </Text>
-              ) : null}
-            </View>
-          ))}
+      {desfeito ? (
+        <View style={[styles.aviso, { borderColor: theme.ink, backgroundColor: theme.paperRaised }]} aria-live="polite">
+          <Text style={[typography.body, styles.avisoTexto, { color: theme.ink }]}>
+            Você deixou de seguir {desfeito.nome}.
+          </Text>
+          <Botao
+            variante="texto"
+            rotulo="Desfazer"
+            aoTocar={() => {
+              seguir.mutate(desfeito);
+              setDesfeito(null);
+            }}
+          />
         </View>
+      ) : null}
+      {seguir.isError ? (
+        <Text style={[typography.body, { color: theme.error }]} aria-live="assertive">
+          {mensagemDeErro(seguir.error)}
+        </Text>
+      ) : null}
+
+      {itens.length === 0 ? (
+        <View style={styles.vazio}>
+          <Vazio mensagem="Você ainda não segue ninguém. Procure pessoas, partidos, propostas e assuntos na Busca." />
+          <Botao rotulo="Ir para a Busca" aoTocar={() => router.navigate('/busca')} />
+        </View>
+      ) : (
+        GRUPOS.map(({ tipo, nome }) => {
+          const doGrupo = itens.filter((s) => s.tipo === tipo);
+          if (doGrupo.length === 0) return null;
+          return (
+            <Secao key={tipo} titulo={`${nome} · ${doGrupo.length}`}>
+              {doGrupo.map((s) => (
+                <LinhaDeAlvo
+                  key={`${s.tipo}:${s.id}`}
+                  alvo={{ tipo: s.tipo, id: s.id }}
+                  nome={s.nome}
+                  detalhe={s.detalhe}
+                  aoDeixar={() => deixar(s)}
+                />
+              ))}
+            </Secao>
+          );
+        })
       )}
     </Tela>
   );
 }
 
 const styles = StyleSheet.create({
-  item: { paddingVertical: space.md, gap: space.xxs, borderBottomWidth: rules.hairline },
+  aviso: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.sm,
+    paddingLeft: space.md,
+    borderWidth: 1,
+    borderRadius: radius.paper,
+  },
+  avisoTexto: { flex: 1 },
+  vazio: { alignItems: 'center', gap: space.md },
 });

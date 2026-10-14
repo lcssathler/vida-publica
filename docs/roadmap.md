@@ -110,7 +110,7 @@ Objetivo: saber quem é quem, em todas as fontes, sem casar pessoas só pelo nom
 | [x] | `mobile/feed` | Feed, filtros, "Você parou aqui", detalhe do evento com fonte |
 | [x] | `mobile/perfis` | Perfis de pessoa e partido por categoria |
 | [x] | `mobile/propostas` | Proposta com linha do tempo |
-| [ ] | `mobile/busca-seguindo` | Busca, explorar e gerenciar quem segue |
+| [x] | `mobile/busca-seguindo` | Busca, explorar e gerenciar quem segue |
 | [ ] | `mobile/offline-a11y` | Cache offline básico e revisão de acessibilidade |
 
 ## Fase 7 — Notificações

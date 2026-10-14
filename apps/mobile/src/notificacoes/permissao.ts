@@ -4,10 +4,9 @@ import { Platform } from 'react-native';
 /**
  * Pede a permissão do sistema, só depois que a pessoa aceitou a pré-pergunta
  * do app. Não registra token de envio: isso é da Fase 7 (FCM).
- * Na web não há pedido: devolve false.
+ * Na web, ver permissao.web.ts.
  */
 export async function pedirPermissaoDoSistema(): Promise<boolean> {
-  if (Platform.OS === 'web') return false;
   const atual = await Notifications.getPermissionsAsync();
   if (atual.granted) return true;
   if (!atual.canAskAgain) return false;

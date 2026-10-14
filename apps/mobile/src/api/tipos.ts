@@ -290,3 +290,49 @@ export interface Proposta {
   /** Do mais recente ao mais antigo. */
   linhaDoTempo: ItemLinhaDoTempo[];
 }
+
+export const FUSOS = [
+  'America/Noronha',
+  'America/Sao_Paulo',
+  'America/Bahia',
+  'America/Fortaleza',
+  'America/Recife',
+  'America/Maceio',
+  'America/Belem',
+  'America/Araguaina',
+  'America/Manaus',
+  'America/Cuiaba',
+  'America/Campo_Grande',
+  'America/Porto_Velho',
+  'America/Boa_Vista',
+  'America/Rio_Branco',
+  'America/Eirunepe',
+  'America/Santarem',
+] as const;
+
+export interface Conta {
+  usuarioId: string;
+  criadaEm: string;
+  /** Logins vinculados; vazio = conta anônima do aparelho. */
+  identidades: ('apple' | 'google')[];
+  seguindo: number;
+  sessoesAtivas: number;
+  anonima: boolean;
+  preferencias: Preferencias;
+}
+
+export interface ResultadoBusca {
+  q: string;
+  pessoas: { id: string; nome: string; detalhe: string | null; seguindo: boolean }[];
+  partidos: {
+    id: string;
+    sigla: string;
+    nome: string | null;
+    sucessor: { id: string; sigla: string } | null;
+    seguindo: boolean;
+  }[];
+  propostas: { id: string; identificacao: string; ementa: string | null; situacao: string | null; seguindo: boolean }[];
+  assuntos: { nome: string; proposicoes: number; seguindo: boolean }[];
+}
+
+export type GrupoBusca = 'pessoa' | 'partido' | 'proposicao' | 'assunto';

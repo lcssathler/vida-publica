@@ -123,7 +123,7 @@ Objetivo: saber quem é quem, em todas as fontes, sem casar pessoas só pelo nom
 | --- | --- | --- |
 | [x] | `notify/fila-envio` | Fila de envio com teto diário e horário de silêncio |
 | [x] | `notify/fcm` | Adaptador FCM para Android e iOS |
-| [ ] | `notify/resumo-semanal` | Resumo semanal de dinheiro e despesas |
+| [x] | `notify/resumo-semanal` | Resumo semanal de dinheiro e despesas |
 
 ## Fase 8 — Operação
 

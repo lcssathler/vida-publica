@@ -2,6 +2,7 @@ import { Dispositivo } from './enviador';
 
 export interface PreferenciasAviso {
   notificacoes: boolean;
+  resumoSemanal: boolean;
   maxPorDia: number;
   silencioInicio: string;
   silencioFim: string;

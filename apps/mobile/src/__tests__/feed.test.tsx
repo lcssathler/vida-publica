@@ -67,6 +67,25 @@ describe('Feed', () => {
     expect(screen.getByRole('button', { name: 'Filtros (2)' })).toBeOnTheScreen();
   });
 
+  it('o resumo semanal abre o feed de quem segue filtrado por gastos e campanha', async () => {
+    const parametros = mockParametros as Record<string, string>;
+    parametros.categorias = 'gastos,campanha';
+    try {
+      const { api } = await renderizar(<Feed />, {
+        local: { onboardingConcluido: true },
+        rotas: { ...seguindoUm, ...assuntos, 'GET /feed': { corpo: { itens: [visto], proximoCursor: null } } },
+      });
+      await screen.findByText('Registro visto');
+      expect(api.pedidos.filter((p) => p.caminho.startsWith('/feed')).map((p) => p.caminho)).toEqual([
+        '/feed?escopo=seguindo&limite=20&tipo=despesa_mensal,fundo_recebido,repasse,doacao',
+      ]);
+      expect(screen.getByRole('checkbox', { name: 'Gastos' })).toBeChecked();
+      expect(screen.getByRole('checkbox', { name: 'Campanha' })).toBeChecked();
+    } finally {
+      delete parametros.categorias;
+    }
+  });
+
   it('quem não segue nada é convidado a ver tudo', async () => {
     const { api } = await renderizar(<Feed />, {
       local: { onboardingConcluido: true },

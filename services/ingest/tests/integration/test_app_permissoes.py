@@ -26,6 +26,7 @@ TABELAS_APP = (
     "dispositivo",
     "notificacao",
     "notificacao_cursor",
+    "resumo_semanal",
 )
 
 
@@ -185,6 +186,7 @@ def test_notificador_le_o_minimo(notify):
         "app.dispositivo",
         "app.notificacao",
         "app.notificacao_cursor",
+        "app.resumo_semanal",
     ):
         notify.run(f"SELECT count(*) FROM {tabela}")  # noqa: S608
     notify.run("SELECT id, usuario_id, revogada_em FROM app.sessao LIMIT 1")
@@ -218,6 +220,7 @@ def test_notificador_so_escreve_a_fila(notify):
 def test_api_nao_ve_a_fila_mas_registra_aparelho(api):
     assert _denied(api, "SELECT count(*) FROM app.notificacao")
     assert _denied(api, "SELECT count(*) FROM app.notificacao_cursor")
+    assert _denied(api, "SELECT count(*) FROM app.resumo_semanal")
     _, sessao = _usuario_com_sessao(api)
     api.run(
         "INSERT INTO app.dispositivo (sessao_id, token, plataforma) VALUES (:s, :t, 'android')",
@@ -266,3 +269,33 @@ def test_notificador_apaga_token_invalido_e_fila_some_com_a_conta(api, notify):
     assert notify.run("SELECT count(*) FROM app.notificacao WHERE usuario_id = :u", u=usuario) == [
         [0]
     ]
+
+
+def test_resumo_semanal_um_por_semana_e_some_com_a_conta(api, notify):
+    usuario, _ = _usuario_com_sessao(api)
+    notify.run(
+        "INSERT INTO app.resumo_semanal (usuario_id, semana, status)"
+        " VALUES (:u, '2026-10-12', 'vazio')",
+        u=usuario,
+    )
+    for semana, codigo in (("2026-10-12", "23505"), ("2026-10-14", "23514")):
+        with pytest.raises(pg8000.native.DatabaseError) as error:
+            notify.run(
+                "INSERT INTO app.resumo_semanal (usuario_id, semana, status)"
+                " VALUES (:u, CAST(:s AS date), 'vazio')",
+                u=usuario,
+                s=semana,
+            )
+        assert error.value.args[0]["C"] == codigo  # repetido; não é segunda-feira
+    # Pendente exige o texto e o link.
+    with pytest.raises(pg8000.native.DatabaseError) as error:
+        notify.run(
+            "INSERT INTO app.resumo_semanal (usuario_id, semana) VALUES (:u, '2026-10-19')",
+            u=usuario,
+        )
+    assert error.value.args[0]["C"] == "23514"
+    assert _denied(notify, "DELETE FROM app.resumo_semanal")
+    api.run("DELETE FROM app.usuario WHERE id = :u", u=usuario)
+    assert notify.run(
+        "SELECT count(*) FROM app.resumo_semanal WHERE usuario_id = :u", u=usuario
+    ) == [[0]]

@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,6 +18,7 @@ import { Carregando, Falha, Vazio } from '../../components/Estado';
 import { montarLinhas, type Linha } from '../../feed/linhas';
 import { RegistroDoEvento } from '../../feed/RegistroDoEvento';
 import { CATEGORIAS, NOMES_CATEGORIAS, type Categoria } from '../../feed/rotulos';
+import { categoriasDoLink } from '../../notificacoes/link';
 import { AvisoSemConexao } from '../../offline/AvisoSemConexao';
 import { useSessao } from '../../sessao/Sessao';
 import { rules, space, typography } from '../../theme/tokens';
@@ -30,12 +31,30 @@ function alternar<T>(lista: T[], item: T): T[] {
   return lista.includes(item) ? lista.filter((i) => i !== item) : [...lista, item];
 }
 
+function filtrosPedidos(categorias: string | undefined): FiltrosFeed | null {
+  const pedidas = categorias ? categoriasDoLink(`vidapublica://feed?categorias=${categorias}`) : null;
+  return pedidas?.length ? { ...FILTROS_PADRAO, categorias: pedidas } : null;
+}
+
 export default function Feed() {
   const theme = useTheme();
   const router = useRouter();
   const { local, atualizarLocal } = useSessao();
-  const [filtros, setFiltros] = useState<FiltrosFeed>(FILTROS_PADRAO);
-  const [abertos, setAbertos] = useState(false);
+  // O resumo semanal abre o feed de quem a pessoa segue já filtrado
+  // (?categorias=gastos,campanha). Com a aba já montada, o parâmetro novo é
+  // aplicado durante a renderização.
+  const { categorias: pedidas } = useLocalSearchParams<{ categorias?: string }>();
+  const [filtros, setFiltros] = useState<FiltrosFeed>(() => filtrosPedidos(pedidas) ?? FILTROS_PADRAO);
+  const [abertos, setAbertos] = useState(() => !!filtrosPedidos(pedidas));
+  const [pedidasAplicadas, setPedidasAplicadas] = useState(pedidas);
+  if (pedidas !== pedidasAplicadas) {
+    setPedidasAplicadas(pedidas);
+    const pedidos = filtrosPedidos(pedidas);
+    if (pedidos) {
+      setFiltros(pedidos);
+      setAbertos(true);
+    }
+  }
   // O marco da visita anterior fica fixo enquanto a tela está aberta.
   const [marcos] = useState(local.parouAqui);
   const feed = useFeed(filtros);

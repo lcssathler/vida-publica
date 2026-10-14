@@ -111,11 +111,7 @@ export class PostgresFilaRepositorio extends FilaRepositorio {
     fn: (fila: FilaDoUsuario) => Promise<T>,
   ): Promise<T | null> {
     return this.db.transacao(async (tx) => {
-      const [trava] = await tx.query<{ ok: boolean }>(
-        `SELECT pg_try_advisory_xact_lock(hashtextextended('notificacao:' || $1, 0)) AS ok`,
-        [usuarioId],
-      );
-      if (!trava.ok) return null;
+      if (!(await travarUsuario(tx, usuarioId))) return null;
       return fn(new FilaPostgres(tx, usuarioId));
     });
   }
@@ -127,31 +123,8 @@ class FilaPostgres implements FilaDoUsuario {
     private readonly usuarioId: string,
   ) {}
 
-  async preferencias(): Promise<PreferenciasAviso> {
-    const [linha] = await this.tx.query<{
-      notificacoes: boolean;
-      max_por_dia: number;
-      silencio_inicio: string;
-      silencio_fim: string;
-      fuso: string;
-    }>(
-      `SELECT notificacoes, max_por_dia, to_char(silencio_inicio, 'HH24:MI') AS silencio_inicio,
-              to_char(silencio_fim, 'HH24:MI') AS silencio_fim, fuso
-         FROM app.preferencias WHERE usuario_id = $1`,
-      [this.usuarioId],
-    );
-    if (!linha) {
-      const { notificacoes, maxPorDia, silencioInicio, silencioFim, fuso } =
-        PREFERENCIAS_PADRAO;
-      return { notificacoes, maxPorDia, silencioInicio, silencioFim, fuso };
-    }
-    return {
-      notificacoes: linha.notificacoes,
-      maxPorDia: linha.max_por_dia,
-      silencioInicio: linha.silencio_inicio,
-      silencioFim: linha.silencio_fim,
-      fuso: linha.fuso,
-    };
+  preferencias(): Promise<PreferenciasAviso> {
+    return lerPreferencias(this.tx, this.usuarioId);
   }
 
   async pendentes(agora: Date): Promise<Pendente[]> {
@@ -191,24 +164,8 @@ class FilaPostgres implements FilaDoUsuario {
     }));
   }
 
-  async dispositivos(): Promise<Dispositivo[]> {
-    const linhas = await this.tx.query<{
-      sessao_id: string;
-      token: string;
-      plataforma: Dispositivo['plataforma'];
-    }>(
-      `SELECT d.sessao_id, d.token, d.plataforma
-         FROM app.dispositivo d
-         JOIN app.sessao s ON s.id = d.sessao_id
-        WHERE s.usuario_id = $1 AND s.revogada_em IS NULL
-        ORDER BY d.registrado_em`,
-      [this.usuarioId],
-    );
-    return linhas.map((l) => ({
-      sessaoId: l.sessao_id,
-      token: l.token,
-      plataforma: l.plataforma,
-    }));
+  dispositivos(): Promise<Dispositivo[]> {
+    return lerDispositivos(this.tx, this.usuarioId);
   }
 
   async enviadasDesde(instante: Date): Promise<number> {
@@ -252,9 +209,91 @@ class FilaPostgres implements FilaDoUsuario {
     }
   }
 
-  async removerDispositivo(token: string): Promise<void> {
-    await this.tx.query('DELETE FROM app.dispositivo WHERE token = $1', [
-      token,
-    ]);
+  removerDispositivo(token: string): Promise<void> {
+    return apagarDispositivo(this.tx, token);
   }
+}
+
+/** Preferências de aviso do usuário (padrões da conta sem linha gravada). */
+export async function lerPreferencias(
+  tx: Executor,
+  usuarioId: string,
+): Promise<PreferenciasAviso> {
+  const [linha] = await tx.query<{
+    notificacoes: boolean;
+    resumo_semanal: boolean;
+    max_por_dia: number;
+    silencio_inicio: string;
+    silencio_fim: string;
+    fuso: string;
+  }>(
+    `SELECT notificacoes, resumo_semanal, max_por_dia,
+            to_char(silencio_inicio, 'HH24:MI') AS silencio_inicio,
+            to_char(silencio_fim, 'HH24:MI') AS silencio_fim, fuso
+       FROM app.preferencias WHERE usuario_id = $1`,
+    [usuarioId],
+  );
+  if (!linha) {
+    const p = PREFERENCIAS_PADRAO;
+    return {
+      notificacoes: p.notificacoes,
+      resumoSemanal: p.resumoSemanal,
+      maxPorDia: p.maxPorDia,
+      silencioInicio: p.silencioInicio,
+      silencioFim: p.silencioFim,
+      fuso: p.fuso,
+    };
+  }
+  return {
+    notificacoes: linha.notificacoes,
+    resumoSemanal: linha.resumo_semanal,
+    maxPorDia: linha.max_por_dia,
+    silencioInicio: linha.silencio_inicio,
+    silencioFim: linha.silencio_fim,
+    fuso: linha.fuso,
+  };
+}
+
+/** Aparelhos das sessões ativas do usuário. */
+export async function lerDispositivos(
+  tx: Executor,
+  usuarioId: string,
+): Promise<Dispositivo[]> {
+  const linhas = await tx.query<{
+    sessao_id: string;
+    token: string;
+    plataforma: Dispositivo['plataforma'];
+  }>(
+    `SELECT d.sessao_id, d.token, d.plataforma
+       FROM app.dispositivo d
+       JOIN app.sessao s ON s.id = d.sessao_id
+      WHERE s.usuario_id = $1 AND s.revogada_em IS NULL
+      ORDER BY d.registrado_em`,
+    [usuarioId],
+  );
+  return linhas.map((l) => ({
+    sessaoId: l.sessao_id,
+    token: l.token,
+    plataforma: l.plataforma,
+  }));
+}
+
+/** Apaga o aparelho cujo token o FCM disse que não vale mais. */
+export async function apagarDispositivo(
+  tx: Executor,
+  token: string,
+): Promise<void> {
+  await tx.query('DELETE FROM app.dispositivo WHERE token = $1', [token]);
+}
+
+/** Trava o usuário na transação; false se outro notificador está com ele. */
+export async function travarUsuario(
+  tx: Executor,
+  usuarioId: string,
+): Promise<boolean> {
+  const [trava] = await tx.query<{ ok: boolean }>(
+    `SELECT pg_try_advisory_xact_lock(hashtextextended('notificacao:' || $1, 0)) AS ok`,
+    [usuarioId],
+  );
+  return trava.ok;
 }

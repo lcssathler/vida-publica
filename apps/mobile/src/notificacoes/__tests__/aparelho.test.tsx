@@ -7,7 +7,7 @@ import { ESTADO_INICIAL } from '../../sessao/local';
 import { apiFalsa, cofreEmMemoria } from '../../test/apiFalsa';
 import { esquecerAparelho, registrarAparelho } from '../aparelho';
 import { useAvisos } from '../avisos';
-import { eventoDoAviso, eventoDoLink } from '../link';
+import { categoriasDoLink, eventoDoLink, rotaDoAviso, rotaDoLink } from '../link';
 import { tokenDeEnvio } from '../token';
 
 jest.mock('expo-notifications', () => ({
@@ -61,12 +61,21 @@ describe('link do aviso', () => {
   it('acha o link onde cada plataforma entrega os dados', () => {
     const url = `vidapublica://evento/${ID}`;
     const resposta = (request: object) => ({ notification: { request } });
-    expect(eventoDoAviso(resposta({ content: { data: { url } } }))).toBe(ID);
-    expect(eventoDoAviso(resposta({ content: { data: {} }, trigger: { payload: { url } } }))).toBe(ID);
-    expect(eventoDoAviso(resposta({ content: {}, trigger: { remoteMessage: { data: { url } } } }))).toBe(ID);
-    expect(eventoDoAviso({ data: { url } })).toBe(ID);
-    expect(eventoDoAviso(null)).toBeNull();
-    expect(eventoDoAviso(resposta({ content: { data: { url: 'vidapublica://' } } }))).toBeNull();
+    const rota = `/evento/${ID}`;
+    expect(rotaDoAviso(resposta({ content: { data: { url } } }))).toBe(rota);
+    expect(rotaDoAviso(resposta({ content: { data: {} }, trigger: { payload: { url } } }))).toBe(rota);
+    expect(rotaDoAviso(resposta({ content: {}, trigger: { remoteMessage: { data: { url } } } }))).toBe(rota);
+    expect(rotaDoAviso({ data: { url } })).toBe(rota);
+    expect(rotaDoAviso(null)).toBeNull();
+    expect(rotaDoAviso(resposta({ content: { data: { url: 'vidapublica://' } } }))).toBeNull();
+  });
+
+  it('o resumo semanal abre o feed filtrado só com categorias que existem', () => {
+    expect(rotaDoLink('vidapublica://feed?categorias=gastos,campanha')).toBe('/?categorias=gastos,campanha');
+    expect(rotaDoLink('vidapublica://feed')).toBe('/');
+    expect(categoriasDoLink('vidapublica://feed?categorias=gastos,inventada')).toEqual(['gastos']);
+    expect(rotaDoLink('vidapublica://feed?categorias=inventada')).toBe('/');
+    expect(rotaDoLink('vidapublica://feed?outra=1')).toBeNull();
   });
 });
 

@@ -2,13 +2,21 @@ import { Logger, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { LoggerModule } from 'nestjs-pino';
 import { DbModule } from '../db/db.module';
-import { Enviador, Relogio, RelogioDoSistema } from './enviador';
+import {
+  Enviador,
+  Relogio,
+  RelogioDoSistema,
+  RelogioSimulado,
+} from './enviador';
 import { EnviadorFalso } from './enviador-falso';
 import { EnviadorFcm, lerCredenciais } from './enviador-fcm';
 import { EnvNotificador, validarEnvNotificador } from './env-notificador';
 import { FilaRepositorio } from './fila.repositorio';
 import { CONFIG_FILA, ConfigFila, FilaService } from './fila.service';
 import { PostgresFilaRepositorio } from './postgres-fila.repositorio';
+import { PostgresResumoRepositorio } from './postgres-resumo.repositorio';
+import { ResumoRepositorio } from './resumo.repositorio';
+import { CONFIG_RESUMO, ConfigResumo, ResumoService } from './resumo.service';
 
 /**
  * Notificador: processo separado da API (src/notificacoes/notificador.ts), com
@@ -34,7 +42,18 @@ import { PostgresFilaRepositorio } from './postgres-fila.repositorio';
   ],
   providers: [
     FilaService,
+    ResumoService,
     { provide: FilaRepositorio, useClass: PostgresFilaRepositorio },
+    { provide: ResumoRepositorio, useClass: PostgresResumoRepositorio },
+    {
+      provide: CONFIG_RESUMO,
+      inject: [ConfigService],
+      useFactory: (
+        config: ConfigService<EnvNotificador, true>,
+      ): ConfigResumo => ({
+        hora: config.get('NOTIF_RESUMO_HORA', { infer: true }),
+      }),
+    },
     {
       provide: Enviador,
       inject: [ConfigService],
@@ -61,7 +80,16 @@ import { PostgresFilaRepositorio } from './postgres-fila.repositorio';
         return new EnviadorFcm(conta, { validarApenas });
       },
     },
-    { provide: Relogio, useClass: RelogioDoSistema },
+    {
+      provide: Relogio,
+      inject: [ConfigService],
+      useFactory: (config: ConfigService<EnvNotificador, true>): Relogio => {
+        const agora = config.get('NOTIF_AGORA', { infer: true });
+        if (!agora) return new RelogioDoSistema();
+        new Logger('Notificador').warn({ msg: 'Relógio simulado', agora });
+        return new RelogioSimulado(new Date(agora));
+      },
+    },
     {
       provide: CONFIG_FILA,
       inject: [ConfigService],

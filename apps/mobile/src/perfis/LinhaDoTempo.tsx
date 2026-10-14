@@ -12,6 +12,7 @@ import { Vazio } from '../components/Estado';
 import { montarLinhas, type Linha } from '../feed/linhas';
 import { RegistroDoEvento } from '../feed/RegistroDoEvento';
 import { CATEGORIAS } from '../feed/rotulos';
+import { AvisoSemConexao } from '../offline/AvisoSemConexao';
 import { rules, space, typography } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
 
@@ -39,6 +40,7 @@ export function PerfilComLinhaDoTempo({ alvo, categorias, cabecalho }: LinhaDoTe
 
   const seletor = (
     <View style={styles.cabecalho}>
+      <AvisoSemConexao />
       {cabecalho}
       <View style={[styles.tituloLinha, { borderBottomColor: theme.ink }]}>
         <Text role="heading" style={[typography.title, { color: theme.ink }]}>

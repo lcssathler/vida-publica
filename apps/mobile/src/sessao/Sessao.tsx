@@ -10,10 +10,11 @@ import {
 } from 'react';
 import { Platform } from 'react-native';
 import { ClienteApi } from '../api/cliente';
-import { mensagemDeErro } from '../api/erros';
+import { ErroRede, mensagemDeErro } from '../api/erros';
 import type { Plataforma } from '../api/tipos';
 import { Carregando, Falha } from '../components/Estado';
 import { API_URL } from '../config';
+import { persistidor } from '../offline/cache';
 import { cofre } from './cofre';
 import { ESTADO_INICIAL, gravarLocal, lerLocal, type EstadoLocal } from './local';
 
@@ -44,17 +45,22 @@ export function criarCliente(): ClienteApi {
  * antes de mostrar o app. Se a API encerrar a sessão (refresh recusado), o
  * aparelho volta ao começo do onboarding com a conta nova.
  */
-export function SessaoProvider({ children }: { children: ReactNode }) {
+export function SessaoProvider({ children, cliente: injetado }: { children: ReactNode; cliente?: ClienteApi }) {
   const consultas = useQueryClient();
-  const [cliente] = useState(criarCliente);
+  const [cliente] = useState(() => injetado ?? criarCliente());
   const [local, setLocal] = useState<EstadoLocal | null>(null);
   const [erro, setErro] = useState<unknown>(null);
   const [tentativa, setTentativa] = useState(0);
 
   useEffect(() => {
     let ativo = true;
-    Promise.all([cliente.iniciar(), lerLocal()])
-      .then(([, estado]) => ativo && setLocal(estado))
+    Promise.all([cliente.iniciar().then(() => null, (e: unknown) => e), lerLocal()])
+      .then(([falha, estado]) => {
+        // Sem rede, quem já passou do onboarding abre com o que está guardado;
+        // a sessão é renovada na primeira chamada com conexão.
+        if (falha && !(falha instanceof ErroRede && estado.onboardingConcluido)) throw falha;
+        if (ativo) setLocal(estado);
+      })
       .catch((e: unknown) => ativo && setErro(e));
     return () => {
       ativo = false;
@@ -69,6 +75,7 @@ export function SessaoProvider({ children }: { children: ReactNode }) {
     () =>
       cliente.ouvirEncerramento(() => {
         consultas.clear();
+        void persistidor.removeClient();
         setLocal(ESTADO_INICIAL);
       }),
     [cliente, consultas],

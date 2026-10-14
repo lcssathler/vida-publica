@@ -65,6 +65,20 @@ Até concluir, só as telas do onboarding ficam acessíveis (`Stack.Protected` e
 - Conta (`GET /conta`, `PATCH /conta/preferencias`): estado, avisos (ligar pede a permissão do sistema; negada, a preferência fica desligada e o app oferece abrir os ajustes), resumo semanal, máximo por dia, horário de silêncio, fuso; "Refazer o início"; sair do aparelho (contas com login); excluir a conta com confirmação (`DELETE /conta`), que apaga o refresh do cofre, limpa o estado local e volta ao onboarding com uma conta anônima nova.
 - Login opcional com Apple (iOS, quando o aparelho oferece) e Google (só quando configurado), em `src/conta/login.ts`: o app pega o token de identidade do provedor sem pedir nome nem e-mail e troca em `POST /auth/entrar/{provedor}`. Se a identidade já tinha conta, o que o aparelho seguia é juntado a ela.
 
+## Offline
+
+- As consultas ficam guardadas no aparelho (TanStack Query persistido em AsyncStorage, `src/offline/cache.ts`) por 3 dias: feed, registros, perfis, propostas, o que a pessoa segue e as listas do onboarding. A busca não fica guardada. Listas com cursor guardam só as 3 primeiras páginas.
+- Sem rede (`expo-network` no aparelho; eventos do navegador na web), as consultas ficam em pausa, as telas mostram o que está guardado e uma faixa avisa "Sem conexão", com a hora dos dados no feed. Ao voltar, tudo retoma sozinho.
+- Quem já passou do onboarding abre o app sem rede; a sessão é renovada na primeira chamada com conexão, com o mesmo refresh guardado.
+- Excluir a conta ou ter a sessão encerrada apaga o cache do aparelho.
+
+## Acessibilidade
+
+- Controles com papel (`button`, `link`, `checkbox`, `radio`, `switch`) e nome lido; estado marcado em `aria-checked` e com "✓", nunca só pela cor; alvo de toque mínimo de 48 pt; título (`heading`) em toda tela; fotos decorativas escondidas do leitor; avisos e erros em regiões vivas.
+- Contraste WCAG AA (4,5:1) para todo texto, inclusive o metadado de 11 pt, nos modos claro e escuro, no papel e no papel elevado (`src/theme/__tests__/tokens.test.ts`).
+- Fonte do sistema respeitada; com fonte grande (acima de 130%), a hora do registro sai da coluna de margem.
+- `src/test/auditoria.ts` revisa automaticamente cada tela nos testes (`src/__tests__/acessibilidade.test.tsx`): papel, nome, alvo de 48 pt, campos com nome e título.
+
 ## Configuração
 
 Logins opcionais (identificadores públicos, não segredos), lidos por `app.config.ts`: `VP_LOGIN_APPLE=1` liga "Sign in with Apple" no build iOS; `VP_GOOGLE_IOS_URL_SCHEME`, `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` e `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` ligam o Google (biblioteca nativa: precisa de build de desenvolvimento, não roda no Expo Go). Sem elas, os botões não aparecem. A API precisa dos mesmos ids em `APPLE_CLIENT_IDS` e `GOOGLE_CLIENT_IDS`.

@@ -12,6 +12,7 @@ import { Secao } from '../../components/Secao';
 import { Tela } from '../../components/Tela';
 import { appleDisponivel, entrar, googleDisponivel, LoginCancelado, type Provedor } from '../../conta/login';
 import { pedirPermissaoDoSistema } from '../../notificacoes/permissao';
+import { persistidor } from '../../offline/cache';
 import { NOME_ESTADO } from '../../onboarding/estados';
 import { useSessao } from '../../sessao/Sessao';
 import { ESTADO_INICIAL } from '../../sessao/local';
@@ -265,6 +266,7 @@ function SecaoPrivacidade({ anonima }: { anonima: boolean }) {
   const recomecar = async () => {
     await cliente.esquecer();
     consultas.clear();
+    await persistidor.removeClient();
     atualizarLocal(ESTADO_INICIAL);
   };
 

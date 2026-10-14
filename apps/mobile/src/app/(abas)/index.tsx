@@ -18,6 +18,7 @@ import { Carregando, Falha, Vazio } from '../../components/Estado';
 import { montarLinhas, type Linha } from '../../feed/linhas';
 import { RegistroDoEvento } from '../../feed/RegistroDoEvento';
 import { CATEGORIAS, NOMES_CATEGORIAS, type Categoria } from '../../feed/rotulos';
+import { AvisoSemConexao } from '../../offline/AvisoSemConexao';
 import { useSessao } from '../../sessao/Sessao';
 import { rules, space, typography } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
@@ -70,6 +71,7 @@ export default function Feed() {
 
   const cabecalho = (
     <View style={styles.cabecalho}>
+      <AvisoSemConexao atualizadoEm={feed.dataUpdatedAt || undefined} />
       <View style={[styles.titulo, { borderBottomColor: theme.ink }]}>
         <Text role="heading" style={[typography.headline, { color: theme.ink }]}>
           Vida Pública

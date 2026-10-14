@@ -1,4 +1,5 @@
 import { QueryClient } from '@tanstack/react-query';
+import { VALIDADE_CACHE_MS } from '../offline/cache';
 import { ErroRede } from './erros';
 
 /**
@@ -11,6 +12,8 @@ export function novoQueryClient(): QueryClient {
       queries: {
         retry: (falhas, erro) => erro instanceof ErroRede && falhas < 2,
         staleTime: 60 * 1000,
+        // Guardadas no aparelho pelo mesmo tempo que o cache offline vale.
+        gcTime: VALIDADE_CACHE_MS,
       },
       mutations: { retry: false },
     },

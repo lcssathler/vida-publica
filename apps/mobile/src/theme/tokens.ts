@@ -27,7 +27,7 @@ export const palettes: Record<ColorScheme, Palette> = {
     paperRaised: '#FAF8F3',
     ink: '#1B1A17',
     ink2: '#4A4740',
-    ink3: '#7A766C',
+    ink3: '#6E6A61',
     rule: '#D9D3C5',
     stamp: '#4B3FA0',
     stampWash: '#E7E3F4',

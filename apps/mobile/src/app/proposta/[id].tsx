@@ -12,6 +12,7 @@ import { Carregando, Falha, Vazio } from '../../components/Estado';
 import { LinkTexto, Secao } from '../../components/Secao';
 import { NOME_TIPO } from '../../feed/rotulos';
 import { situacaoMudou } from '../../propostas/linha';
+import { AvisoSemConexao } from '../../offline/AvisoSemConexao';
 import { Placar } from '../../propostas/Placar';
 import { rules, space, typography } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
@@ -56,6 +57,7 @@ function Cabecalho({ p }: { p: Proposta }) {
 
   return (
     <View style={styles.cabecalho}>
+      <AvisoSemConexao />
       <Botao rotulo="‹ Voltar" variante="texto" estilo={styles.voltar} aoTocar={() => (router.canGoBack() ? router.back() : router.replace('/'))} />
       <View style={[styles.titulo, { borderBottomColor: theme.ink }]}>
         <Text style={[typography.overline, { color: theme.ink2 }]}>

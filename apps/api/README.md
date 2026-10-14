@@ -105,14 +105,19 @@ O registro do aparelho é da API; a fila e o envio são do **notificador**, um p
   - **falso** (`enviador-falso.ts`): registra cada envio no log, com só o começo do token. É o que roda sem credenciais.
 - **Credenciais do FCM** nunca no repositório: a conta de serviço do Firebase vem de `FCM_CREDENCIAIS_JSON` (o JSON numa linha; no compose, `VP_FCM_CREDENCIAIS_JSON` do `infra/.env`) ou de `FCM_CREDENCIAIS_ARQUIVO` (caminho de um arquivo fora do git). Sem nenhuma, o adaptador real fica desligado e o notificador usa o falso. Credencial malformada derruba a subida com o nome do campo, nunca com o conteúdo. `FCM_VALIDAR_APENAS=true` manda tudo com `validate_only` (o FCM confere credenciais, mensagem e token sem entregar).
 
+- **Resumo semanal** (`resumo.service.ts`, tabela `app.resumo_semanal`, um por usuário e semana): na segunda-feira, a partir das 09:00 no fuso de cada conta (`NOTIF_RESUMO_HORA`), um aviso com o dinheiro e as despesas de quem a pessoa segue (`despesa_mensal`, `repasse`, `doacao`, `fundo_recebido`) publicados na semana anterior (segunda a domingo, no fuso), só contagens e somas por tipo (nenhum nome; doador pessoa física nem aparece no feed), mais quantos avisos passaram do teto diário naquela semana. Valem as mesmas regras da fila: só publicados e com fonte, depois do início da fila (a carga inicial não entra) e de a pessoa passar a seguir. Resumo ou avisos desligados: não sai (`descartado`); semana sem nada: `vazio`, sem aviso; horário de silêncio: espera o fim; não conta no teto diário. O texto é factual ("Resumo da semana de 12/10 a 18/10" / "Dinheiro de quem você segue: 2 repasses de partido (R$ 1,2 mi); 1 dia de doações (R$ 5 mil). Toque para ver no feed.") e o link `vidapublica://feed?categorias=gastos,campanha` abre o feed de quem a pessoa segue com esses filtros.
+
 Rodar com o compose (`docker compose -f infra/docker-compose.yml run --rm notificador node dist/notificacoes/notificador.js <comando>`):
 
 | Comando | O que faz |
 | --- | --- |
-| `ciclo` | Enfileira os recém-publicados e envia o que estiver na vez; imprime as contagens |
-| `enfileirar` / `enviar` | Só uma das etapas |
+| `ciclo` | Fila (enfileira os recém-publicados e envia o que estiver na vez) e resumo semanal; imprime as contagens |
+| `enfileirar` / `enviar` | Só uma das etapas da fila |
+| `resumo` | Só o resumo semanal: grava os devidos e envia os que estiverem na vez |
 | `continuo` | Um ciclo a cada `NOTIF_INTERVALO_SEGUNDOS`; erro num ciclo vai para o log e o próximo tenta de novo (é o comando do serviço `notificador` no compose) |
 | `testar-fcm <token> [android\|ios] [--entregar]` | Aviso de teste para um token pelo FCM, sem banco: por padrão só valida (`validate_only`); com `--entregar`, chega ao aparelho |
+
+`--agora=<ISO>` (recusado no `continuo`) faz o relógio de uma rodada avulsa começar no instante dado, para conferir, por exemplo, o resumo de segunda-feira sem esperar por ela.
 
 ## Verificações
 
@@ -169,6 +174,7 @@ O notificador valida as próprias variáveis (`src/notificacoes/env-notificador.
 | `NOTIF_FRESCOR_DIAS` | `7` | Fato mais antigo que isso quando foi publicado não vira aviso |
 | `NOTIF_LOTE` | `200` | Usuários por consulta da fila |
 | `NOTIF_MAX_TENTATIVAS` | `5` | Tentativas de envio antes de desistir |
+| `NOTIF_RESUMO_HORA` | `09:00` | Hora local de segunda-feira em que sai o resumo da semana anterior |
 | `FCM_CREDENCIAIS_JSON` | vazio | Conta de serviço do Firebase (JSON). Vazio, com `FCM_CREDENCIAIS_ARQUIVO` também vazio: adaptador falso |
 | `FCM_CREDENCIAIS_ARQUIVO` | vazio | Caminho da conta de serviço, fora do repositório |
 | `FCM_VALIDAR_APENAS` | `false` | `true`: o FCM só valida (`validate_only`), sem entregar |

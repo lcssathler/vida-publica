@@ -7,16 +7,19 @@ import { Logger } from 'nestjs-pino';
 import { EnviadorFcm, lerCredenciais } from './enviador-fcm';
 import { EnvNotificador, validarEnvNotificador } from './env-notificador';
 import { FilaService } from './fila.service';
+import { ResumoService } from './resumo.service';
 import { NotificadorModule } from './notificador.module';
 
 /** Tocado a cada volta do modo contínuo; o healthcheck confere a idade. */
 const SINAL_DE_VIDA = join(tmpdir(), 'notificador-vivo');
 
-const USO = `Uso: node dist/notificacoes/notificador.js <comando>
-  ciclo       enfileira os eventos recém-publicados e envia o que estiver na vez
-  enfileirar  só enfileira
-  enviar      só envia o que estiver na vez
+const USO = `Uso: node dist/notificacoes/notificador.js <comando> [--agora=<ISO>]
+  ciclo       fila de avisos (enfileira e envia) e resumo semanal
+  enfileirar  só enfileira os eventos recém-publicados
+  enviar      só envia os avisos que estiverem na vez
+  resumo      só o resumo semanal (gera os devidos e envia os que estiverem na vez)
   continuo    roda um ciclo a cada NOTIF_INTERVALO_SEGUNDOS até receber SIGTERM
+  --agora     só em rodadas avulsas: o relógio começa no instante dado (conferência)
   testar-fcm <token> [android|ios] [--entregar]
               manda um aviso de teste a um token pelo FCM, só validando
               (validate_only) ou, com --entregar, de verdade`;
@@ -24,9 +27,21 @@ const USO = `Uso: node dist/notificacoes/notificador.js <comando>
 async function main(): Promise<number> {
   const comando = process.argv[2] ?? 'ciclo';
   if (comando === 'testar-fcm') return testarFcm(process.argv.slice(3));
-  if (!['ciclo', 'enfileirar', 'enviar', 'continuo'].includes(comando)) {
+  if (
+    !['ciclo', 'enfileirar', 'enviar', 'resumo', 'continuo'].includes(comando)
+  ) {
     process.stderr.write(`${USO}\n`);
     return 2;
+  }
+  const agora = process.argv
+    .find((a) => a.startsWith('--agora='))
+    ?.slice('--agora='.length);
+  if (agora) {
+    if (comando === 'continuo') {
+      process.stderr.write('--agora só vale em rodadas avulsas.\n');
+      return 2;
+    }
+    process.env.NOTIF_AGORA = agora;
   }
   const app = await NestFactory.createApplicationContext(NotificadorModule, {
     bufferLogs: true,
@@ -34,10 +49,13 @@ async function main(): Promise<number> {
   const log = app.get(Logger);
   app.useLogger(log);
   const fila = app.get(FilaService);
+  const resumo = app.get(ResumoService);
   const imprimir = (r: unknown) =>
     process.stdout.write(`${JSON.stringify(r, null, 2)}\n`);
   try {
-    if (comando === 'ciclo') imprimir(await fila.ciclo());
+    if (comando === 'ciclo') {
+      imprimir({ fila: await fila.ciclo(), resumo: await resumo.ciclo() });
+    } else if (comando === 'resumo') imprimir(await resumo.ciclo());
     else if (comando === 'enfileirar') imprimir(await fila.enfileirar());
     else if (comando === 'enviar') imprimir(await fila.enviar());
     else {
@@ -45,6 +63,7 @@ async function main(): Promise<number> {
         app.get<ConfigService<EnvNotificador, true>>(ConfigService);
       await continuo(
         fila,
+        resumo,
         log,
         config.get('NOTIF_INTERVALO_SEGUNDOS', { infer: true }) * 1000,
       );
@@ -106,6 +125,7 @@ async function testarFcm(args: string[]): Promise<number> {
  */
 async function continuo(
   fila: FilaService,
+  resumo: ResumoService,
   log: Logger,
   intervaloMs: number,
 ): Promise<void> {
@@ -125,8 +145,9 @@ async function continuo(
     }
     try {
       await fila.ciclo();
+      await resumo.ciclo();
     } catch (erro) {
-      log.error({ msg: 'ciclo da fila falhou', erro: String(erro) });
+      log.error({ msg: 'ciclo do notificador falhou', erro: String(erro) });
     }
     if (parar) break;
     await new Promise<void>((resolve) => {

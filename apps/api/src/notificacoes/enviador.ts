@@ -44,3 +44,20 @@ export class RelogioDoSistema extends Relogio {
     return new Date();
   }
 }
+
+/**
+ * Relógio que começa num instante dado e anda junto com o do sistema. Só
+ * para rodadas avulsas de conferência (ex.: o resumo de segunda-feira).
+ */
+export class RelogioSimulado extends Relogio {
+  private readonly diferenca: number;
+
+  constructor(inicio: Date) {
+    super();
+    this.diferenca = inicio.getTime() - Date.now();
+  }
+
+  agora(): Date {
+    return new Date(Date.now() + this.diferenca);
+  }
+}

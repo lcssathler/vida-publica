@@ -20,6 +20,7 @@ export interface EventoFila {
   ocorridoEm: Date;
   publicadoEm: Date | null;
   alvos: string[]; // "tipo:id"
+  valor?: number | null;
 }
 
 export interface Aviso {
@@ -147,6 +148,18 @@ export class MemoriaFila extends FilaRepositorio {
     return fn(this.filaDe(usuarioId));
   }
 
+  prefsDe(usuarioId: string): PreferenciasAviso {
+    const p = { ...PREFERENCIAS_PADRAO, ...this.preferencias.get(usuarioId) };
+    return {
+      notificacoes: p.notificacoes,
+      resumoSemanal: p.resumoSemanal,
+      maxPorDia: p.maxPorDia,
+      silencioInicio: p.silencioInicio,
+      silencioFim: p.silencioFim,
+      fuso: p.fuso,
+    };
+  }
+
   doUsuario(usuarioId: string): Aviso[] {
     return this.avisos.filter((n) => n.usuarioId === usuarioId);
   }
@@ -154,19 +167,7 @@ export class MemoriaFila extends FilaRepositorio {
   private filaDe(usuarioId: string): FilaDoUsuario {
     const evento = (id: string) => this.eventos.find((e) => e.id === id)!;
     return {
-      preferencias: () => {
-        const { notificacoes, maxPorDia, silencioInicio, silencioFim, fuso } = {
-          ...PREFERENCIAS_PADRAO,
-          ...this.preferencias.get(usuarioId),
-        };
-        return Promise.resolve({
-          notificacoes,
-          maxPorDia,
-          silencioInicio,
-          silencioFim,
-          fuso,
-        });
-      },
+      preferencias: () => Promise.resolve(this.prefsDe(usuarioId)),
       pendentes: (agora: Date): Promise<Pendente[]> =>
         Promise.resolve(
           this.doUsuario(usuarioId)

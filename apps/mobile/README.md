@@ -72,7 +72,7 @@ Até concluir, só as telas do onboarding ficam acessíveis (`Stack.Protected` e
 - iOS: o token nativo é da APNs, que o FCM não aceita. Com o `GoogleService-Info.plist` no build (`VP_FIREBASE_IOS_PLIST`), o React Native Firebase Messaging registra o aparelho e devolve o token do FCM (`src/notificacoes/token.ios.ts`); sem ele, o iOS não registra token. O React Native Firebase só é ligado no iOS (`react-native.config.js`): no Android, um segundo serviço de mensagens disputaria os avisos com o do `expo-notifications`. Precisa de build de desenvolvimento.
 - Web (só desenvolvimento): não há token; registro e remoção ficam desligados (`*.web.ts`).
 - Desligar os avisos na Conta grava a preferência (a API para de enfileirar) e apaga o token (`DELETE /dispositivo`); sair e excluir a conta apagam o token na própria API.
-- Tocar num aviso abre o registro com a fonte: os dados trazem `url: vidapublica://evento/{id}`, lido onde cada plataforma o entrega (`src/notificacoes/link.ts`). Com o app aberto, o aviso aparece na faixa, sem som.
+- Tocar num aviso abre o registro com a fonte: os dados trazem `url: vidapublica://evento/{id}`, lido onde cada plataforma o entrega (`src/notificacoes/link.ts`). O resumo semanal traz `vidapublica://feed?categorias=gastos,campanha` e abre o feed de quem a pessoa segue com esses filtros (o feed aceita `?categorias=` na rota). Com o app aberto, o aviso aparece na faixa, sem som.
 
 ## Offline
 

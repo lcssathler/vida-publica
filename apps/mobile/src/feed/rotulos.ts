@@ -60,3 +60,19 @@ export function assuntoDoEvento(evento: EventoFeed): string | null {
   const assuntos = evento.alvos.filter((a) => a.tipo === 'assunto');
   return (assuntos.find((a) => a.seguindo) ?? assuntos[0])?.nome ?? null;
 }
+
+/** Fonte do repasse partido → candidato, como a API devolve. */
+export function nomeFonteRepasse(fonte: string): string {
+  if (fonte === 'fundo_especial') return 'Fundo Eleitoral (FEFC)';
+  if (fonte === 'fundo_partidario') return 'Fundo Partidário';
+  if (fonte === 'outros') return 'Outros recursos';
+  return fonte.replace(/_/g, ' ');
+}
+
+/** Quem repassou, pela esfera do diretório no TSE: N nacional, F estadual, M municipal. */
+export function nomeEsfera(esfera: string | null): string {
+  if (esfera === 'N') return 'Pelo diretório nacional';
+  if (esfera === 'F') return 'Pelos diretórios estaduais';
+  if (esfera === 'M') return 'Pelos diretórios municipais';
+  return 'Diretório não informado';
+}

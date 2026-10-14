@@ -6,8 +6,12 @@ import type {
   Alvo,
   AlvoSeguido,
   Assunto,
+  CategoriaPerfil,
+  DoadoresPessoa,
   EventoFeed,
   Parlamentar,
+  PerfilPartido,
+  PerfilPessoa,
   Preferencias,
   RespostaFeed,
   Uf,
@@ -20,6 +24,8 @@ export const chaves = {
   preferencias: ['preferencias'] as const,
   feed: ['feed'] as const,
   evento: (id: string) => ['evento', id] as const,
+  pessoa: (id: string) => ['pessoa', id] as const,
+  partido: (id: string) => ['partido', id] as const,
 };
 
 const chaveAlvo = (alvo: Alvo) => `${alvo.tipo}:${alvo.id}`;
@@ -79,6 +85,9 @@ export function useSeguir() {
       await consultas.invalidateQueries({ queryKey: chaves.seguindo });
       // O feed "seguindo" e os eventos de campanha dependem de quem se segue.
       await consultas.invalidateQueries({ queryKey: chaves.feed });
+      // Perfis trazem "seguindo" e contagens que dependem de quem se segue.
+      await consultas.invalidateQueries({ queryKey: ['pessoa'] });
+      await consultas.invalidateQueries({ queryKey: ['partido'] });
     },
   });
 }
@@ -151,5 +160,52 @@ export function useEvento(id: string) {
   return useQuery({
     queryKey: chaves.evento(id),
     queryFn: () => cliente.get<EventoFeed>(`/eventos/${encodeURIComponent(id)}`),
+  });
+}
+
+export function usePessoa(id: string) {
+  const { cliente } = useSessao();
+  return useQuery({
+    queryKey: chaves.pessoa(id),
+    queryFn: () => cliente.get<PerfilPessoa>(`/pessoas/${encodeURIComponent(id)}`),
+  });
+}
+
+export function usePartido(id: string) {
+  const { cliente } = useSessao();
+  return useQuery({
+    queryKey: chaves.partido(id),
+    queryFn: () => cliente.get<PerfilPartido>(`/partidos/${encodeURIComponent(id)}`),
+  });
+}
+
+export function useDoadores(pessoaId: string, ano: number | null) {
+  const { cliente } = useSessao();
+  return useQuery({
+    queryKey: [...chaves.pessoa(pessoaId), 'doadores', ano],
+    queryFn: () =>
+      cliente.get<DoadoresPessoa>(`/pessoas/${encodeURIComponent(pessoaId)}/doadores?ano=${ano}`),
+    enabled: ano !== null,
+  });
+}
+
+/** Linha do tempo do perfil (pessoa ou partido), por categoria, com cursor. */
+export function useEventosDoPerfil(
+  tipo: 'pessoa' | 'partido',
+  id: string,
+  categoria: CategoriaPerfil | null,
+) {
+  const { cliente } = useSessao();
+  const base = tipo === 'pessoa' ? '/pessoas' : '/partidos';
+  return useInfiniteQuery({
+    queryKey: [tipo, id, 'eventos', categoria],
+    queryFn: ({ pageParam }) => {
+      const partes = ['limite=20'];
+      if (categoria) partes.push(`categoria=${categoria}`);
+      if (pageParam) partes.push(`cursor=${encodeURIComponent(pageParam)}`);
+      return cliente.get<RespostaFeed>(`${base}/${encodeURIComponent(id)}/eventos?${partes.join('&')}`);
+    },
+    initialPageParam: null as string | null,
+    getNextPageParam: (ultima) => ultima.proximoCursor,
   });
 }

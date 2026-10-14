@@ -45,6 +45,13 @@ Até concluir, só as telas do onboarding ficam acessíveis (`Stack.Protected` e
 - "Você parou aqui": o registro do topo da última visita fica guardado no aparelho por escopo. Na volta, o que vem antes dele é grifado como novo e um divisor marca onde a pessoa parou (`src/feed/linhas.ts`).
 - Detalhe (`/evento/[id]`): fato, data, valor, envolvidos, fonte (carimbo, nome, endereço, data do dado e da coleta, botão para abrir a fonte oficial) e a regra que gerou o registro.
 
+## Perfis
+
+- Pessoa (`/pessoa/[id]`): foto oficial com crédito, nome e nome civil, mandatos, histórico de partido (cada sigla leva ao perfil do partido), cota parlamentar dos dois anos mais recentes com as maiores categorias, quem financiou a campanha por eleição e as candidaturas. Os doadores aparecem exatamente como a API entrega: por origem, entidades com CNPJ pelo nome, pessoa física nomeada só acima de R$ 10 mil e o resto somado em "outras".
+- Partido (`/partido/[id]`): número, nome, anos no TSE, sucessor e antecessores, parlamentares em exercício (cada um leva ao perfil) e repasses a candidatos por ano, fonte e esfera.
+- Os dois terminam na linha do tempo por categoria (`src/perfis/LinhaDoTempo.tsx`), com as contagens da API e cursor; só aparecem as categorias com registros.
+- Os envolvidos no detalhe do registro e os itens da aba Seguindo levam aos perfis.
+
 ## Configuração
 
 O endereço da API vem de `EXPO_PUBLIC_API_URL`, definido na hora do empacotamento (copie `.env.example` para `.env.local`). Não é segredo e o app não guarda nenhuma chave. Sem a variável, usa `http://localhost:3000` (a API do compose). No emulador Android, use `http://10.0.2.2:3000`.

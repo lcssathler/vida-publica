@@ -112,3 +112,116 @@ export interface RespostaFeed {
   itens: EventoFeed[];
   proximoCursor: string | null;
 }
+
+export type CategoriaPerfil = 'votos' | 'presenca' | 'gastos' | 'propostas' | 'campanha' | 'eleicoes';
+
+export interface ContagemCategoria {
+  categoria: CategoriaPerfil;
+  eventos: number;
+  porTipo: Partial<Record<TipoEvento, number>>;
+}
+
+export interface Mandato {
+  casa: 'camara' | 'senado';
+  cargo: string;
+  uf: string | null;
+  legislatura: number;
+  condicao: string;
+  inicio: string | null;
+  fim: string | null;
+  emExercicio: boolean;
+}
+
+export interface Filiacao {
+  sigla: string;
+  partidoId: string | null;
+  desde: string;
+  ate: string | null;
+}
+
+export interface Candidatura {
+  ano: number;
+  turno: number;
+  sqCandidato: string;
+  cargo: string | null;
+  uf: string | null;
+  nomeUrna: string | null;
+  numero: number | null;
+  partido: { id: string | null; sigla: string | null };
+  situacao: string | null;
+  resultado: string | null;
+}
+
+export interface GastoAnual {
+  ano: number;
+  casa: 'camara' | 'senado';
+  total: number;
+  documentos: number;
+  categorias: { categoria: string; total: number }[];
+}
+
+export interface PerfilPessoa {
+  id: string;
+  nome: string;
+  nomeCivil: string | null;
+  foto: Foto | null;
+  mandatos: Mandato[];
+  filiacoes: Filiacao[];
+  candidaturas: Candidatura[];
+  partidoAtual: { id: string | null; sigla: string } | null;
+  seguindo: boolean;
+  categorias: ContagemCategoria[];
+  gastos: GastoAnual[];
+  anosDeCampanha: number[];
+}
+
+export interface Valor {
+  total: number;
+  receitas: number;
+}
+
+export interface DoadoresCandidatura {
+  ano: number;
+  sqCandidato: string;
+  cargo: string | null;
+  uf: string | null;
+  partido: string | null;
+  total: number;
+  receitas: number;
+  porOrigem: (Valor & { origem: string })[];
+  comCnpj: (Valor & { nome: string; cnpj: string })[];
+  pessoasFisicas: {
+    /** Só quem doou mais que o limite (R$ 10 mil) somado na candidatura. */
+    nomeadas: { nome: string; total: number; doacoes: number }[];
+    outras: { doadores: number; total: number };
+  };
+}
+
+export interface DoadoresPessoa {
+  ano: number;
+  limiteNomePessoaFisica: number;
+  fonte: { url: string };
+  candidaturas: DoadoresCandidatura[];
+}
+
+export interface PartidoResumo {
+  id: string;
+  sigla: string;
+  tipo: string;
+  ano: number | null;
+}
+
+export interface PerfilPartido {
+  id: string;
+  sigla: string;
+  nome: string | null;
+  numero: number;
+  primeiroAno: number | null;
+  ultimoAno: number | null;
+  sucessor: PartidoResumo | null;
+  antecessores: PartidoResumo[];
+  emExercicio: { id: string; nome: string; casa: 'camara' | 'senado'; cargo: string; uf: string | null }[];
+  repasses: { ano: number; fonte: string; esfera: string | null; total: number; repasses: number; candidatos: number }[];
+  seguindo: boolean;
+  categorias: ContagemCategoria[];
+}

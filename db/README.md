@@ -35,7 +35,7 @@ O arquivo aparece em `db/migrations/` com as seções `-- migrate:up` e `-- migr
 | `feed.evento` | Um evento por fato e versão de regra, de qualquer tipo: `chave_dedup` única, data do fato, fonte, título, resumo, `payload` jsonb, valor, visibilidade (`geral` ou só `seguidores`) e status (`segurado`, `publicado`, `arquivado`) com o motivo |
 | `feed.evento_alvo` | Pessoas, partidos, proposições e assuntos de cada evento, para seguir e filtrar sem varrer o `payload` |
 
-A API lê só eventos `publicado`; o admin revisa os `segurado`.
+A API lê só eventos `publicado`; o admin revisa os `segurado`. O índice parcial `evento_feed_idx (ocorrido_em DESC, id DESC) WHERE status = 'publicado'` serve à paginação por cursor do app.
 
 ## App
 

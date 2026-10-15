@@ -94,6 +94,52 @@ services:
       postgres:
         condition: service_healthy
 
+  # API do painel de revisão: mesma imagem da API, só as rotas /admin, com o
+  # usuário vp_admin. Fica só em 127.0.0.1: o único cliente é o painel Next.js
+  # (apps/admin), que repassa o IP de quem acessa (conferido em ADMIN_IPS).
+  # Contas do painel (sem cadastro pela web):
+  #   docker compose -f infra/docker-compose.yml exec admin-api node dist/admin/admin-cli.js criar <email> <nome>
+  admin-api:
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    command: ["node", "dist/admin/admin.js"]
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgres://vp_admin:${VP_ADMIN_DB_PASSWORD:?rode node infra/scripts/init-env.mjs}@postgres:5432/${POSTGRES_DB:-vida_publica}
+      ADMIN_TOTP_CHAVE: ${VP_ADMIN_TOTP_CHAVE:?rode node infra/scripts/init-env.mjs}
+      ADMIN_IPS: ${VP_ADMIN_IPS:-127.0.0.1,::1,172.16.0.0/12}
+      # O painel é o proxy à frente: o IP de quem acessa vem no X-Forwarded-For.
+      TRUST_PROXY: 1
+    ports:
+      - "127.0.0.1:${ADMIN_API_PORT:-3001}:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # Painel de revisão (Next.js, apps/admin): http://127.0.0.1:3002, só desta
+  # máquina. Login com e-mail, senha e código do 2FA (contas criadas pelo
+  # admin-cli acima). No compose, quem abre pela porta publicada chega pela
+  # rede do Docker (172.16.0.0/12); em produção, ADMIN_IPS lista os IPs da
+  # equipe e o proxy reverso fica à frente.
+  painel:
+    build:
+      context: ..
+      dockerfile: apps/admin/Dockerfile
+    restart: unless-stopped
+    environment:
+      ADMIN_API_URL: http://admin-api:3000
+      ADMIN_IPS: ${VP_ADMIN_IPS:-127.0.0.1,::1,172.16.0.0/12}
+      # HTTP só na máquina local; em produção o cookie exige HTTPS.
+      PAINEL_HTTP: "1"
+    ports:
+      - "127.0.0.1:${PAINEL_PORT:-3002}:3002"
+    depends_on:
+      admin-api:
+        condition: service_started
+
   # Worker de coleta: roda um comando e termina. Exemplo:
   #   docker compose -f infra/docker-compose.yml run --rm worker check-storage
   worker:

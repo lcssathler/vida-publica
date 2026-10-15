@@ -47,6 +47,8 @@ export default defineConfig({
       LIMITE_POR_MINUTO: '10000',
       LIMITE_IP_POR_MINUTO: '10000',
       LIMITE_CONTAS_POR_IP: '10000',
+      // Processo do admin (test/admin.e2e-spec.ts): chave fictícia do 2FA.
+      ADMIN_TOTP_CHAVE: 'chave-de-teste-do-2fa-'.repeat(2),
     },
   },
 });

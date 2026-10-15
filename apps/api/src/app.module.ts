@@ -6,6 +6,7 @@ import { BuscaModule } from './busca/busca.module';
 import { Env, validateEnv } from './config/env';
 import { ContaModule } from './conta/conta.module';
 import { DbModule } from './db/db.module';
+import { ErratasModule } from './erratas/erratas.module';
 import { FeedModule } from './feed/feed.module';
 import { HealthModule } from './health/health.module';
 import { LimiteModule } from './limite/limite.module';
@@ -42,6 +43,7 @@ import { SeguirModule } from './seguir/seguir.module';
     BuscaModule,
     ContaModule,
     NotificacoesModule,
+    ErratasModule,
   ],
 })
 export class AppModule {}

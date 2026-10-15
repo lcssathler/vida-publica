@@ -1,8 +1,8 @@
 """Permissões das tabelas de usuário do app (esquema app).
 
 Só a API e o notificador escrevem em app (o notificador, só a fila de avisos);
-o admin lê; o worker não enxerga. A API nunca lê os hashes de CPF do esquema
-ident.
+o worker não enxerga. O admin (Fase 8) só vê dos reportes de erro o conteúdo,
+sem a conta. A API e o admin nunca leem os hashes de CPF do esquema ident.
 """
 
 import hashlib
@@ -27,6 +27,7 @@ TABELAS_APP = (
     "notificacao",
     "notificacao_cursor",
     "resumo_semanal",
+    "reporte",
 )
 
 
@@ -101,13 +102,47 @@ def test_worker_nao_enxerga_app(tabela):
 
 
 @pytest.mark.parametrize("tabela", TABELAS_APP)
-def test_admin_le_mas_nao_escreve_app(tabela):
+def test_admin_nao_le_nem_escreve_app(tabela):
     connection = _connect("admin")
     try:
-        connection.run(f"SELECT count(*) FROM app.{tabela}")  # noqa: S608
+        assert _denied(connection, f"SELECT * FROM app.{tabela}")  # noqa: S608
         assert _denied(connection, f"DELETE FROM app.{tabela}")  # noqa: S608
     finally:
         connection.close()
+
+
+def test_admin_ve_o_reporte_sem_a_conta():
+    connection = _connect("admin")
+    try:
+        connection.run(
+            "SELECT id, evento_id, motivo, texto, criado_em, status, resolvido_em,"
+            " resolvido_por, errata_id FROM app.reporte"
+        )
+        assert _denied(connection, "SELECT usuario_id FROM app.reporte")
+        assert _denied(connection, "UPDATE app.reporte SET texto = 'x'")
+        assert _denied(connection, "SELECT count(*) FROM ident.pessoa")
+    finally:
+        connection.close()
+
+
+def test_api_reporta_e_exclusao_apaga(api):
+    usuario, _ = _usuario_com_sessao(api)
+    evento = api.run("SELECT id FROM feed.evento LIMIT 1")
+    if not evento:
+        pytest.skip("sem eventos no banco")
+    api.run(
+        "INSERT INTO app.reporte (usuario_id, evento_id, motivo) VALUES (:u, :e, 'outro')",
+        u=usuario,
+        e=evento[0][0],
+    )
+    assert _denied(api, "SELECT count(*) FROM feed.errata WHERE false") is False
+    assert _denied(
+        api,
+        "INSERT INTO feed.errata (titulo, texto, publicada_por)"
+        " VALUES ('xxxxx', 'xxxxxxxxxx', gen_random_uuid())",
+    )
+    api.run("DELETE FROM app.usuario WHERE id = :u", u=usuario)
+    assert api.run("SELECT count(*) FROM app.reporte WHERE usuario_id = :u", u=usuario) == [[0]]
 
 
 def test_api_nao_altera_feed_nem_canon(api):

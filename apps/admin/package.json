@@ -1,0 +1,35 @@
+{
+  "name": "@vida-publica/admin",
+  "version": "0.0.1",
+  "description": "Painel de revisão do Vida Pública",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "scripts": {
+    "dev": "next dev --webpack --hostname 127.0.0.1 --port 3002",
+    "build": "next build --webpack",
+    "start": "next start --hostname 127.0.0.1 --port 3002",
+    "lint": "eslint .",
+    "typecheck": "next typegen && tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "next": "16.4.1",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "server-only": "^0.0.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.18.0",
+    "@next/eslint-plugin-next": "16.4.1",
+    "@next/swc-wasm-nodejs": "16.4.1",
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "eslint": "^9.18.0",
+    "eslint-plugin-react-hooks": "^7.0.0",
+    "globals": "^17.0.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.20.0",
+    "vitest": "^5.0.4"
+  }
+}

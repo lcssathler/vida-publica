@@ -7,6 +7,7 @@ import { UsuariosRepositorio } from '../../src/auth/usuarios.repositorio';
 import { BuscaRepositorio } from '../../src/busca/busca.repositorio';
 import { ContaRepositorio } from '../../src/conta/conta.repositorio';
 import { VerificadorIdentidade } from '../../src/auth/verificador-identidade';
+import { ErratasRepositorio } from '../../src/erratas/erratas.repositorio';
 import { FeedRepositorio } from '../../src/feed/feed.repositorio';
 import { DispositivosRepositorio } from '../../src/notificacoes/dispositivos.repositorio';
 import { PerfisRepositorio } from '../../src/perfis/perfis.repositorio';
@@ -16,6 +17,7 @@ import { MemoriaFeed } from './memoria-feed';
 import { MemoriaBusca } from './memoria-busca';
 import { MemoriaConta } from './memoria-conta';
 import { MemoriaDispositivos } from './memoria-dispositivos';
+import { MemoriaErratas } from './memoria-erratas';
 import { MemoriaPerfis } from './memoria-perfis';
 import { MemoriaPropostas } from './memoria-propostas';
 import { MemoriaSeguindo } from './memoria-seguindo';
@@ -32,6 +34,7 @@ export interface AppDeTeste {
   busca: MemoriaBusca;
   conta: MemoriaConta;
   dispositivos: MemoriaDispositivos;
+  erratas: MemoriaErratas;
   /** Cria uma conta anônima e devolve o cabeçalho de autorização dela. */
   anonimo(): Promise<{ authorization: string; usuarioId: string }>;
 }
@@ -54,6 +57,7 @@ export async function criarApp(
   const busca = new MemoriaBusca();
   const conta = new MemoriaConta(usuarios, seguindo);
   const dispositivos = new MemoriaDispositivos(usuarios);
+  const erratas = new MemoriaErratas(feed);
   let construtor = Test.createTestingModule({ imports: [AppModule] })
     .overrideProvider(UsuariosRepositorio)
     .useValue(usuarios)
@@ -71,6 +75,8 @@ export async function criarApp(
     .useValue(conta)
     .overrideProvider(DispositivosRepositorio)
     .useValue(dispositivos)
+    .overrideProvider(ErratasRepositorio)
+    .useValue(erratas)
     .overrideProvider(VerificadorIdentidade)
     .useValue(new VerificadorFalso());
   for (const [porta, adaptador] of trocas) {
@@ -90,6 +96,7 @@ export async function criarApp(
     busca,
     conta,
     dispositivos,
+    erratas,
     async anonimo() {
       const resposta = await request(app.getHttpServer())
         .post('/auth/anonimo')

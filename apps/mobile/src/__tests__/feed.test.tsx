@@ -160,3 +160,31 @@ describe('Detalhe do evento', () => {
     expect(await screen.findByText('Não encontrado.')).toBeOnTheScreen();
   });
 });
+
+describe('Errata e "Reportar erro"', () => {
+  it('o detalhe mostra a errata e leva ao reporte', async () => {
+    await renderizar(<DetalheDoEvento />, {
+      rotas: {
+        'GET /eventos/e1': {
+          corpo: evento({
+            id: 'e1',
+            erratas: [
+              {
+                id: 'er1',
+                titulo: 'Voto atribuído à pessoa errada',
+                texto: 'O registro foi corrigido com a lista oficial.',
+                publicadaEm: '2026-10-15T12:00:00.000Z',
+              },
+            ],
+          }),
+        },
+      },
+    });
+    expect(await screen.findByText('Voto atribuído à pessoa errada')).toBeOnTheScreen();
+    expect(screen.getByText('Publicada em 15/10/2026.')).toBeOnTheScreen();
+    await fireEvent.press(screen.getByRole('link', { name: 'Todas as erratas' }));
+    expect(mockRoteador.push).toHaveBeenCalledWith('/erratas');
+    await fireEvent.press(screen.getByRole('link', { name: 'Reportar erro neste registro' }));
+    expect(mockRoteador.push).toHaveBeenCalledWith({ pathname: '/reportar/[id]', params: { id: 'e1' } });
+  });
+});

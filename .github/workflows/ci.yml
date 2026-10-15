@@ -40,6 +40,13 @@ jobs:
         run: docker compose -f infra/docker-compose.yml run --rm migrate
       - name: API responde no compose
         run: curl -fsS http://localhost:3000/health
+      - name: API do admin e painel de revisão respondem no compose
+        run: |
+          curl -fsS http://127.0.0.1:3001/health
+          curl -fsS http://127.0.0.1:3002/saude
+          # Sem sessão do painel: 401 na API do admin e o painel manda ao login.
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3001/admin/resumo)" = 401
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3002/)" = 307
       - name: Notificador roda um ciclo com o usuário vp_notify
         run: |
           docker compose -f infra/docker-compose.yml run --rm notificador node dist/notificacoes/notificador.js ciclo
@@ -67,6 +74,7 @@ jobs:
           pnpm install --frozen-lockfile --filter @vida-publica/api...
           export VP_API_TEST_DATABASE_URL="postgres://vp_api:${VP_API_DB_PASSWORD}@127.0.0.1:${POSTGRES_PORT}/${POSTGRES_DB}"
           export VP_NOTIFY_TEST_DATABASE_URL="postgres://vp_notify:${VP_NOTIFY_DB_PASSWORD}@127.0.0.1:${POSTGRES_PORT}/${POSTGRES_DB}"
+          export VP_ADMIN_TEST_DATABASE_URL="postgres://vp_admin:${VP_ADMIN_DB_PASSWORD}@127.0.0.1:${POSTGRES_PORT}/${POSTGRES_DB}"
           export VP_API_TEST_OWNER_URL="postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@127.0.0.1:${POSTGRES_PORT}/${POSTGRES_DB}"
           pnpm --filter @vida-publica/api run test:int
       - name: Derruba o ambiente
@@ -108,6 +116,9 @@ jobs:
       - name: Build da imagem da API
         if: steps.detect.outputs.present == 'true' && hashFiles('apps/api/Dockerfile') != ''
         run: docker build -f apps/api/Dockerfile -t vida-publica-api:ci .
+      - name: Build do painel de revisão (Next.js)
+        if: steps.detect.outputs.present == 'true' && hashFiles('apps/admin/package.json') != ''
+        run: pnpm --filter @vida-publica/admin run build
       - name: Sem workspace Node ainda
         if: steps.detect.outputs.present != 'true'
         run: echo "Nenhum pnpm-lock.yaml encontrado; nada a verificar."

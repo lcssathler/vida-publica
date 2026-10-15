@@ -4,6 +4,7 @@ import Busca from '../app/(abas)/busca';
 import ContaTela from '../app/(abas)/conta';
 import Feed from '../app/(abas)/index';
 import Seguindo from '../app/(abas)/seguindo';
+import Erratas from '../app/erratas';
 import DetalheDoEvento from '../app/evento/[id]';
 import EscolherAssuntos from '../app/onboarding/assuntos';
 import EscolherEstado from '../app/onboarding/index';
@@ -12,6 +13,7 @@ import QuemSeguir from '../app/onboarding/seguir';
 import PerfilDePartido from '../app/partido/[id]';
 import PerfilDePessoa from '../app/pessoa/[id]';
 import DetalheDaProposta from '../app/proposta/[id]';
+import ReportarErro from '../app/reportar/[id]';
 import { auditar } from '../test/auditoria';
 import { evento } from '../test/fabricas';
 import { renderizar } from '../test/renderizar';
@@ -29,7 +31,14 @@ const alvos = [
   { tipo: 'pessoa', id: 'p1', nome: 'Maria Exemplo', papel: 'votante', seguindo: true },
   { tipo: 'assunto', id: 'Saúde', nome: 'Saúde', papel: '', seguindo: false },
 ] as const;
-const comAlvos = evento({ id: 'x1', alvos: [...alvos], valor: 1200 });
+const comAlvos = evento({
+  id: 'x1',
+  alvos: [...alvos],
+  valor: 1200,
+  erratas: [
+    { id: 'er1', titulo: 'Voto corrigido', texto: 'O voto era de outra sessão.', publicadaEm: '2026-10-15T12:00:00.000Z' },
+  ],
+});
 const pagina = { corpo: { itens: [comAlvos], proximoCursor: null } };
 const seguindo = {
   corpo: {
@@ -134,6 +143,20 @@ const rotas = {
       ],
     },
   },
+  'GET /erratas?limite=20': {
+    corpo: {
+      erratas: [
+        {
+          id: 'er1',
+          titulo: 'Voto corrigido',
+          texto: 'O voto era de outra sessão.',
+          publicadaEm: '2026-10-15T12:00:00.000Z',
+          evento: { id: 'x1', titulo: comAlvos.titulo, tipo: 'voto_nominal', ocorridoEm: comAlvos.ocorridoEm },
+        },
+      ],
+      proximoCursor: null,
+    },
+  },
   'GET /conta': {
     corpo: { usuarioId: 'u', criadaEm: '2026-10-14T12:00:00.000Z', identidades: [], seguindo: 2, sessoesAtivas: 1, anonima: true, preferencias },
   },
@@ -152,6 +175,8 @@ const telas: [string, ReactElement, string][] = [
   ['busca', <Busca key="10" />, 'Busca'],
   ['seguindo', <Seguindo key="11" />, 'Seguindo'],
   ['conta', <ContaTela key="12" />, 'Conta'],
+  ['reportar erro', <ReportarErro key="13" />, 'O que está errado neste registro?'],
+  ['erratas', <Erratas key="14" />, 'Erratas'],
 ];
 
 describe.each(telas)('acessibilidade: %s', (_nome, tela, titulo) => {

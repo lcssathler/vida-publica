@@ -106,7 +106,29 @@ export interface EventoFeed {
   fonte: { url: string; dadoEm: string | null; coletadoEm: string };
   regra: { versao: number; descricao?: string };
   alvos: AlvoDoEvento[];
+  /** Só no detalhe: correções publicadas sobre o registro, da mais recente. */
+  erratas?: ErrataDoEvento[];
 }
+
+export interface ErrataDoEvento {
+  id: string;
+  titulo: string;
+  texto: string;
+  publicadaEm: string;
+}
+
+/** Errata pública: o que estava errado e o que foi feito. */
+export interface Errata extends ErrataDoEvento {
+  /** O registro corrigido, só se continua no app para quem pede. */
+  evento: { id: string; titulo: string; tipo: TipoEvento; ocorridoEm: string } | null;
+}
+
+export interface RespostaErratas {
+  erratas: Errata[];
+  proximoCursor: string | null;
+}
+
+export type MotivoReporte = 'fato_errado' | 'pessoa_errada' | 'valor_errado' | 'fonte_quebrada' | 'outro';
 
 export interface RespostaFeed {
   itens: EventoFeed[];

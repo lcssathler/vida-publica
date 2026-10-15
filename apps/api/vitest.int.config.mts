@@ -6,6 +6,7 @@ import base from './vitest.config.mts';
  * descartável já migrado, acessado com o usuário vp_api:
  *   VP_API_TEST_DATABASE_URL=postgres://vp_api:<senha>@127.0.0.1:5433/vida_publica_test
  *   VP_NOTIFY_TEST_DATABASE_URL=postgres://vp_notify:<senha>@127.0.0.1:5433/vida_publica_test
+ *   VP_ADMIN_TEST_DATABASE_URL=postgres://vp_admin:<senha>@127.0.0.1:5433/vida_publica_test
  */
 const url = process.env.VP_API_TEST_DATABASE_URL;
 if (!url) {
@@ -14,6 +15,10 @@ if (!url) {
 // O notificador conecta com o próprio usuário (vp_notify).
 if (!process.env.VP_NOTIFY_TEST_DATABASE_URL) {
   throw new Error('Defina VP_NOTIFY_TEST_DATABASE_URL (usuário vp_notify)');
+}
+// O processo do painel conecta com o próprio usuário (vp_admin).
+if (!process.env.VP_ADMIN_TEST_DATABASE_URL) {
+  throw new Error('Defina VP_ADMIN_TEST_DATABASE_URL (usuário vp_admin)');
 }
 
 export default defineConfig({

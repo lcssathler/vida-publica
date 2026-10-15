@@ -70,7 +70,7 @@ jobs:
           done
           docker compose -f infra/docker-compose.yml exec -T backup vp-backup info
           docker compose -f infra/docker-compose.yml exec -T backup vp-backup testar-restauracao
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v7
       - name: Testes de integração (esquema e permissões)
         working-directory: services/ingest
         run: |
@@ -176,7 +176,7 @@ jobs:
         working-directory: .
         run: |
           if [ -f services/ingest/pyproject.toml ]; then echo "present=true" >> "$GITHUB_OUTPUT"; else echo "present=false" >> "$GITHUB_OUTPUT"; fi
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v7
         if: steps.detect.outputs.present == 'true'
       - name: Instala dependências
         if: steps.detect.outputs.present == 'true'

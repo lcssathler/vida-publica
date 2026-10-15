@@ -92,6 +92,8 @@ Cada comando roda como job registrado em `raw.job_run`. Pelo Docker: `docker com
 
 Todos são idempotentes: rodar de novo só grava o que mudou.
 
+Em produção, `vp-ingest agendar` roda cada coleta e o motor de eventos no intervalo da fonte (`agendador.py`: votações a cada 15 minutos, agenda e pauta a cada 30, proposições a cada hora, TSE a cada 6 horas, parlamentares e despesas por dia, partidos por semana, motor a cada 10 minutos), em sequência e cada uma num processo próprio. Ao começar, lê de `raw.job_run` a última execução bem-sucedida de cada tarefa. Sem `VP_S3_SECRET_KEY` nem `VP_S3_ENDPOINT`, o S3 é o da AWS com as credenciais da máquina.
+
 ## Eventos do feed
 
 Depois da coleta, `eventos` transforma o esquema `canon` em eventos do feed (`feed.evento`). Cada tipo de evento tem uma regra versionada em `feed.regra`; cada gerador devolve todos os fatos do seu tipo e o motor grava só a diferença:

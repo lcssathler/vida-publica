@@ -1,0 +1,133 @@
+# Máquina da aplicação (produção). Sobe pelo serviço vida-publica
+# (infra/producao/subir.sh), que exporta as variáveis do segredo do Secrets
+# Manager e da configuração da máquina (/etc/vida-publica/ambiente). Nenhuma
+# credencial neste arquivo.
+name: vida-publica
+
+x-observabilidade: &observabilidade
+  SENTRY_DSN: ${VP_SENTRY_DSN:-}
+  SENTRY_AMBIENTE: producao
+  SENTRY_RELEASE: ${VERSAO}
+
+x-node: &node
+  NODE_ENV: production
+
+services:
+  # Proxy com TLS automático (Let's Encrypt): a API para todos; o painel só
+  # para os IPs da equipe (conferido de novo no painel e na API do admin).
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      API_DOMINIO: ${API_DOMINIO}
+      PAINEL_DOMINIO: ${PAINEL_DOMINIO}
+      ADMIN_IPS_CADDY: ${ADMIN_IPS_CADDY}
+      ACME_EMAIL: ${ACME_EMAIL}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-dados:/data
+      - caddy-config:/config
+    depends_on:
+      - api
+      - painel
+
+  api:
+    image: ${IMAGENS}-api:${VERSAO}
+    restart: unless-stopped
+    environment:
+      <<: [*node, *observabilidade]
+      PORT: 3000
+      DATABASE_URL: postgres://vp_api:${VP_API_DB_PASSWORD}@${VP_DB_HOST}:5432/vida_publica
+      DB_POOL_MAX: 20
+      JWT_SECRET: ${VP_API_JWT_SECRET}
+      APPLE_CLIENT_IDS: ${VP_APPLE_CLIENT_IDS:-}
+      GOOGLE_CLIENT_IDS: ${VP_GOOGLE_CLIENT_IDS:-}
+      # O Caddy é o proxy à frente: o IP real vem no X-Forwarded-For.
+      TRUST_PROXY: 1
+      VP_SERVICO: api
+
+  notificador:
+    image: ${IMAGENS}-api:${VERSAO}
+    restart: unless-stopped
+    command: ["node", "dist/notificacoes/notificador.js", "continuo"]
+    environment:
+      <<: [*node, *observabilidade]
+      DATABASE_URL: postgres://vp_notify:${VP_NOTIFY_DB_PASSWORD}@${VP_DB_HOST}:5432/vida_publica
+      FCM_CREDENCIAIS_JSON: ${VP_FCM_CREDENCIAIS_JSON:-}
+      HEALTHCHECKS_PING_KEY: ${VP_HEALTHCHECKS_PING_KEY:-}
+      VP_SERVICO: notificador
+    healthcheck:
+      test: ["CMD-SHELL", "test -n \"$$(find /tmp/notificador-vivo -mmin -5 2>/dev/null)\""]
+      interval: 30s
+      timeout: 3s
+      retries: 5
+      start_period: 30s
+
+  admin-api:
+    image: ${IMAGENS}-api:${VERSAO}
+    restart: unless-stopped
+    command: ["node", "dist/admin/admin.js"]
+    environment:
+      <<: [*node, *observabilidade]
+      PORT: 3000
+      DATABASE_URL: postgres://vp_admin:${VP_ADMIN_DB_PASSWORD}@${VP_DB_HOST}:5432/vida_publica
+      ADMIN_TOTP_CHAVE: ${VP_ADMIN_TOTP_CHAVE}
+      ADMIN_IPS: ${VP_ADMIN_IPS}
+      TRUST_PROXY: 1
+      VP_SERVICO: admin-api
+
+  painel:
+    image: ${IMAGENS}-painel:${VERSAO}
+    restart: unless-stopped
+    environment:
+      ADMIN_API_URL: http://admin-api:3000
+      ADMIN_IPS: ${VP_ADMIN_IPS}
+    depends_on:
+      - admin-api
+
+  # Coletas e motor de eventos nos intervalos de cada fonte.
+  agendador:
+    image: ${IMAGENS}-worker:${VERSAO}
+    restart: unless-stopped
+    command: ["agendar"]
+    environment: &worker
+      VP_DB_HOST: ${VP_DB_HOST}
+      VP_DB_PORT: 5432
+      VP_DB_NAME: vida_publica
+      VP_DB_USER: vp_ingest
+      VP_DB_PASSWORD: ${VP_INGEST_DB_PASSWORD}
+      VP_CPF_HASH_KEY: ${VP_CPF_HASH_KEY}
+      # S3 da AWS com o papel da máquina: sem endpoint e sem chave.
+      VP_S3_ENDPOINT: ""
+      VP_S3_REGION: ${AWS_REGION}
+      VP_S3_SECRET_KEY: ""
+      VP_S3_BUCKET_RAW: ${VP_S3_BUCKET_RAW}
+      VP_LOG_JSON: "true"
+      VP_SENTRY_DSN: ${VP_SENTRY_DSN:-}
+      VP_AMBIENTE: producao
+      VP_HEALTHCHECKS_PING_KEY: ${VP_HEALTHCHECKS_PING_KEY:-}
+    healthcheck:
+      test: ["CMD-SHELL", "test -n \"$$(find /tmp/agendador-vivo -mmin -240 2>/dev/null)\""]
+      interval: 60s
+      timeout: 3s
+      retries: 3
+      start_period: 60s
+
+  vigia:
+    image: ${IMAGENS}-worker:${VERSAO}
+    restart: unless-stopped
+    command: ["vigiar", "--continuo"]
+    environment: *worker
+    healthcheck:
+      test: ["CMD-SHELL", "test -n \"$$(find /tmp/vigia-vivo -mmin -15 2>/dev/null)\""]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 20s
+
+volumes:
+  caddy-dados:
+  caddy-config:

@@ -1,0 +1,29 @@
+{
+	email {$ACME_EMAIL}
+	# Sem painel de administração do próprio Caddy exposto.
+	admin off
+}
+
+(seguranca) {
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options nosniff
+		-Server
+	}
+}
+
+# API do app: para todos. O Caddy sobrescreve o X-Forwarded-For com o IP de
+# quem conecta (não confia no que o cliente manda).
+{$API_DOMINIO} {
+	import seguranca
+	encode zstd gzip
+	reverse_proxy api:3000
+}
+
+# Painel de revisão: só os IPs da equipe; o resto recebe 403 aqui mesmo.
+{$PAINEL_DOMINIO} {
+	import seguranca
+	@fora not remote_ip {$ADMIN_IPS_CADDY}
+	respond @fora "Endereço sem acesso ao painel." 403
+	reverse_proxy painel:3002
+}

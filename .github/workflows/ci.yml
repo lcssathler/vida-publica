@@ -95,6 +95,32 @@ jobs:
         if: always()
         run: docker compose -f infra/docker-compose.yml down -v
 
+  terraform:
+    name: terraform
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra/terraform
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.13.5
+      - name: Formatação
+        run: terraform fmt -check -recursive
+      - name: Validação
+        run: |
+          terraform init -backend=false -input=false
+          terraform validate
+      - name: Plano sem conta (credenciais fictícias, nenhuma chamada à AWS)
+        env:
+          AWS_ACCESS_KEY_ID: ficticio
+          AWS_SECRET_ACCESS_KEY: ficticio
+        run: terraform plan -input=false -lock=false -var-file=exemplo.tfvars -var planejar_sem_conta=true
+      - name: Scripts de produção e de backup (shellcheck)
+        working-directory: .
+        run: shellcheck infra/producao/subir.sh && shellcheck -s sh infra/postgres/vp-backup
+
   node:
     name: node
     runs-on: ubuntu-latest

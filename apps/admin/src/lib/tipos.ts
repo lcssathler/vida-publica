@@ -116,3 +116,21 @@ export interface ResultadoRevisao {
   revisados: string[];
   recusados: Array<{ id: string; motivo: string }>;
 }
+
+export interface SaudeFonte {
+  job: string;
+  descricao: string;
+  prazoHoras: number;
+  ativo: boolean;
+  ultimoSucesso: string | null;
+  ultimaFalha: string | null;
+  erro: string | null;
+  atrasado: boolean;
+  alertaDesde: string | null;
+}
+
+export interface AlertaFonte {
+  chave: string;
+  abertoEm: string;
+  resolvidoEm: string | null;
+}

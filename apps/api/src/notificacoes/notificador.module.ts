@@ -1,6 +1,7 @@
 import { Logger, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { LoggerModule } from 'nestjs-pino';
+import { idsDoTrace } from '../observabilidade/logs';
 import { DbModule } from '../db/db.module';
 import {
   Enviador,
@@ -31,6 +32,8 @@ import { CONFIG_RESUMO, ConfigResumo, ResumoService } from './resumo.service';
       useFactory: (config: ConfigService<EnvNotificador, true>) => ({
         pinoHttp: {
           level: config.get('LOG_LEVEL', { infer: true }),
+          // trace_id e span_id do OpenTelemetry em cada linha.
+          mixin: idsDoTrace,
           transport:
             config.get('NODE_ENV', { infer: true }) === 'development'
               ? { target: 'pino-pretty', options: { singleLine: true } }

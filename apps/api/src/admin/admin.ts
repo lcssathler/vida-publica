@@ -1,9 +1,11 @@
-import { NestFactory } from '@nestjs/core';
+import '../observabilidade/instrumentar';
+import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { ConfigService } from '@nestjs/config';
 import helmet from 'helmet';
 import { Logger } from 'nestjs-pino';
 import { AdminModule } from './admin.module';
+import { FiltroDeErros } from '../observabilidade/filtro-erros';
 import { EnvAdmin } from './env-admin';
 
 /**
@@ -18,6 +20,7 @@ async function bootstrap(): Promise<void> {
   app.useLogger(app.get(Logger));
   app.use(helmet());
   app.enableShutdownHooks();
+  app.useGlobalFilters(new FiltroDeErros(app.get(HttpAdapterHost).httpAdapter));
   const config = app.get<ConfigService<EnvAdmin, true>>(ConfigService);
   app.set('trust proxy', config.get('TRUST_PROXY', { infer: true }));
   await app.listen(config.get('PORT', { infer: true }));

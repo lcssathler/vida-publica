@@ -158,6 +158,25 @@ export interface ResumoRevisao {
   erratas: number;
 }
 
+/** Situação de um job diante do prazo máximo sem coleta bem-sucedida. */
+export interface SaudeFonte {
+  job: string;
+  descricao: string;
+  prazoHoras: number;
+  ativo: boolean;
+  ultimoSucesso: Date | null;
+  ultimaFalha: Date | null;
+  erro: string | null;
+  atrasado: boolean;
+  alertaDesde: Date | null;
+}
+
+export interface AlertaFonte {
+  chave: string;
+  abertoEm: Date;
+  resolvidoEm: Date | null;
+}
+
 export interface Pagina<T> {
   itens: T[];
   total: number;
@@ -209,6 +228,9 @@ export abstract class RevisaoRepositorio {
   abstract publicarErrata(dados: NovaErrata, revisor: Revisor): Promise<string>;
 
   abstract acoes(pagina: number, porPagina: number): Promise<Pagina<Acao>>;
+
+  /** Prazo e última coleta de cada job (raw.fonte_prazo, raw.job_run, raw.alerta). */
+  abstract fontes(): Promise<{ fontes: SaudeFonte[]; alertas: AlertaFonte[] }>;
 }
 
 /** Grava uma ação do painel (dentro da transação de quem muda). */

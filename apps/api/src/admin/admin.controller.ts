@@ -332,6 +332,11 @@ export class AdminController {
     }
   }
 
+  @Get('admin/fontes')
+  fontes() {
+    return this.revisao.fontes();
+  }
+
   @Get('admin/acoes')
   acoes(@Query(new ZodPipe(paginaSchema)) consulta: { pagina: number }) {
     return this.revisao.acoes(consulta.pagina, 100);

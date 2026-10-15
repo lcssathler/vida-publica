@@ -19,7 +19,10 @@ import {
   RevisaoRepositorio,
   revisadoPor,
   Revisor,
+  SaudeFonte,
+  AlertaFonte,
 } from './revisao.repositorio';
+import { semCpf } from '../comum/cpf';
 
 /** Nome de quem revisou: a conta do painel (admin:<id>) ou o processo. */
 const NOME_REVISOR = (coluna: string) => `CASE
@@ -535,6 +538,40 @@ export class PostgresRevisaoRepositorio extends RevisaoRepositorio {
       });
       return errata.id;
     });
+  }
+
+  async fontes(): Promise<{ fontes: SaudeFonte[]; alertas: AlertaFonte[] }> {
+    const fontes = await this.db.query<SaudeFonte>(
+      `SELECT p.job, p.descricao, extract(epoch FROM p.prazo)::float8 / 3600 AS "prazoHoras",
+              p.ativo, s.ultimo AS "ultimoSucesso", f.finished_at AS "ultimaFalha",
+              f.error AS erro,
+              (s.ultimo IS NULL OR now() - s.ultimo > p.prazo) AS atrasado,
+              a.aberto_em AS "alertaDesde"
+         FROM raw.fonte_prazo p
+         LEFT JOIN LATERAL (
+           SELECT max(r.finished_at) AS ultimo FROM raw.job_run r
+            WHERE r.job = p.job AND r.status = 'succeeded') s ON true
+         LEFT JOIN LATERAL (
+           SELECT r.finished_at, r.error FROM raw.job_run r
+            WHERE r.job = p.job AND r.status = 'failed'
+              AND r.finished_at > coalesce(s.ultimo, '-infinity')
+            ORDER BY r.finished_at DESC LIMIT 1) f ON true
+         LEFT JOIN raw.alerta a
+           ON a.chave = 'fonte:' || p.job AND a.resolvido_em IS NULL
+        ORDER BY atrasado DESC, p.job`,
+    );
+    const alertas = await this.db.query<AlertaFonte>(
+      `SELECT chave, aberto_em AS "abertoEm", resolvido_em AS "resolvidoEm"
+         FROM raw.alerta ORDER BY aberto_em DESC LIMIT 50`,
+    );
+    return {
+      // O texto do erro vem da exceção do job: CPF nunca.
+      fontes: fontes.map((f) => ({
+        ...f,
+        erro: f.erro ? semCpf(f.erro) : null,
+      })),
+      alertas,
+    };
   }
 
   async acoes(pagina: number, porPagina: number): Promise<Pagina<Acao>> {

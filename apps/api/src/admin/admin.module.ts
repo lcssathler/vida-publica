@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { LoggerModule } from 'nestjs-pino';
+import { idsDoTrace } from '../observabilidade/logs';
 import { DbModule } from '../db/db.module';
 import { ContadorEmMemoria, ContadorRequisicoes } from '../limite/contador';
 import { AdminController } from './admin.controller';
@@ -33,6 +34,8 @@ import { RevisaoRepositorio } from './revisao.repositorio';
       useFactory: (config: ConfigService<EnvAdmin, true>) => ({
         pinoHttp: {
           level: config.get('LOG_LEVEL', { infer: true }),
+          // trace_id e span_id do OpenTelemetry em cada linha.
+          mixin: idsDoTrace,
           redact: ['req.headers.authorization', 'req.headers.cookie'],
           transport:
             config.get('NODE_ENV', { infer: true }) === 'development'

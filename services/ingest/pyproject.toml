@@ -12,6 +12,7 @@ dependencies = [
   "pg8000>=1.31",
   "pydantic>=2.11",
   "pydantic-settings>=2.10",
+  "sentry-sdk>=2.30",
 ]
 
 [project.scripts]

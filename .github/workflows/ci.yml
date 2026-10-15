@@ -56,6 +56,10 @@ jobs:
         run: |
           docker compose -f infra/docker-compose.yml run --rm worker check-storage
           docker compose -f infra/docker-compose.yml run --rm worker check-db
+      - name: Vigia confere os prazos das fontes (banco vazio: todas atrasadas, alertas abertos)
+        run: |
+          docker compose -f infra/docker-compose.yml run --rm worker vigiar
+          docker compose -f infra/docker-compose.yml exec -T postgres psql -U vp_owner -d vida_publica -tAc             "SELECT count(*) FROM raw.alerta WHERE resolvido_em IS NULL" | grep -qv '^0$'
       - uses: astral-sh/setup-uv@v5
       - name: Testes de integração (esquema e permissões)
         working-directory: services/ingest

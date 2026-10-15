@@ -32,3 +32,16 @@ class Settings(BaseSettings):
         default="VidaPublica/0.1 (+https://github.com/lcssathler/vida-publica)",
     )
     http_timeout_seconds: float = 60.0
+
+    # Observabilidade. Sem credenciais, tudo fica no log (adaptador de log).
+    # Logs em JSON, uma linha por registro (no contêiner); texto no terminal.
+    log_json: bool = False
+    # Erros e lentidão dos jobs no Sentry; vazio desliga.
+    sentry_dsn: SecretStr = SecretStr("")
+    ambiente: str = "local"
+    # healthchecks.io: chave de ping do projeto. O vigia pinga o check "fontes"
+    # (falha se alguma fonte passou do prazo); vazio desliga.
+    healthchecks_ping_key: SecretStr = SecretStr("")
+    healthchecks_url: str = "https://hc-ping.com"
+    # Intervalo do vigia no modo contínuo, em segundos.
+    vigia_intervalo_segundos: int = 300

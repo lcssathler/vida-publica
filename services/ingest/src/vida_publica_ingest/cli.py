@@ -3,6 +3,7 @@ import logging
 import sys
 from datetime import date, timedelta
 
+from . import vigia
 from .adapters.postgres import PgJobRecorder, PgRawRegistry, connect
 from .adapters.s3 import S3RawStorage
 from .canon import mandatos, pessoas, repasses
@@ -10,6 +11,7 @@ from .config import Settings
 from .events import engine, registro
 from .http import SourceClient
 from .jobs import run_job
+from .observabilidade import alertadores, configurar_logs, iniciar_sentry
 from .sources import (
     camara_deputados,
     camara_eventos,
@@ -456,6 +458,24 @@ def _mandatos_filiacoes(settings: Settings) -> int:
     return 0
 
 
+def _vigiar(settings: Settings, sentry_ligado: bool, em_continuo: bool) -> int:
+    alertador = alertadores(settings, sentry_ligado)
+    if em_continuo:
+        vigia.continuo(lambda: connect(settings), alertador, settings.vigia_intervalo_segundos)
+        return 0
+    conn = connect(settings)
+    try:
+        resultado = vigia.vigiar(vigia.VigiaRepository(conn), alertador)
+    finally:
+        conn.close()
+    print(
+        f"vigia: {resultado.no_prazo} no prazo, {resultado.atrasados} atrasados;"
+        f" alertas {resultado.abertos} abertos, {resultado.lembrados} lembrados,"
+        f" {resultado.resolvidos} resolvidos"
+    )
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
     logging.getLogger("httpx").setLevel(logging.WARNING)
@@ -463,6 +483,14 @@ def main(argv: list[str] | None = None) -> int:
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("check-storage", help="confere o acesso ao S3 e cria o bucket bruto")
     commands.add_parser("check-db", help="confere o acesso ao banco com o usuário do worker")
+    vigiar = commands.add_parser(
+        "vigiar",
+        help="confere o prazo de cada fonte (raw.job_run), abre e fecha alertas e manda o"
+        " sinal de vida",
+    )
+    vigiar.add_argument(
+        "--continuo", action="store_true", help="uma volta a cada VP_VIGIA_INTERVALO_SEGUNDOS"
+    )
     deputados = commands.add_parser("camara-deputados", help="coleta deputados da Câmara")
     deputados.add_argument(
         "--legislatura", type=int, action="append", help="padrão: 57 (2023-2027)"
@@ -559,6 +587,10 @@ def main(argv: list[str] | None = None) -> int:
 
     args = parser.parse_args(argv)
     settings = Settings()
+    configurar_logs(settings)
+    sentry_ligado = iniciar_sentry(settings)
+    if args.command == "vigiar":
+        return _vigiar(settings, sentry_ligado, args.continuo)
     if args.command == "check-storage":
         return _check_storage(settings)
     if args.command == "check-db":

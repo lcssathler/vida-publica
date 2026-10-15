@@ -35,7 +35,8 @@ jobs:
       - name: Valida o docker-compose
         run: docker compose -f infra/docker-compose.yml config --quiet
       - name: Sobe banco e armazenamento e espera ficarem saudáveis
-        run: docker compose -f infra/docker-compose.yml up -d --wait --wait-timeout 120
+        # O teste de restauração roda no passo próprio, não no laço do backup.
+        run: VP_BACKUP_TESTE_DIAS=0 docker compose -f infra/docker-compose.yml up -d --wait --wait-timeout 180
       - name: Aplica as migrações do banco
         run: docker compose -f infra/docker-compose.yml run --rm migrate
       - name: API responde no compose
@@ -60,6 +61,15 @@ jobs:
         run: |
           docker compose -f infra/docker-compose.yml run --rm worker vigiar
           docker compose -f infra/docker-compose.yml exec -T postgres psql -U vp_owner -d vida_publica -tAc             "SELECT count(*) FROM raw.alerta WHERE resolvido_em IS NULL" | grep -qv '^0$'
+      - name: Backup contínuo e teste de restauração (pgBackRest)
+        run: |
+          # O laço do serviço backup faz o primeiro backup completo sozinho.
+          for i in $(seq 1 60); do
+            docker compose -f infra/docker-compose.yml exec -T backup vp-backup info | grep -q "full backup" && break
+            sleep 5
+          done
+          docker compose -f infra/docker-compose.yml exec -T backup vp-backup info
+          docker compose -f infra/docker-compose.yml exec -T backup vp-backup testar-restauracao
       - uses: astral-sh/setup-uv@v5
       - name: Testes de integração (esquema e permissões)
         working-directory: services/ingest

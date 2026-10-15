@@ -2,11 +2,56 @@
 # gerado por `node infra/scripts/init-env.mjs` (o .env nunca é versionado).
 name: vida-publica
 
+# Repositório do backup (pgBackRest), igual para o banco (arquivamento de WAL)
+# e para o serviço de backup. Tudo por variável: nenhuma credencial em arquivo.
+# No ambiente local o repositório é o RustFS, atrás do proxy TLS backup-s3 (o
+# pgBackRest só fala S3 por HTTPS); em produção, um S3 de outro provedor.
+x-pgbackrest: &pgbackrest
+  PGBACKREST_STANZA: vida-publica
+  PGBACKREST_PG1_PATH: /var/lib/postgresql/data
+  PGBACKREST_PG1_SOCKET_PATH: /var/run/postgresql
+  PGBACKREST_PG1_USER: ${POSTGRES_USER:-vp_owner}
+  PGBACKREST_REPO1_TYPE: s3
+  PGBACKREST_REPO1_S3_ENDPOINT: ${VP_BACKUP_S3_ENDPOINT:-backup-s3}
+  PGBACKREST_REPO1_STORAGE_PORT: ${VP_BACKUP_S3_PORTA:-9443}
+  # Local: certificado da CA interna do proxy; em produção, sempre y.
+  PGBACKREST_REPO1_STORAGE_VERIFY_TLS: ${VP_BACKUP_S3_VERIFICAR_TLS:-n}
+  PGBACKREST_REPO1_S3_BUCKET: ${VP_BACKUP_S3_BUCKET:-vp-backup}
+  PGBACKREST_REPO1_S3_REGION: ${VP_BACKUP_S3_REGIAO:-us-east-1}
+  PGBACKREST_REPO1_S3_KEY: ${VP_BACKUP_S3_CHAVE:-${S3_ACCESS_KEY:-vp_s3}}
+  PGBACKREST_REPO1_S3_KEY_SECRET: ${VP_BACKUP_S3_SEGREDO:-${S3_SECRET_KEY:?rode node infra/scripts/init-env.mjs}}
+  PGBACKREST_REPO1_S3_URI_STYLE: path
+  PGBACKREST_REPO1_PATH: /vida-publica
+  # Tudo cifrado no repositório (AES-256); sem a frase, o backup não abre.
+  PGBACKREST_REPO1_CIPHER_TYPE: aes-256-cbc
+  PGBACKREST_REPO1_CIPHER_PASS: ${VP_BACKUP_CIFRA:?rode node infra/scripts/init-env.mjs}
+  PGBACKREST_REPO1_RETENTION_FULL: "2"
+  PGBACKREST_COMPRESS_TYPE: zst
+  PGBACKREST_START_FAST: "y"
+  PGBACKREST_LOG_LEVEL_CONSOLE: warn
+  PGBACKREST_LOG_LEVEL_FILE: "off"
+
 services:
   postgres:
-    image: postgres:16-alpine
+    build:
+      context: ./postgres
+    image: vida-publica-postgres
     restart: unless-stopped
+    # Backup contínuo: cada segmento de WAL vai para o repositório (no máximo
+    # 5 minutos de atraso, archive_timeout), o que permite restaurar em
+    # qualquer ponto no tempo desde o backup completo mais antigo guardado.
+    command:
+      - postgres
+      - -c
+      - wal_level=replica
+      - -c
+      - archive_mode=on
+      - -c
+      - archive_command=pgbackrest archive-push %p
+      - -c
+      - archive_timeout=300
     environment:
+      <<: *pgbackrest
       POSTGRES_DB: ${POSTGRES_DB:-vida_publica}
       POSTGRES_USER: ${POSTGRES_USER:-vp_owner}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?rode node infra/scripts/init-env.mjs}
@@ -19,6 +64,7 @@ services:
       - "${POSTGRES_PORT:-5433}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      - postgres-socket:/var/run/postgresql
       - ./postgres/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
@@ -152,6 +198,66 @@ services:
       admin-api:
         condition: service_started
 
+  # Só no ambiente local: TLS na frente do RustFS para o repositório do backup
+  # (o pgBackRest não fala S3 sem HTTPS). Certificado da CA interna do Caddy.
+  backup-s3:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    command: ["caddy", "reverse-proxy", "--from", "https://backup-s3:9443", "--to", "http://s3:9000", "--internal-certs"]
+    depends_on:
+      s3:
+        condition: service_healthy
+
+  # Backup: mesma imagem do banco, com o diretório de dados só para leitura e o
+  # socket compartilhado. A cada hora confere o arquivamento de WAL e faz o
+  # backup completo (semanal) ou diferencial (diário); a cada 30 dias, o teste
+  # de restauração num banco descartável. Registra tudo em raw.job_run (o vigia
+  # alerta se parar) e, com a chave, pinga o check "backup" do healthchecks.io.
+  #   docker compose -f infra/docker-compose.yml exec backup vp-backup testar-restauracao
+  backup:
+    image: vida-publica-postgres
+    restart: unless-stopped
+    command: ["vp-backup", "agendar"]
+    shm_size: 256mb
+    environment:
+      <<: *pgbackrest
+      POSTGRES_USER: ${POSTGRES_USER:-vp_owner}
+      POSTGRES_DB: ${POSTGRES_DB:-vida_publica}
+      VP_BACKUP_CRIAR_BUCKET_URL: ${VP_BACKUP_CRIAR_BUCKET_URL:-http://s3:9000}
+      VP_BACKUP_TESTE_DIAS: ${VP_BACKUP_TESTE_DIAS:-30}
+      VP_HEALTHCHECKS_PING_KEY: ${VP_HEALTHCHECKS_PING_KEY:-}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data:ro
+      - postgres-socket:/var/run/postgresql
+      - postgres-restauracao:/restauracao
+    healthcheck:
+      test: ["CMD-SHELL", "test -n \"$$(find /tmp/backup-vivo -mmin -90 2>/dev/null)\""]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 120s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      backup-s3:
+        condition: service_started
+
+  # Restauração do banco de verdade (com o postgres parado): sem argumentos, até
+  # o último WAL arquivado; com --type=time --target="<instante>", até o instante.
+  #   docker compose -f infra/docker-compose.yml run --rm restaurar --type=time --target="2026-10-15 13:00:00+00" --target-action=promote
+  restaurar:
+    image: vida-publica-postgres
+    profiles: [tools]
+    user: postgres
+    entrypoint: ["pgbackrest", "restore", "--delta", "--log-level-console=info"]
+    environment:
+      <<: *pgbackrest
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    depends_on:
+      backup-s3:
+        condition: service_started
+
   # Worker de coleta: roda um comando e termina. Exemplo:
   #   docker compose -f infra/docker-compose.yml run --rm worker check-storage
   worker:
@@ -226,4 +332,6 @@ services:
 
 volumes:
   postgres-data:
+  postgres-socket:
+  postgres-restauracao:
   s3-data:

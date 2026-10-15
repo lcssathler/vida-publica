@@ -1,0 +1,264 @@
+#!/bin/sh
+# Backup contínuo do Vida Pública com o pgBackRest.
+#
+#   vp-backup agendar              laço do serviço "backup": prepara o repositório,
+#                                  confere o arquivamento de WAL, faz o backup
+#                                  completo semanal e o diferencial diário e, a
+#                                  cada VP_BACKUP_TESTE_DIAS, o teste de restauração
+#   vp-backup preparar             cria o bucket (só no ambiente local) e a stanza
+#   vp-backup backup [full|diff|incr]
+#   vp-backup testar-restauracao   restaura num banco descartável até um ponto
+#                                  marcado agora e compara linhas e somas de
+#                                  verificação de todas as tabelas com o original
+#   vp-backup info
+#
+# O banco arquiva cada segmento de WAL no mesmo repositório (archive_command), o
+# que permite restaurar em qualquer ponto no tempo entre o backup mais antigo
+# guardado e o último WAL arquivado. Toda a configuração vem de variáveis
+# PGBACKREST_* (repositório S3, cifra AES-256) e VP_*; nenhuma credencial em
+# arquivo. Cada execução fica em raw.job_run (jobs backup, backup-wal e
+# backup-restauracao), que o vigia confere contra raw.fonte_prazo.
+set -eu
+
+export PGHOST="${PGHOST:-/var/run/postgresql}"
+export PGUSER="${PGUSER:-${POSTGRES_USER:-postgres}}"
+export PGDATABASE="${PGDATABASE:-${POSTGRES_DB:-postgres}}"
+
+INTERVALO="${VP_BACKUP_INTERVALO_SEGUNDOS:-3600}"
+COMPLETO_DIAS="${VP_BACKUP_COMPLETO_DIAS:-7}"
+DIFERENCIAL_HORAS="${VP_BACKUP_DIFERENCIAL_HORAS:-24}"
+TESTE_DIAS="${VP_BACKUP_TESTE_DIAS:-30}"
+WAL_MINUTOS="${VP_BACKUP_WAL_MINUTOS:-30}"
+RESTAURACAO="${VP_BACKUP_RESTAURACAO_DIR:-/restauracao}"
+SOMAS=/usr/local/share/vp-backup/somas.sql
+
+log() { printf '{"ts":"%s","nivel":"%s","logger":"vp-backup","msg":"%s"}\n' \
+  "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$1" "$2"; }
+
+# Comandos do pgBackRest e do Postgres rodam como o usuário postgres (dono dos
+# arquivos); o script pode rodar como root (o teste de restauração precisa
+# preparar o diretório).
+como_postgres() {
+  if [ "$(id -u)" = 0 ]; then su-exec postgres "$@"; else "$@"; fi
+}
+
+sql() { psql -X -q -At -v ON_ERROR_STOP=1 "$@"; }
+
+# --- registro em raw.job_run e sinal de vida ---------------------------------
+
+job_inicio() {
+  sql -c "INSERT INTO raw.job_run (job, status, started_at) VALUES ('$1', 'running', now()) RETURNING id"
+}
+
+job_fim() { # id ok|falhou [erro]
+  if [ "$2" = ok ]; then
+    sql -c "UPDATE raw.job_run SET status = 'succeeded', finished_at = now() WHERE id = '$1'"
+  else
+    printf '%s' "${3:-falhou}" | tail -c 500 >/tmp/vp-erro.txt
+    sql -v id="$1" -v erro="$(cat /tmp/vp-erro.txt)" <<'SQL'
+UPDATE raw.job_run SET status = 'failed', finished_at = now(), error = :'erro' WHERE id = :'id';
+SQL
+  fi
+}
+
+ping() { # check ok|falhou texto
+  [ -n "${VP_HEALTHCHECKS_PING_KEY:-}" ] || return 0
+  sufixo=""
+  [ "$2" = ok ] || sufixo="/fail"
+  curl -fsS -m 10 --retry 2 -o /dev/null --data-raw "$3" \
+    "${VP_HEALTHCHECKS_URL:-https://hc-ping.com}/${VP_HEALTHCHECKS_PING_KEY}/$1${sufixo}?create=1" \
+    || log warning "ping ao healthchecks.io falhou ($1)"
+}
+
+# Roda um passo registrado: job_run, log e sinal de vida.
+registrado() { # job check comando...
+  job="$1"; check="$2"; shift 2
+  if ! id=$(job_inicio "$job"); then
+    log error "não registrou $job em raw.job_run (migrações aplicadas?)"
+    return 1
+  fi
+  if saida=$("$@" 2>&1); then
+    job_fim "$id" ok
+    log info "$job ok"
+    ping "$check" ok "$job ok"
+    printf '%s\n' "$saida"
+    return 0
+  fi
+  printf '%s\n' "$saida" >&2
+  job_fim "$id" falhou "$saida"
+  log error "$job falhou"
+  ping "$check" falhou "$job falhou: $(printf '%s' "$saida" | tail -c 300)"
+  return 1
+}
+
+# --- comandos ----------------------------------------------------------------
+
+preparar() {
+  # Só no ambiente local: o bucket no RustFS. Em produção, o Terraform cria.
+  if [ -n "${VP_BACKUP_CRIAR_BUCKET_URL:-}" ]; then
+    codigo=$(curl -s -o /dev/null -w '%{http_code}' -X PUT \
+      --aws-sigv4 "aws:amz:${PGBACKREST_REPO1_S3_REGION:-us-east-1}:s3" \
+      --user "${PGBACKREST_REPO1_S3_KEY}:${PGBACKREST_REPO1_S3_KEY_SECRET}" \
+      "${VP_BACKUP_CRIAR_BUCKET_URL%/}/${PGBACKREST_REPO1_S3_BUCKET}")
+    case "$codigo" in
+      200|409) ;;
+      *) log error "não criou o bucket (HTTP $codigo)"; return 1 ;;
+    esac
+  fi
+  como_postgres pgbackrest stanza-create
+  como_postgres pgbackrest check
+}
+
+backup() { # full|diff|incr
+  como_postgres pgbackrest backup --type="${1:-diff}"
+  # Confere as somas de tudo o que está no repositório (backups e WAL).
+  como_postgres pgbackrest verify
+  como_postgres pgbackrest info --output=json     | jq -r '.[0].backup[-1] | "backup \(.type) \(.label): \(.info.size) bytes no banco, \(.info.repository.size) no repositório"'
+}
+
+# Arquivamento de WAL em dia: o último segmento arquivado é recente e não houve
+# falha depois dele (pg_stat_archiver).
+conferir_wal() {
+  estado=$(sql -c "SELECT coalesce(extract(epoch FROM now() - last_archived_time)::int, -1)
+                          || ' ' || CASE WHEN coalesce(last_failed_time, '-infinity')
+                                              > coalesce(last_archived_time, '-infinity')
+                                         THEN 'sim' ELSE 'nao' END
+                     FROM pg_stat_archiver")
+  idade=${estado% *}; falha=${estado#* }
+  if [ "$idade" -lt 0 ] || [ "$idade" -gt $((WAL_MINUTOS * 60)) ] || [ "$falha" = sim ]; then
+    echo "arquivamento de WAL atrasado ou com falha: último há ${idade}s, falha depois dele: $falha"
+    return 1
+  fi
+  echo "último WAL arquivado há ${idade}s"
+}
+
+# Tipo do próximo backup: completo se não há um recente, diferencial se o último
+# backup passou do intervalo, nada caso contrário.
+proximo_backup() {
+  info=$(como_postgres pgbackrest info --output=json)
+  agora=$(date -u +%s)
+  completo=$(printf '%s' "$info" | jq '[.[0].backup[]? | select(.type == "full") | .timestamp.stop] | max // 0')
+  ultimo=$(printf '%s' "$info" | jq '[.[0].backup[]? | .timestamp.stop] | max // 0')
+  if [ $((agora - completo)) -ge $((COMPLETO_DIAS * 86400)) ]; then echo full
+  elif [ $((agora - ultimo)) -ge $((DIFERENCIAL_HORAS * 3600)) ]; then echo diff
+  else echo nada; fi
+}
+
+dias_desde_teste() {
+  sql -c "SELECT coalesce(extract(epoch FROM now() - max(finished_at))::int / 86400, 99999)
+            FROM raw.job_run WHERE job = 'backup-restauracao' AND status = 'succeeded'"
+}
+
+testar_restauracao() {
+  ponto="vp-teste-$(date -u +%Y%m%dT%H%M%SZ)"
+  dados="$RESTAURACAO/data"
+  porta=5440
+
+  # 1. Original: todas as tabelas travadas contra escrita (SHARE: leituras
+  #    seguem), o ponto de restauração marcado no WAL e as somas tiradas na
+  #    mesma fotografia. Nada muda entre o ponto e as somas.
+  log info "marcando o ponto $ponto e somando o original"
+  sql -v ponto="$ponto" -v somas="$SOMAS" >/dev/null <<'SQL'
+\i :somas
+BEGIN;
+DO $$ DECLARE t regclass;
+BEGIN
+  FOR t IN SELECT * FROM pg_temp.vp_tabelas() LOOP
+    EXECUTE format('LOCK TABLE %s IN SHARE MODE', t);
+  END LOOP;
+END $$;
+SELECT pg_create_restore_point(:'ponto');
+\copy (SELECT t::text, s.linhas, s.soma FROM pg_temp.vp_tabelas() t, LATERAL pg_temp.vp_soma(t) s ORDER BY 1) TO '/tmp/vp-original.tsv'
+COMMIT;
+SQL
+
+  # 2. Marca depois do ponto: não pode aparecer na cópia restaurada.
+  marca=$(sql -c "INSERT INTO raw.job_run (job, status, started_at) VALUES ('backup-restauracao-marca', 'running', now()) RETURNING id")
+  sql -c "UPDATE raw.job_run SET status = 'succeeded', finished_at = now() WHERE id = '$marca'"
+
+  # 3. O WAL com o ponto precisa estar no repositório antes de restaurar.
+  como_postgres pgbackrest check
+
+  # 4. Restaura num diretório vazio até o ponto, sem arquivar nada (a cópia
+  #    não pode escrever no repositório de produção).
+  rm -rf "$dados"
+  mkdir -p "$dados"
+  chown postgres:postgres "$RESTAURACAO" "$dados"
+  chmod 700 "$dados"
+  log info "restaurando até $ponto"
+  como_postgres pgbackrest restore --pg1-path="$dados" --type=name --target="$ponto" \
+    --target-action=promote --archive-mode=off
+  como_postgres pg_ctl -D "$dados" -l /tmp/vp-restauracao.log -w -t 900 \
+    -o "-p $porta -k /tmp -c listen_addresses='' -c archive_mode=off -c max_parallel_workers_per_gather=0" start
+  tentativas=0
+  until [ "$(sql -h /tmp -p "$porta" -c 'SELECT pg_is_in_recovery()')" = f ]; do
+    tentativas=$((tentativas + 1))
+    [ "$tentativas" -lt 600 ] || { log error "a cópia não terminou a recuperação"; return 1; }
+    sleep 1
+  done
+
+  # 5. Somas da cópia e a marca posterior ao ponto.
+  sql -h /tmp -p "$porta" -v somas="$SOMAS" >/dev/null <<'SQL'
+\i :somas
+\copy (SELECT t::text, s.linhas, s.soma FROM pg_temp.vp_tabelas() t, LATERAL pg_temp.vp_soma(t) s ORDER BY 1) TO '/tmp/vp-restaurado.tsv'
+SQL
+  depois=$(sql -h /tmp -p "$porta" -c "SELECT count(*) FROM raw.job_run WHERE id = '$marca'")
+  como_postgres pg_ctl -D "$dados" -m fast -w stop
+  rm -rf "$dados"
+
+  # 6. Comparação.
+  tabelas=$(wc -l </tmp/vp-original.tsv | tr -d ' ')
+  linhas=$(awk -F'\t' '{s += $2} END {print s + 0}' /tmp/vp-original.tsv)
+  if ! diff /tmp/vp-original.tsv /tmp/vp-restaurado.tsv >/tmp/vp-diferencas.txt; then
+    echo "DIFERENTE: $(grep -c '^[<>]' /tmp/vp-diferencas.txt) linha(s) de diferença em $tabelas tabelas"
+    head -40 /tmp/vp-diferencas.txt
+    return 1
+  fi
+  if [ "$depois" != 0 ]; then
+    echo "a cópia trouxe o que foi gravado depois do ponto: não parou no ponto"
+    return 1
+  fi
+  echo "restauração conferida: ponto $ponto, $tabelas tabelas e $linhas linhas iguais ao original (linhas e somas md5); nada gravado depois do ponto"
+}
+
+vivo() { date -u +%Y-%m-%dT%H:%M:%SZ >/tmp/backup-vivo; }
+
+agendar() {
+  vivo
+  until preparar; do
+    log warning "repositório ainda não está pronto; nova tentativa em 60 s"
+    vivo
+    sleep 60
+  done
+  # O registro das execuções precisa das migrações aplicadas.
+  until sql -c 'SELECT 1 FROM raw.job_run LIMIT 0' >/dev/null 2>&1; do
+    log warning "raw.job_run ainda não existe; nova tentativa em 15 s"
+    vivo
+    sleep 15
+  done
+  while true; do
+    vivo
+    registrado backup-wal backup conferir_wal || true
+    tipo=$(proximo_backup || echo diff)
+    if [ "$tipo" != nada ]; then
+      registrado backup backup backup "$tipo" || true
+    fi
+    if [ "$TESTE_DIAS" -gt 0 ] && [ "$(dias_desde_teste)" -ge "$TESTE_DIAS" ]; then
+      registrado backup-restauracao backup-restauracao testar_restauracao || true
+    fi
+    sleep "$INTERVALO"
+  done
+}
+
+case "${1:-}" in
+  agendar) agendar ;;
+  preparar) preparar ;;
+  backup) registrado backup backup backup "${2:-diff}" ;;
+  testar-restauracao) registrado backup-restauracao backup-restauracao testar_restauracao ;;
+  wal) registrado backup-wal backup conferir_wal ;;
+  info) como_postgres pgbackrest info ;;
+  *)
+    sed -n '2,15p' "$0"
+    exit 2
+    ;;
+esac

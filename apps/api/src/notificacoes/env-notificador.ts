@@ -32,6 +32,10 @@ const envSchema = z.object({
   // Só para rodadas avulsas de conferência (opção --agora do comando): o
   // relógio do notificador começa neste instante. Recusado no modo contínuo.
   NOTIF_AGORA: z.iso.datetime({ offset: true }).optional(),
+  // Sinal de vida no healthchecks.io (check "notificador", criado no primeiro
+  // ping): chave de ping do projeto. Vazia, o sinal fica só no log.
+  HEALTHCHECKS_PING_KEY: z.string().optional(),
+  HEALTHCHECKS_URL: z.url().default('https://hc-ping.com'),
   // Conta de serviço do Firebase: o JSON (FCM_CREDENCIAIS_JSON) ou o caminho
   // de um arquivo fora do repositório (FCM_CREDENCIAIS_ARQUIVO). Sem nenhuma,
   // o FCM fica desligado e o adaptador falso só registra os envios.

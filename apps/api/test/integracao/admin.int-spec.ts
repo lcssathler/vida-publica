@@ -312,6 +312,14 @@ describe('Painel de revisão no Postgres (integração, usuário vp_admin)', () 
     ).resolves.toEqual({ ok: false, pessoaId: null });
   });
 
+  it('saúde das fontes: prazo, última coleta e alerta aberto por job', async () => {
+    const { fontes } = await revisao.fontes();
+    const votacoes = fontes.find((f) => f.job === 'camara-votacoes');
+    expect(votacoes).toMatchObject({ prazoHoras: 6, ativo: true });
+    expect(typeof votacoes?.atrasado).toBe('boolean');
+    expect(fontes.length).toBeGreaterThanOrEqual(33);
+  });
+
   it('o admin não lê ident nem as tabelas de usuário do app', async () => {
     await expect(
       admin.query('SELECT 1 FROM ident.pessoa LIMIT 1'),

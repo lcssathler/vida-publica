@@ -1,4 +1,6 @@
-import { NestFactory } from '@nestjs/core';
+// Antes de tudo: o Sentry (OpenTelemetry) instrumenta HTTP, Express e Postgres.
+import './observabilidade/instrumentar';
+import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -7,6 +9,7 @@ import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
 import { opcoesCors } from './comum/cors';
 import { Env } from './config/env';
+import { FiltroDeErros } from './observabilidade/filtro-erros';
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -15,6 +18,7 @@ async function bootstrap(): Promise<void> {
   app.useLogger(app.get(Logger));
   app.use(helmet());
   app.enableShutdownHooks();
+  app.useGlobalFilters(new FiltroDeErros(app.get(HttpAdapterHost).httpAdapter));
 
   const config = app.get<ConfigService<Env, true>>(ConfigService);
   app.set('trust proxy', config.get('TRUST_PROXY', { infer: true }));

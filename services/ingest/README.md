@@ -19,6 +19,8 @@ Baixa os dados públicos oficiais, guarda cada arquivo bruto sem alteração, no
 | `events/dinheiro_campanha.py` | `fundo_recebido`, `repasse` e `doacao` (pessoa física só em totais; só para seguidores durante a campanha) |
 | `events/candidaturas.py` | `troca_partido` (sem contar renomeação, fusão ou incorporação), `situacao_candidatura` e `resultado` (cargos federais) |
 | `events/registro.py` | Geradores de eventos executados pelo comando `eventos` |
+| `observabilidade.py` | Logs em JSON, Sentry (sem dados pessoais) e adaptadores de alerta (log, Sentry, healthchecks.io) |
+| `vigia.py` | Vigia de dados desatualizados: prazo de cada fonte, alertas abertos e resolvidos, sinal de vida |
 | `cli.py` | Comando `vp-ingest` |
 
 As dependências são em Python puro sempre que possível (driver `pg8000`, `csv` da biblioteca padrão), para o worker rodar igual em qualquer máquina, sem binários nativos.
@@ -57,6 +59,12 @@ Variáveis com prefixo `VP_` (`src/vida_publica_ingest/config.py`):
 | `VP_S3_BUCKET_RAW` | `vp-raw` |
 | `VP_USER_AGENT` | identifica o coletor para as fontes oficiais |
 | `VP_CAMARA_PRESENCA_LEGADO` | `false`; `true` liga o serviço legado de frequência diária da Câmara |
+| `VP_LOG_JSON` | `false`; `true` escreve uma linha JSON por registro (instante UTC, nível, logger, mensagem e extras como `job`, `job_run`, `duracao_s`) |
+| `VP_SENTRY_DSN` | vazio (desligado); com o DSN, erros dos jobs e uma transação por job vão ao Sentry |
+| `VP_AMBIENTE` | `local`; ambiente no Sentry |
+| `VP_HEALTHCHECKS_PING_KEY` | vazio (desligado); chave de ping do projeto no healthchecks.io |
+| `VP_HEALTHCHECKS_URL` | `https://hc-ping.com` |
+| `VP_VIGIA_INTERVALO_SEGUNDOS` | `300`; intervalo do vigia no modo contínuo |
 
 ## Pipeline
 
@@ -102,6 +110,18 @@ Regras do motor:
 - **Campanha:** eventos de candidatos (repasses, doações, candidaturas) ficam com `visibilidade = 'seguidores'` do início da propaganda ao segundo turno; depois, voltam a `geral`.
 - **Doador pessoa física:** nunca é nomeado no feed, só o total e o número de doações.
 - **Fonte removeu:** fato que some da fonte tem o evento arquivado (`fonte_removeu`); se voltar, o evento recupera o status.
+
+## Observabilidade e dados desatualizados
+
+- **Logs**: uma linha JSON por registro no contêiner (`VP_LOG_JSON=true`); cada job registra início, fim, duração e o id da execução (`raw.job_run`).
+- **Sentry** (com `VP_SENTRY_DSN`): o erro de um job vira um evento e cada job, uma transação. Sem dados pessoais: sem variáveis locais, sem corpo de requisição, sem usuário, e o que parece CPF é trocado antes de enviar.
+- **Vigia** (`vp-ingest vigiar`, serviço `vigia` no compose com `--continuo`, a cada 5 minutos): cada job tem um prazo máximo sem coleta bem-sucedida em `raw.fonte_prazo` (versionado em migração, a partir da frequência de cada fonte; o motor de eventos entra como `eventos-<tipo>`, 2 h). Passou do prazo, abre um alerta em `raw.alerta` e avisa; a coleta voltou, fecha e avisa; aberto há 24 h, lembra. Falha recente não conta: vale a última execução bem-sucedida. Avisos:
+  - sempre no log (`alerta aberto`, `alerta resolvido`);
+  - no Sentry, um aviso por fonte (agrupado pela chave), com `VP_SENTRY_DSN`;
+  - no healthchecks.io, com `VP_HEALTHCHECKS_PING_KEY`: o check `fontes` recebe sucesso quando tudo está no prazo e `/fail` com a lista dos atrasados, a cada volta. Se o vigia para, os pings param e o healthchecks.io avisa. O check é criado no primeiro ping; configure lá o período (10 min) e a tolerância.
+- O notificador manda o próprio sinal de vida (check `notificador`) a cada ciclo; a API e o painel têm healthcheck do contêiner.
+
+O painel de revisão mostra a situação de cada job e os alertas recentes em "Saúde das fontes".
 
 ## Regra de ouro
 

@@ -63,6 +63,24 @@ docker compose -f infra/docker-compose.yml exec admin-api node dist/admin/admin-
 | `ADMIN_SESSAO_HORAS` | `8` | Validade da sessão do painel |
 | `TRUST_PROXY` | `0` | Proxies à frente (o painel: `1`) |
 
+### Observabilidade
+
+Cada processo (API, notificador, API do admin) importa primeiro `src/observabilidade/instrumentar.ts`, que liga o **Sentry** quando há `SENTRY_DSN`. O SDK do Sentry monta o **OpenTelemetry** e instrumenta HTTP, Express e Postgres; spans criados com `@opentelemetry/api` (o ciclo do notificador, por exemplo) vão para o mesmo destino, e trocar de destino é trocar a exportação, sem mexer no código. Sem `SENTRY_DSN`, nada é ligado nem enviado.
+
+- **Erros**: um filtro global manda ao Sentry só o inesperado (exceções que não são `HttpException` e respostas 5xx); 4xx não é erro do sistema.
+- **Nada de dado pessoal**: sem usuário, cookies, cabeçalhos, corpos nem a consulta das URLs (`dataCollection` do SDK e uma limpeza em `beforeSend`/`beforeSendTransaction`: o que alguém busca pode revelar opinião). O que parece CPF é trocado.
+- **Logs estruturados** (pino, JSON) com `trace_id` e `span_id` do OpenTelemetry em cada linha.
+- **Sinal de vida do notificador**: com `HEALTHCHECKS_PING_KEY`, cada ciclo pinga o check `notificador` do healthchecks.io (`/fail` quando o ciclo falha); se o processo trava, os pings param e o healthchecks.io avisa.
+
+| Variável | Padrão | Descrição |
+| --- | --- | --- |
+| `SENTRY_DSN` | vazio | DSN do projeto no Sentry; vazio desliga (no compose, `VP_SENTRY_DSN`) |
+| `SENTRY_AMBIENTE` | `NODE_ENV` | Ambiente no Sentry |
+| `SENTRY_AMOSTRA_TRACES` | `0.2` | Fração das requisições com trace |
+| `VP_SERVICO` | `api` | Nome do processo no Sentry (`api`, `notificador`, `admin-api`) |
+| `HEALTHCHECKS_PING_KEY` | vazio | Só no notificador: chave de ping do projeto no healthchecks.io |
+| `HEALTHCHECKS_URL` | `https://hc-ping.com` | Só no notificador |
+
 ## Rodar localmente
 
 Na raiz do repositório:

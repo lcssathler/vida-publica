@@ -44,6 +44,14 @@ Aplicar as migrações do banco (veja `db/README.md`):
 docker compose -f infra/docker-compose.yml run --rm migrate
 ```
 
+Vigia de dados desatualizados: o serviço `vigia` roda sozinho a cada 5 minutos; uma volta avulsa:
+
+```bash
+docker compose -f infra/docker-compose.yml run --rm worker vigiar
+```
+
+Sentry e healthchecks.io são opcionais: com `VP_SENTRY_DSN` e `VP_HEALTHCHECKS_PING_KEY` no `infra/.env` (nunca versionados), erros, traces e alertas saem também para lá; sem elas, ficam nos logs (`docker compose -f infra/docker-compose.yml logs vigia`).
+
 Para apagar também os dados locais:
 
 ```bash

@@ -1,6 +1,9 @@
+// Antes de tudo: o Sentry (OpenTelemetry) instrumenta o Postgres e o fetch.
+import { esvaziar, capturarErro } from '../observabilidade/instrumentar';
 import { writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { trace } from '@opentelemetry/api';
 import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { Logger } from 'nestjs-pino';
@@ -9,6 +12,11 @@ import { EnvNotificador, validarEnvNotificador } from './env-notificador';
 import { FilaService } from './fila.service';
 import { ResumoService } from './resumo.service';
 import { NotificadorModule } from './notificador.module';
+import {
+  PingHealthchecks,
+  SemSinalExterno,
+  type SinalDeVida,
+} from '../observabilidade/healthchecks';
 
 /** Tocado a cada volta do modo contínuo; o healthcheck confere a idade. */
 const SINAL_DE_VIDA = join(tmpdir(), 'notificador-vivo');
@@ -61,15 +69,26 @@ async function main(): Promise<number> {
     else {
       const config =
         app.get<ConfigService<EnvNotificador, true>>(ConfigService);
+      const chave = config.get('HEALTHCHECKS_PING_KEY', { infer: true });
+      const sinal: SinalDeVida = chave
+        ? new PingHealthchecks(
+            chave,
+            'notificador',
+            config.get('HEALTHCHECKS_URL', { infer: true }),
+            (m) => log.warn(m),
+          )
+        : new SemSinalExterno();
       await continuo(
         fila,
         resumo,
         log,
+        sinal,
         config.get('NOTIF_INTERVALO_SEGUNDOS', { infer: true }) * 1000,
       );
     }
   } finally {
     await app.close();
+    await esvaziar();
   }
   return 0;
 }
@@ -127,8 +146,10 @@ async function continuo(
   fila: FilaService,
   resumo: ResumoService,
   log: Logger,
+  vida: SinalDeVida,
   intervaloMs: number,
 ): Promise<void> {
+  const tracer = trace.getTracer('vida-publica-notificador');
   let parar = false;
   let acordar: () => void = () => undefined;
   const sinal = () => {
@@ -143,12 +164,25 @@ async function continuo(
     } catch {
       // Sem onde gravar, só o healthcheck fica sem o sinal.
     }
-    try {
-      await fila.ciclo();
-      await resumo.ciclo();
-    } catch (erro) {
-      log.error({ msg: 'ciclo do notificador falhou', erro: String(erro) });
-    }
+    // Um span por ciclo (vai ao Sentry com as consultas ao banco e os envios).
+    const ok = await tracer.startActiveSpan(
+      'notificador.ciclo',
+      async (span) => {
+        try {
+          await fila.ciclo();
+          await resumo.ciclo();
+          return true;
+        } catch (erro) {
+          log.error({ msg: 'ciclo do notificador falhou', erro: String(erro) });
+          capturarErro(erro, { processo: 'notificador' });
+          span.recordException(erro instanceof Error ? erro : String(erro));
+          return false;
+        } finally {
+          span.end();
+        }
+      },
+    );
+    await vida.ping(ok, ok ? 'ciclo ok' : 'ciclo falhou');
     if (parar) break;
     await new Promise<void>((resolve) => {
       const espera = setTimeout(resolve, intervaloMs);

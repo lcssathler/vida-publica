@@ -59,6 +59,10 @@ services:
       APPLE_CLIENT_IDS: ${VP_APPLE_CLIENT_IDS:-}
       GOOGLE_CLIENT_IDS: ${VP_GOOGLE_CLIENT_IDS:-}
       CORS_ORIGENS: ${VP_API_CORS_ORIGENS:-}
+      # Observabilidade (opcional; vazio desliga): erros e traces no Sentry.
+      SENTRY_DSN: ${VP_SENTRY_DSN:-}
+      SENTRY_AMBIENTE: ${VP_AMBIENTE:-local}
+      VP_SERVICO: api
     ports:
       - "${API_PORT:-3000}:3000"
     depends_on:
@@ -83,6 +87,11 @@ services:
       # Conta de serviço do Firebase (JSON numa linha, só no infra/.env). Vazia: adaptador falso.
       FCM_CREDENCIAIS_JSON: ${VP_FCM_CREDENCIAIS_JSON:-}
       FCM_VALIDAR_APENAS: ${VP_FCM_VALIDAR_APENAS:-false}
+      SENTRY_DSN: ${VP_SENTRY_DSN:-}
+      SENTRY_AMBIENTE: ${VP_AMBIENTE:-local}
+      VP_SERVICO: notificador
+      # Sinal de vida no healthchecks.io (check "notificador"); vazio desliga.
+      HEALTHCHECKS_PING_KEY: ${VP_HEALTHCHECKS_PING_KEY:-}
     # Saudável enquanto o laço do modo contínuo roda (sinal de vida a cada ciclo).
     healthcheck:
       test: ["CMD-SHELL", "test -n \"$$(find /tmp/notificador-vivo -mmin -5 2>/dev/null)\""]
@@ -113,6 +122,9 @@ services:
       ADMIN_IPS: ${VP_ADMIN_IPS:-127.0.0.1,::1,172.16.0.0/12}
       # O painel é o proxy à frente: o IP de quem acessa vem no X-Forwarded-For.
       TRUST_PROXY: 1
+      SENTRY_DSN: ${VP_SENTRY_DSN:-}
+      SENTRY_AMBIENTE: ${VP_AMBIENTE:-local}
+      VP_SERVICO: admin-api
     ports:
       - "127.0.0.1:${ADMIN_API_PORT:-3001}:3000"
     depends_on:
@@ -157,10 +169,43 @@ services:
       VP_DB_PASSWORD: ${VP_INGEST_DB_PASSWORD:?rode node infra/scripts/init-env.mjs}
       VP_CPF_HASH_KEY: ${VP_CPF_HASH_KEY:?rode node infra/scripts/init-env.mjs}
       VP_CAMARA_PRESENCA_LEGADO: ${VP_CAMARA_PRESENCA_LEGADO:-false}
+      VP_LOG_JSON: ${VP_LOG_JSON:-false}
+      VP_SENTRY_DSN: ${VP_SENTRY_DSN:-}
+      VP_AMBIENTE: ${VP_AMBIENTE:-local}
     depends_on:
       postgres:
         condition: service_healthy
       s3:
+        condition: service_healthy
+
+  # Vigia de dados desatualizados: a cada 5 minutos confere o prazo de cada
+  # fonte e do motor de eventos (raw.fonte_prazo × raw.job_run), abre e fecha
+  # alertas (raw.alerta) e avisa: sempre no log (JSON); no Sentry e no
+  # healthchecks.io (check "fontes") quando as credenciais estão no infra/.env.
+  vigia:
+    build:
+      context: ../services/ingest
+    restart: unless-stopped
+    command: ["vigiar", "--continuo"]
+    environment:
+      VP_DB_HOST: postgres
+      VP_DB_PORT: 5432
+      VP_DB_NAME: ${POSTGRES_DB:-vida_publica}
+      VP_DB_USER: vp_ingest
+      VP_DB_PASSWORD: ${VP_INGEST_DB_PASSWORD:?rode node infra/scripts/init-env.mjs}
+      VP_LOG_JSON: "true"
+      VP_SENTRY_DSN: ${VP_SENTRY_DSN:-}
+      VP_AMBIENTE: ${VP_AMBIENTE:-local}
+      VP_HEALTHCHECKS_PING_KEY: ${VP_HEALTHCHECKS_PING_KEY:-}
+      VP_VIGIA_INTERVALO_SEGUNDOS: ${VP_VIGIA_INTERVALO_SEGUNDOS:-300}
+    healthcheck:
+      test: ["CMD-SHELL", "test -n \"$$(find /tmp/vigia-vivo -mmin -15 2>/dev/null)\""]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 20s
+    depends_on:
+      postgres:
         condition: service_healthy
 
   # Migrações do banco (db/migrations). Rodar com:

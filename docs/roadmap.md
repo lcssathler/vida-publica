@@ -138,6 +138,35 @@ Objetivo: saber quem é quem, em todas as fontes, sem casar pessoas só pelo nom
 | [x] | `ops/backup` | Backup contínuo do banco e teste de restauração |
 | [x] | `ops/deploy` | Terraform e deploy em VMs |
 
+**Critério de saída:**
+- **Painel.** Fica restrito por IP e exige login próprio com 2FA, separado das contas do app; não mostra dado pessoal de usuário além do conteúdo dos reportes. Ninguém é nomeado por CPF, e doador pessoa física com até R$ 10 mil também não.
+- **Revisão.** Todo evento segurado (dinheiro acima de R$ 500 mil ou regra nova) é publicado ou arquivado por alguém, com nome e hora. Publicar passa pela fila de avisos como qualquer publicação: só quem já seguia recebe, nada retroativo, nada reenviado.
+- **Casamentos.** Os incertos são resolvidos por uma pessoa, com vínculo manual que o worker não desfaz.
+- **Erratas.** "Reportar erro" em cada evento do app vira um reporte revisado, e a errata pública aparece no app.
+- **Observabilidade.** Erros e traces vão ao Sentry pelo OpenTelemetry, sem dado pessoal, e os logs são estruturados. Cada fonte tem um prazo sem coleta bem-sucedida; estourou, alerta. O motor, o notificador e o backup também têm sinal de vida. Sem credenciais, tudo fica no log.
+- **Backup.** É contínuo, com restauração por ponto no tempo, e a restauração é conferida num banco descartável, com contagens e somas iguais às do original.
+- **Deploy.** O Terraform valida e planeja limpo; nenhum segredo fica em arquivo versionado; criar recursos pagos só com autorização.
+
+**Resultado (15/10/2026):** a operação foi conferida contra o banco do compose com a carga publicada. O painel foi aberto no navegador embutido (servidor de desenvolvimento e imagem de produção) e o app no Expo web.
+
+- **Painel e revisão.** O painel Next.js consome a API do admin, outro processo da API com o usuário `vp_admin`, que deixou de ler `app` e `ident`. O login exige senha e TOTP; o código não vale duas vezes, há bloqueio depois de 5 erros e 403 para IP fora da lista.
+  - 53 segurados por valor foram conferidos com o `canon` e publicados pelo painel, cada um com quem revisou, quando e nota no registro de ações. Entre eles, os 2 repasses do PSDB a Aécio Neves e o do PSOL a Duda Salabert, seguidos pelo celular.
+  - Quem segue os alvos passou a ver os eventos na linha do tempo, no feed e no detalhe; quem não segue recebe 404 (campanha). O motor, rodado de novo, não mudou nada.
+  - O notificador passou dessas publicações sem gerar push, porque dinheiro vai para o resumo semanal: o de 19/10 da conta do celular vai trazer os 3 repasses (R$ 3,62 mi), calculado com a mesma consulta.
+- **Casamentos.** A fila de 7 casamentos foi zerada, com nota em cada decisão: 6 ligados por nascimento, nome civil e candidatura a suplente, e 1 como pessoa própria por conflito de dados. A cobertura do Senado na legislatura passou de 238/245 para 245/245.
+- **Errata real.** Uma doação publicada com data futura (09/12/2026, no relatório entregue ao TSE em 09/10) foi reportada pelo app. O reporte apareceu no painel sem a conta, a errata foi publicada arquivando o evento, a página de erratas do app a mostra e o registro passou a responder "Não encontrado".
+- **Observabilidade.**
+  - O vigia abriu 21 alertas de fontes paradas, porque a coleta local estava parada desde a véspera. Depois de coletores reais (agenda, 72 votações e o motor de votos e pauta), fechou exatamente os 7 alertas dessas fontes.
+  - Com um receptor local no lugar do Sentry e do healthchecks.io, os envelopes chegaram limpos: um 500 real e traces de `/busca` sem o termo buscado, sem tokens, IP nem user-agent, e um span por ciclo do notificador com a chave mascarada. Os pings `fontes`, `notificador` e `backup` também chegaram.
+- **Backup.** pgBackRest no RustFS, cifrado: completo em 35 s (1,4 GB viram 374 MB) e diferencial de 101 MB, com `verify`.
+  - O teste de restauração deu 76 tabelas e 2.969.089 linhas iguais (linhas e md5), sem a marca gravada depois do ponto.
+  - A restauração por instante também foi conferida, e uma falha de arquivamento foi detectada e se recuperou sem buraco.
+  - O ensaio do roteiro real restaurou o próprio banco local, que subiu na linha do tempo 2 com as mesmas somas. O CI roda backup e teste de restauração a cada PR.
+- **Deploy.**
+  - O Terraform para a AWS em São Paulo (duas VMs, sem SSH, Secrets Manager, buckets cifrados) passou em `fmt`, `validate` e `plan` limpo (40 recursos, sem conta). O compose de produção, o Caddyfile e os scripts foram validados.
+  - O agendador das coletas foi conferido no worker.
+  - Custo estimado: ~US$ 114/mês. **Nenhum recurso foi criado na nuvem: a criação espera a autorização do gasto.**
+
 ## Fase 9 — Pré-lançamento
 
 | | Branch | Entrega |

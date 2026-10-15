@@ -45,6 +45,13 @@ export interface EventoFeed {
   fonte: { url: string; dadoEm: Date | null; coletadoEm: Date };
   regra: { versao: number; descricao?: string };
   alvos: AlvoDoEvento[];
+  /** Só no detalhe: erratas publicadas sobre este evento, da mais recente. */
+  erratas?: Array<{
+    id: string;
+    titulo: string;
+    texto: string;
+    publicadaEm: Date;
+  }>;
 }
 
 /** Posição no feed: o último evento da página anterior. */

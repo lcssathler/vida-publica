@@ -15,6 +15,8 @@ API do Vida Pública em NestJS 12. Monólito modular: cada pasta em `src/` é um
 | `conta` | `GET /conta`, `GET`/`PATCH /conta/preferencias`, `DELETE /conta` | Conta, preferências (estado, notificações, silêncio, teto diário, fuso) e exclusão definitiva |
 | `limite` | (guarda global) | Limite de requisições por usuário e por IP |
 | `notificacoes` | `GET`/`PUT`/`DELETE /dispositivo` | Registro do aparelho que recebe avisos (token do FCM e plataforma, por sessão); a fila e o envio rodam no notificador, outro processo |
+| `erratas` | `GET /erratas`, `POST /eventos/{id}/reporte` | Erratas públicas (da mais recente, com cursor) e "Reportar erro" num evento, que vai para a revisão humana |
+| `admin` | `/admin/...` (só no processo do admin) | Painel de revisão: login com 2FA, eventos segurados, casamentos de pessoas, reportes, erratas e registro de ações. Roda em outro processo, com o usuário `vp_admin`; a API do app não tem essas rotas |
 | `health` | `GET /health` | Saúde da API |
 
 Toda rota exige `Authorization: Bearer <token de acesso>`, salvo as marcadas com `@Publico()` (saúde, criação de conta anônima e renovação). A guarda confere também se a sessão continua ativa.
@@ -25,6 +27,41 @@ Toda rota exige `Authorization: Bearer <token de acesso>`, salvo as marcadas com
 2. O token de acesso vale 15 minutos. `POST /auth/renovar` troca o refresh por um par novo; o antigo deixa de valer. Apresentar de novo um refresh já usado encerra a sessão inteira (sinal de vazamento).
 3. `POST /auth/entrar/apple` ou `/google` com o token de identidade do provedor: se a identidade é nova, fica vinculada à conta do aparelho; se já pertence a outra conta, a sessão passa para ela e a conta anônima é fundida nela.
 4. No banco ficam só o hash SHA-256 do refresh token e o identificador opaco (`sub`) do provedor: nenhum e-mail ou nome.
+
+### Erratas e "Reportar erro"
+
+- `POST /eventos/{id}/reporte` (`{ motivo, texto? }`, motivo `fato_errado`, `pessoa_errada`, `valor_errado`, `fonte_quebrada` ou `outro`; texto até 1.000 caracteres): só para um evento que a conta vê; um por conta e evento (repetir responde 200 sem gravar de novo). O que parece CPF no texto é trocado por "[CPF removido]" antes de gravar. A conta fica em `app.reporte` só para isso e para sumir com a exclusão da conta; o painel não a enxerga.
+- `GET /erratas?cursor=&limite=`: erratas publicadas pelo painel, da mais recente, com o evento corrigido só quando ele continua visível para quem pede (publicado e, se de seguidores, seguido). Sem quem publicou.
+- O detalhe do evento (`GET /eventos/{id}`) traz `erratas` (título, texto e data) quando há.
+
+### Processo do admin
+
+O painel de revisão (`apps/admin`, Next.js) não fala com o banco: chama a **API do admin**, outro processo com o mesmo código (`src/admin/admin.ts`, só o módulo `admin`) e outro usuário do banco (`vp_admin`), como o notificador. Uma só regra de permissão, aqui.
+
+- **Contas do painel** (`admin.usuario`), separadas das contas do app: e-mail, senha (scrypt com sal, `node:crypto`) e 2FA TOTP (RFC 6238, 6 dígitos, 30 s) com o segredo cifrado no banco (AES-256-GCM, chave derivada de `ADMIN_TOTP_CHAVE`). Sem cadastro pela web: `admin-cli` cria a conta e mostra, uma única vez, a senha inicial e o segredo do 2FA (o endereço `otpauth://` vira QR code no app de autenticação).
+- **Login** (`POST /admin/entrar`): e-mail, senha e código sempre juntos; o mesmo código não vale duas vezes (`totp_ultimo_passo`); 5 erros seguidos bloqueiam a conta por 15 minutos; 10 tentativas por IP a cada 15 minutos; a resposta é a mesma para e-mail desconhecido, senha ou código errados. A sessão (8 h, `ADMIN_SESSAO_HORAS`) é um token aleatório de 256 bits, guardado só como hash em `admin.sessao`; sair ou desativar a conta encerra.
+- **IP**: a guarda global recusa (403) quem não está em `ADMIN_IPS` (endereços ou faixas CIDR, IPv4 e IPv6), inclusive no login; lista vazia, ninguém. O processo só é alcançável pelo painel (rede privada; no compose, `127.0.0.1`), que repassa o IP de quem acessa no `X-Forwarded-For` (`TRUST_PROXY=1`).
+- **Revisão de eventos** (`POST /admin/eventos/revisar`, até 100 por vez, com a versão vista de cada um): publicar só o que está segurado e tem fonte, mantendo `publicado_em` se já tinha (a fila de avisos não reenvia); arquivar com `motivo = 'admin'`. `revisado_em` e `revisado_por = admin:<id>`.
+- **Casamentos** (`POST /admin/casamentos/{fonte}/{id}`): ligar a uma pessoa (vínculo `manual`), pessoa nova (com nome e nascimento do registro) ou descartar, com nota; `canon.match_review` guarda a pessoa, quem resolveu, quando e a nota. `GET /admin/pessoas?q=` procura por nome parecido e mostra nascimento, fontes e candidaturas.
+- **Erratas** (`POST /admin/erratas`): título, texto, evento e pessoa opcionais, reportes resolvidos e, se o fato estava errado, arquivar o evento, tudo numa transação. Texto com algo parecido com CPF é recusado.
+- **Registro de ações** (`admin.acao`): toda mudança grava quem, quando, o quê e a nota, na mesma transação. O papel do admin só insere e lê.
+
+Permissões do papel `vp_admin_role` (migração `admin_revisao`): lê `raw`, `canon` e `feed`; atualiza `feed.evento` e `canon.match_review`; insere em `canon.pessoa`, `canon.pessoa_vinculo` e `feed.errata` (sem alterar erratas); lê e escreve o esquema `admin`. **Não** lê `ident` (CPF nunca, nem em hash) nem o esquema `app`, salvo as colunas do reporte sem a conta. A API do app não lê `admin` nem escreve erratas; o worker não escreve erratas.
+
+```bash
+docker compose -f infra/docker-compose.yml exec admin-api node dist/admin/admin-cli.js criar <email> <nome>
+```
+
+`redefinir <email>` gera senha e 2FA novos (e encerra as sessões); `desativar <email>` bloqueia a conta.
+
+| Variável | Padrão | Descrição |
+| --- | --- | --- |
+| `PORT` | `3001` | Porta HTTP do processo do admin |
+| `DATABASE_URL` | obrigatória | Postgres com o usuário `vp_admin` |
+| `ADMIN_IPS` | vazio | IPs ou faixas CIDR que podem usar o painel (vazio: ninguém) |
+| `ADMIN_TOTP_CHAVE` | obrigatória | Segredo (32+ caracteres) que cifra os segredos do 2FA; no compose, `VP_ADMIN_TOTP_CHAVE` |
+| `ADMIN_SESSAO_HORAS` | `8` | Validade da sessão do painel |
+| `TRUST_PROXY` | `0` | Proxies à frente (o painel: `1`) |
 
 ## Rodar localmente
 
@@ -138,10 +175,10 @@ Os testes usam Vitest. Os decorators do NestJS são compilados pelo próprio Typ
 Os adaptadores Postgres têm testes de integração em `test/integracao`, contra um banco descartável já migrado, com o usuário `vp_api` (no CI, o banco do job `infra`):
 
 ```bash
-VP_API_TEST_DATABASE_URL=postgres://vp_api:<senha>@127.0.0.1:5433/vida_publica_test VP_NOTIFY_TEST_DATABASE_URL=postgres://vp_notify:<senha>@127.0.0.1:5433/vida_publica_test VP_API_TEST_OWNER_URL=postgres://vp_owner:<senha>@127.0.0.1:5433/vida_publica_test pnpm --filter @vida-publica/api run test:int
+VP_API_TEST_DATABASE_URL=postgres://vp_api:<senha>@127.0.0.1:5433/vida_publica_test VP_NOTIFY_TEST_DATABASE_URL=postgres://vp_notify:<senha>@127.0.0.1:5433/vida_publica_test VP_ADMIN_TEST_DATABASE_URL=postgres://vp_admin:<senha>@127.0.0.1:5433/vida_publica_test VP_API_TEST_OWNER_URL=postgres://vp_owner:<senha>@127.0.0.1:5433/vida_publica_test pnpm --filter @vida-publica/api run test:int
 ```
 
-`VP_API_TEST_OWNER_URL` (dono do banco) só grava os dados fictícios de `canon` e `feed` que os testes usam e apaga ao final; a API em si conecta sempre como `vp_api`, e o notificador como `vp_notify`.
+`VP_API_TEST_OWNER_URL` (dono do banco) só grava os dados fictícios de `canon` e `feed` que os testes usam e apaga ao final; a API em si conecta sempre como `vp_api`, o notificador como `vp_notify` e o processo do admin como `vp_admin`.
 
 ## Configuração
 

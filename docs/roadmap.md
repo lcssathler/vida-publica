@@ -133,7 +133,7 @@ Objetivo: saber quem é quem, em todas as fontes, sem casar pessoas só pelo nom
 
 | | Branch | Entrega |
 | --- | --- | --- |
-| [ ] | `admin/revisao` | Painel de revisão: casamentos incertos, eventos segurados, erratas |
+| [x] | `admin/revisao` | Painel de revisão: casamentos incertos, eventos segurados, erratas |
 | [ ] | `ops/observabilidade` | OpenTelemetry, Sentry, alertas de dados desatualizados |
 | [ ] | `ops/backup` | Backup contínuo do banco e teste de restauração |
 | [ ] | `ops/deploy` | Terraform e deploy em VMs |

@@ -125,7 +125,18 @@ export class PostgresFeedRepositorio extends FeedRepositorio {
       [usuarioId, id],
     );
     const [evento] = await this.comAlvos(linhas, usuarioId);
-    return evento ?? null;
+    if (!evento) return null;
+    const erratas = await this.db.query<{
+      id: string;
+      titulo: string;
+      texto: string;
+      publicadaEm: Date;
+    }>(
+      `SELECT id, titulo, texto, publicada_em AS "publicadaEm" FROM feed.errata
+        WHERE evento_id = $1 ORDER BY publicada_em DESC, id DESC`,
+      [id],
+    );
+    return { ...evento, erratas };
   }
 
   private async comAlvos(

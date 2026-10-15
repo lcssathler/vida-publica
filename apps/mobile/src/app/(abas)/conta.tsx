@@ -1,4 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'expo-router';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Linking, Platform, StyleSheet, Text, View } from 'react-native';
 import { useConta, useSalvarPreferencias } from '../../api/consultas';
@@ -8,7 +9,7 @@ import { dataCurta } from '../../comum/formato';
 import { Alternar } from '../../components/Alternar';
 import { Botao } from '../../components/Botao';
 import { Carregando, Falha } from '../../components/Estado';
-import { Secao } from '../../components/Secao';
+import { LinkTexto, Secao } from '../../components/Secao';
 import { Tela } from '../../components/Tela';
 import { appleDisponivel, entrar, googleDisponivel, LoginCancelado, type Provedor } from '../../conta/login';
 import { esquecerAparelho } from '../../notificacoes/aparelho';
@@ -58,6 +59,7 @@ export default function ContaTela() {
     <Tela titulo="Conta" descricao="Preferências deste aparelho e da sua conta.">
       <SecaoConta anonima={c.anonima} identidades={c.identidades} criadaEm={c.criadaEm} />
       <SecaoPreferencias p={c.preferencias} />
+      <SecaoCorrecoes />
       <SecaoPrivacidade anonima={c.anonima} />
     </Tela>
   );
@@ -259,6 +261,21 @@ function SecaoPreferencias({ p }: { p: Preferencias }) {
         ) : null}
       </Secao>
     </>
+  );
+}
+
+/** Erratas: o que o Vida Pública corrigiu, com data. */
+function SecaoCorrecoes() {
+  const theme = useTheme();
+  const router = useRouter();
+  return (
+    <Secao titulo="Correções">
+      <Text style={[typography.body, { color: theme.ink2 }]}>
+        Achou um erro num registro? Use “Reportar erro” no próprio registro. As correções
+        publicadas ficam nas erratas.
+      </Text>
+      <LinkTexto rotulo="Ver as erratas publicadas" aoTocar={() => router.push('/erratas')} />
+    </Secao>
   );
 }
 

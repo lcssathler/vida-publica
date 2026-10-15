@@ -17,6 +17,7 @@ App mobile ◄── API própria ◄── PostgreSQL ◄── Motor de evento
 | API | `apps/api` | NestJS (TypeScript) | Autenticação, feed, perfis, seguir, busca, admin |
 | Worker de coleta e eventos | `services/ingest` | Python 3.12 | Baixar fontes, guardar o bruto, normalizar, casar pessoas, gerar eventos |
 | App | `apps/mobile` | Expo (React Native) | Interface para iOS e Android |
+| Painel de revisão | `apps/admin` | Next.js | Revisão humana (eventos segurados, casamentos, reportes, erratas), consumindo a API do admin |
 | Banco | `db/` | PostgreSQL 16 + dbmate | Dados canônicos, eventos e dados de usuário |
 | Infra local | `infra/` | Docker Compose | Banco e armazenamento S3 (RustFS) na máquina de quem desenvolve |
 
@@ -35,8 +36,9 @@ App mobile ◄── API própria ◄── PostgreSQL ◄── Motor de evento
 | --- | --- | --- | --- |
 | `raw` | Metadados de cada coleta (`raw_object`) e execuções (`job_run`) | Worker | Worker, admin |
 | `canon` | Pessoas, partidos, mandatos, propostas, votações, despesas, contas de campanha | Worker | API, admin |
-| `feed` | Eventos gerados | Worker | API, admin |
-| `app` | Usuários, quem segue o quê, preferências, aparelhos, notificações | API | API, admin |
+| `feed` | Eventos gerados e erratas | Worker (eventos), admin (revisão e erratas) | API, admin |
+| `app` | Usuários, quem segue o quê, preferências, aparelhos, notificações, reportes de erro | API | API, notificador; o admin só vê os reportes, sem a conta |
+| `admin` | Contas do painel (2FA), sessões e registro de ações | Admin | Admin |
 
 Cada componente usa um papel de banco próprio com o mínimo de permissão: o worker não lê dados de usuário, e a API não escreve dados públicos.
 

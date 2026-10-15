@@ -66,6 +66,24 @@ export default function DetalheDoEvento() {
 
       {e.resumo ? <Text style={[typography.body, { color: theme.ink }]}>{e.resumo}</Text> : null}
 
+      {e.erratas?.length ? (
+        <View style={[styles.errata, { borderColor: theme.stamp, backgroundColor: theme.stampWash }]}>
+          <Text role="heading" style={[typography.overline, { color: theme.stamp }]}>
+            Errata
+          </Text>
+          {e.erratas.map((x) => (
+            <View key={x.id} style={styles.itemErrata}>
+              <Text style={[typography.bodyStrong, { color: theme.ink }]}>{x.titulo}</Text>
+              <Text style={[typography.body, { color: theme.ink }]}>{x.texto}</Text>
+              <Text style={[typography.caption, { color: theme.ink2 }]}>
+                Publicada em {dataCurta(x.publicadaEm)}.
+              </Text>
+            </View>
+          ))}
+          <LinkTexto rotulo="Todas as erratas" aoTocar={() => router.push('/erratas')} />
+        </View>
+      ) : null}
+
       {alvos.length ? (
         <View>
           <Text role="heading" style={[typography.overline, styles.secao, { color: theme.ink2 }]}>
@@ -110,6 +128,12 @@ export default function DetalheDoEvento() {
         Registro gerado pela regra {e.tipo} v{e.regra.versao}
         {e.regra.descricao ? `: ${e.regra.descricao}` : '.'}
       </Text>
+
+      <LinkTexto
+        rotulo="Reportar erro"
+        descricao="Reportar erro neste registro"
+        aoTocar={() => router.push({ pathname: '/reportar/[id]', params: { id: e.id } })}
+      />
     </Tela>
   );
 }
@@ -118,4 +142,6 @@ const styles = StyleSheet.create({
   secao: { paddingBottom: space.xs },
   alvo: { paddingVertical: space.sm, gap: space.xxs, borderBottomWidth: rules.hairline },
   fonte: { gap: space.sm, padding: space.md, borderWidth: 1, borderRadius: 2 },
+  errata: { gap: space.sm, padding: space.md, borderWidth: 1, borderRadius: 2 },
+  itemErrata: { gap: space.xxs },
 });

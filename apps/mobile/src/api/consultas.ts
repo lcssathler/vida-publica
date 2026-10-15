@@ -9,6 +9,8 @@ import type {
   CategoriaPerfil,
   Conta,
   DoadoresPessoa,
+  MotivoReporte,
+  RespostaErratas,
   EventoFeed,
   Parlamentar,
   PerfilPartido,
@@ -33,6 +35,7 @@ export const chaves = {
   proposta: (id: string) => ['proposta', id] as const,
   conta: ['conta'] as const,
   busca: ['busca'] as const,
+  erratas: ['erratas'] as const,
 };
 
 const chaveAlvo = (alvo: Alvo) => `${alvo.tipo}:${alvo.id}`;
@@ -152,6 +155,29 @@ export function useEvento(id: string) {
   return useQuery({
     queryKey: chaves.evento(id),
     queryFn: () => cliente.get<EventoFeed>(`/eventos/${encodeURIComponent(id)}`),
+  });
+}
+
+/** Erratas publicadas, da mais recente, por cursor. */
+export function useErratas() {
+  const { cliente } = useSessao();
+  return useInfiniteQuery({
+    queryKey: chaves.erratas,
+    queryFn: ({ pageParam }) =>
+      cliente.get<RespostaErratas>(
+        `/erratas?limite=20${pageParam ? `&cursor=${encodeURIComponent(pageParam)}` : ''}`,
+      ),
+    initialPageParam: null as string | null,
+    getNextPageParam: (ultima) => ultima.proximoCursor,
+  });
+}
+
+/** "Reportar erro" num registro: vai para a revisão humana (um por conta e registro). */
+export function useReportar(eventoId: string) {
+  const { cliente } = useSessao();
+  return useMutation({
+    mutationFn: (dados: { motivo: MotivoReporte; texto?: string }) =>
+      cliente.post<{ recebido: true }>(`/eventos/${encodeURIComponent(eventoId)}/reporte`, dados),
   });
 }
 

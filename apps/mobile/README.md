@@ -43,7 +43,12 @@ Até concluir, só as telas do onboarding ficam acessíveis (`Stack.Protected` e
 - `GET /feed` por cursor (`useInfiniteQuery`), de 20 em 20, com "Quem eu sigo" ou "Tudo" e filtros por tipo (as mesmas categorias dos perfis: votos, presença, gastos, propostas, campanha, eleições) e por assunto (os seguidos e os de mais propostas).
 - Registros agrupados por dia de Brasília. Fato só com data (meia-noite em Brasília) não mostra hora. Datas e valores formatados sem depender do `Intl` (`src/comum/formato.ts`).
 - "Você parou aqui": o registro do topo da última visita fica guardado no aparelho por escopo. Na volta, o que vem antes dele é grifado como novo e um divisor marca onde a pessoa parou (`src/feed/linhas.ts`).
-- Detalhe (`/evento/[id]`): fato, data, valor, envolvidos, fonte (carimbo, nome, endereço, data do dado e da coleta, botão para abrir a fonte oficial) e a regra que gerou o registro.
+- Detalhe (`/evento/[id]`): fato, data, valor, envolvidos, fonte (carimbo, nome, endereço, data do dado e da coleta, botão para abrir a fonte oficial), a regra que gerou o registro, as erratas publicadas sobre ele e "Reportar erro".
+
+## Erratas e "Reportar erro"
+
+- "Reportar erro" (`/reportar/[id]`), no pé de cada registro: motivo (fato, pessoa ou partido, valor, fonte que não abre, outro) e detalhes opcionais (até 1.000 caracteres, com o aviso de não escrever dados pessoais). Vai para `POST /eventos/{id}/reporte` e para a revisão humana no painel, que não vê a conta.
+- Erratas (`/erratas`, pela Conta ou pelo registro corrigido): o que estava errado, o que foi feito e a data, da mais recente, com "Ver o registro corrigido" quando ele continua no app. O registro corrigido mostra a errata num quadro no detalhe.
 
 ## Perfis
 

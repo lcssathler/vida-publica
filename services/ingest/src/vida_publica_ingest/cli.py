@@ -3,7 +3,7 @@ import logging
 import sys
 from datetime import date, timedelta
 
-from . import vigia
+from . import agendador, vigia
 from .adapters.postgres import PgJobRecorder, PgRawRegistry, connect
 from .adapters.s3 import S3RawStorage
 from .canon import mandatos, pessoas, repasses
@@ -491,6 +491,10 @@ def main(argv: list[str] | None = None) -> int:
     vigiar.add_argument(
         "--continuo", action="store_true", help="uma volta a cada VP_VIGIA_INTERVALO_SEGUNDOS"
     )
+    commands.add_parser(
+        "agendar",
+        help="roda as coletas e o motor de eventos nos intervalos de cada fonte (produção)",
+    )
     deputados = commands.add_parser("camara-deputados", help="coleta deputados da Câmara")
     deputados.add_argument(
         "--legislatura", type=int, action="append", help="padrão: 57 (2023-2027)"
@@ -591,6 +595,9 @@ def main(argv: list[str] | None = None) -> int:
     sentry_ligado = iniciar_sentry(settings)
     if args.command == "vigiar":
         return _vigiar(settings, sentry_ligado, args.continuo)
+    if args.command == "agendar":
+        agendador.agendar(lambda: connect(settings))
+        return 0
     if args.command == "check-storage":
         return _check_storage(settings)
     if args.command == "check-db":

@@ -1,0 +1,122 @@
+# Máquina do banco (produção): PostgreSQL com backup contínuo (pgBackRest no
+# S3 da AWS, com o papel da máquina) e o serviço de backup. Sobe pelo serviço
+# vida-publica (infra/producao/subir.sh). Nenhuma credencial neste arquivo.
+name: vida-publica
+
+x-pgbackrest: &pgbackrest
+  PGBACKREST_STANZA: vida-publica
+  PGBACKREST_PG1_PATH: /var/lib/postgresql/data
+  PGBACKREST_PG1_SOCKET_PATH: /var/run/postgresql
+  PGBACKREST_PG1_USER: vp_owner
+  PGBACKREST_REPO1_TYPE: s3
+  PGBACKREST_REPO1_S3_ENDPOINT: s3.${AWS_REGION}.amazonaws.com
+  PGBACKREST_REPO1_S3_REGION: ${AWS_REGION}
+  PGBACKREST_REPO1_S3_BUCKET: ${VP_BACKUP_S3_BUCKET}
+  # Credenciais do papel da máquina (serviço de metadados), sem chave.
+  PGBACKREST_REPO1_S3_KEY_TYPE: auto
+  PGBACKREST_REPO1_STORAGE_VERIFY_TLS: "y"
+  PGBACKREST_REPO1_PATH: /vida-publica
+  PGBACKREST_REPO1_CIPHER_TYPE: aes-256-cbc
+  PGBACKREST_REPO1_CIPHER_PASS: ${VP_BACKUP_CIFRA}
+  PGBACKREST_REPO1_RETENTION_FULL: "2"
+  PGBACKREST_COMPRESS_TYPE: zst
+  PGBACKREST_START_FAST: "y"
+  PGBACKREST_LOG_LEVEL_CONSOLE: warn
+  PGBACKREST_LOG_LEVEL_FILE: "off"
+
+services:
+  postgres:
+    image: ${IMAGENS}-postgres:${VERSAO}
+    restart: unless-stopped
+    command:
+      - postgres
+      - -c
+      - wal_level=replica
+      - -c
+      - archive_mode=on
+      - -c
+      - archive_command=pgbackrest archive-push %p
+      - -c
+      - archive_timeout=300
+      - -c
+      - shared_buffers=1GB
+      - -c
+      - effective_cache_size=2GB
+      - -c
+      - max_connections=100
+    environment:
+      <<: *pgbackrest
+      POSTGRES_DB: vida_publica
+      POSTGRES_USER: vp_owner
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      VP_INGEST_DB_PASSWORD: ${VP_INGEST_DB_PASSWORD}
+      VP_API_DB_PASSWORD: ${VP_API_DB_PASSWORD}
+      VP_ADMIN_DB_PASSWORD: ${VP_ADMIN_DB_PASSWORD}
+      VP_NOTIFY_DB_PASSWORD: ${VP_NOTIFY_DB_PASSWORD}
+      TZ: UTC
+    # Só no IP privado: o grupo de segurança deixa entrar só a aplicação.
+    ports:
+      - "${VP_DB_IP_PRIVADO}:5432:5432"
+    volumes:
+      - /srv/dados/postgres:/var/lib/postgresql/data
+      - postgres-socket:/var/run/postgresql
+      - ../postgres/init:/docker-entrypoint-initdb.d:ro
+    shm_size: 512mb
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vp_owner -d vida_publica"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  migrate:
+    image: ghcr.io/amacneil/dbmate:2.36.0
+    profiles: [tools]
+    environment:
+      DATABASE_URL: postgres://vp_owner:${POSTGRES_PASSWORD}@postgres:5432/vida_publica?sslmode=disable
+      DBMATE_MIGRATIONS_DIR: /db/migrations
+      DBMATE_NO_DUMP_SCHEMA: "true"
+    volumes:
+      - ../../db:/db:ro
+    command: ["--wait", "up"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  backup:
+    image: ${IMAGENS}-postgres:${VERSAO}
+    restart: unless-stopped
+    command: ["vp-backup", "agendar"]
+    shm_size: 512mb
+    environment:
+      <<: *pgbackrest
+      POSTGRES_USER: vp_owner
+      POSTGRES_DB: vida_publica
+      VP_BACKUP_TESTE_DIAS: 30
+      VP_HEALTHCHECKS_PING_KEY: ${VP_HEALTHCHECKS_PING_KEY:-}
+    volumes:
+      - /srv/dados/postgres:/var/lib/postgresql/data:ro
+      - postgres-socket:/var/run/postgresql
+      - /srv/dados/restauracao:/restauracao
+    healthcheck:
+      test: ["CMD-SHELL", "test -n \"$$(find /tmp/backup-vivo -mmin -90 2>/dev/null)\""]
+      interval: 60s
+      timeout: 3s
+      retries: 3
+      start_period: 300s
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # Restauração de verdade, com o postgres parado (veja o README).
+  restaurar:
+    image: ${IMAGENS}-postgres:${VERSAO}
+    profiles: [tools]
+    user: postgres
+    entrypoint: ["pgbackrest", "restore", "--delta", "--log-level-console=info"]
+    environment:
+      <<: *pgbackrest
+    volumes:
+      - /srv/dados/postgres:/var/lib/postgresql/data
+
+volumes:
+  postgres-socket:

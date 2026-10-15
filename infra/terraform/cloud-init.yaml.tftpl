@@ -1,0 +1,71 @@
+#cloud-config
+# Máquina "${papel}" do Vida Pública. Instala o Docker (repositório oficial,
+# pacotes assinados), clona o repositório na tag ${versao} e liga o serviço
+# vida-publica, que busca o segredo no Secrets Manager e sobe o compose de
+# produção (infra/producao/subir.sh). Aqui só vai configuração que não é
+# segredo; segredo nenhum passa pelo user_data nem pelo estado do Terraform.
+package_update: true
+package_upgrade: true
+packages:
+  - ca-certificates
+  - curl
+  - git
+  - jq
+  - unattended-upgrades
+
+write_files:
+  - path: /etc/vida-publica/ambiente
+    permissions: "0644"
+    content: |
+      PAPEL="${papel}"
+      VERSAO="${versao}"
+      IMAGENS="${imagens}"
+      AWS_REGION="${regiao}"
+      SEGREDO="${segredo}"
+%{ for chave, valor in extras ~}
+      ${chave}="${valor}"
+%{ endfor ~}
+  - path: /etc/systemd/system/vida-publica.service
+    permissions: "0644"
+    content: |
+      [Unit]
+      Description=Vida Pública (${papel})
+      Requires=docker.service
+      After=docker.service network-online.target
+      Wants=network-online.target
+
+      [Service]
+      Type=oneshot
+      RemainAfterExit=yes
+      EnvironmentFile=/etc/vida-publica/ambiente
+      WorkingDirectory=/opt/vida-publica
+      ExecStart=/opt/vida-publica/infra/producao/subir.sh
+      ExecStop=/opt/vida-publica/infra/producao/subir.sh parar
+      TimeoutStartSec=1200
+
+      [Install]
+      WantedBy=multi-user.target
+
+runcmd:
+  - install -m 0755 -d /etc/apt/keyrings
+  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+  - chmod a+r /etc/apt/keyrings/docker.asc
+  - echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" > /etc/apt/sources.list.d/docker.list
+  - apt-get update
+  - DEBIAN_FRONTEND=noninteractive apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+  - systemctl enable --now docker
+  # CLI da AWS (snap oficial): busca o segredo do Secrets Manager no subir.sh.
+  - snap install aws-cli --classic
+%{ if volume != "" ~}
+  # Disco de dados do banco: espera aparecer, formata só se estiver vazio e monta.
+  - |
+    disco=/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_${volume}
+    for i in $(seq 1 120); do [ -e "$disco" ] && break; sleep 5; done
+    blkid "$disco" || mkfs.ext4 -L vp-dados "$disco"
+    mkdir -p /srv/dados
+    grep -q vp-dados /etc/fstab || echo "LABEL=vp-dados /srv/dados ext4 defaults,nofail 0 2" >> /etc/fstab
+    mount -a
+%{ endif ~}
+  - git clone --depth 1 --branch ${versao} ${repositorio} /opt/vida-publica
+  - systemctl daemon-reload
+  - systemctl enable --now vida-publica.service

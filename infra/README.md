@@ -1,6 +1,6 @@
 # Infraestrutura local
 
-Sobe PostgreSQL 16, um armazenamento compatível com S3 ([RustFS](https://github.com/rustfs/rustfs)), a API, o notificador (fila de avisos), a API do admin e o painel de revisão na sua máquina. O worker de coleta roda sob demanda. Requer Docker e Node.
+Sobe PostgreSQL 16 (com backup contínuo pelo pgBackRest), um armazenamento compatível com S3 ([RustFS](https://github.com/rustfs/rustfs)), a API, o notificador (fila de avisos), a API do admin e o painel de revisão na sua máquina. O worker de coleta roda sob demanda. Requer Docker e Node.
 
 ## Primeira vez
 
@@ -51,6 +51,43 @@ docker compose -f infra/docker-compose.yml run --rm worker vigiar
 ```
 
 Sentry e healthchecks.io são opcionais: com `VP_SENTRY_DSN` e `VP_HEALTHCHECKS_PING_KEY` no `infra/.env` (nunca versionados), erros, traces e alertas saem também para lá; sem elas, ficam nos logs (`docker compose -f infra/docker-compose.yml logs vigia`).
+
+## Backup e restauração
+
+O banco tem backup contínuo com o [pgBackRest](https://pgbackrest.org): a imagem `infra/postgres` é o Postgres 16 com o pgBackRest, e o próprio banco arquiva cada segmento de WAL no repositório (`archive_command`, no máximo 5 minutos de atraso com `archive_timeout`). Com os backups e o WAL, dá para restaurar o banco em **qualquer ponto no tempo** desde o backup completo mais antigo guardado.
+
+- **Repositório**: S3, cifrado com AES-256 (`VP_BACKUP_CIFRA`; sem a frase, o backup não abre) e comprimido com zstd. No ambiente local é o RustFS, atrás do proxy TLS `backup-s3` (o pgBackRest só fala S3 por HTTPS); em produção, um bucket de outro provedor, longe do servidor do banco. Configuração só por variáveis `PGBACKREST_*` no compose (âncora `x-pgbackrest`).
+- **Serviço `backup`** (mesma imagem, dados só para leitura, socket compartilhado), a cada hora:
+  - confere o arquivamento de WAL (`pg_stat_archiver`: último arquivado há menos de 30 minutos e nenhuma falha depois dele);
+  - faz o backup completo se o último tem mais de 7 dias, ou o diferencial se o último backup tem mais de 24 horas, e verifica o repositório (`pgbackrest verify`); guarda 2 completos (e o WAL entre eles);
+  - a cada 30 dias (`VP_BACKUP_TESTE_DIAS`; 0 desliga), roda o teste de restauração.
+- **Teste de restauração** (`vp-backup testar-restauracao`): trava as tabelas contra escrita (leituras seguem), marca um ponto de restauração no WAL e soma cada tabela dos esquemas da aplicação (linhas e md5 de todas as linhas) na mesma fotografia; grava uma marca depois do ponto; restaura num banco descartável até o ponto, soma de novo e compara. Passa só se todas as tabelas forem iguais e a marca não estiver na cópia.
+- **Alertas**: cada execução vai para `raw.job_run` (`backup`, `backup-wal`, `backup-restauracao`) e o vigia alerta se passar do prazo (26 h, 2 h e 35 dias, em `raw.fonte_prazo`); com `VP_HEALTHCHECKS_PING_KEY`, também pinga o check `backup` do healthchecks.io.
+
+Comandos (dentro do serviço `backup`):
+
+```bash
+docker compose -f infra/docker-compose.yml exec backup vp-backup info
+```
+
+```bash
+docker compose -f infra/docker-compose.yml exec backup vp-backup backup full
+```
+
+```bash
+docker compose -f infra/docker-compose.yml exec backup vp-backup testar-restauracao
+```
+
+### Restaurar o banco de verdade
+
+1. Parar quem escreve: `docker compose -f infra/docker-compose.yml stop api notificador admin-api vigia backup` e, por último, `postgres`.
+2. Restaurar sobre o diretório de dados (serviço `restaurar`, com o banco parado), até o instante desejado; sem argumentos, até o último WAL arquivado:
+
+```bash
+docker compose -f infra/docker-compose.yml run --rm restaurar --type=time --target="2026-10-15 13:00:00+00" --target-action=promote
+```
+
+3. Subir o `postgres`, conferir os dados e subir o resto. Depois de uma restauração para trás, o banco segue numa linha do tempo nova: rode `vp-backup backup full` para começar um backup novo dessa linha.
 
 Para apagar também os dados locais:
 

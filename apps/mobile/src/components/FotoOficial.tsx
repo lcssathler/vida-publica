@@ -22,7 +22,7 @@ export function FotoOficial({ foto, nome, largura = 36 }: { foto: Foto | null; n
     return (
       <View
         aria-hidden
-        style={[styles.foto, tamanho, styles.vazia, { borderColor: theme.rule, backgroundColor: theme.paperRaised }]}
+        style={[styles.foto, tamanho, styles.vazia, { backgroundColor: theme.photo }]}
       >
         <Text style={[typography.dataSmall, { color: theme.ink2 }]}>{iniciais}</Text>
       </View>
@@ -33,13 +33,13 @@ export function FotoOficial({ foto, nome, largura = 36 }: { foto: Foto | null; n
       source={{ uri: urlSegura(foto.url) }}
       accessibilityIgnoresInvertColors
       aria-hidden
-      style={[styles.foto, tamanho, { borderColor: theme.rule, backgroundColor: theme.paperRaised }]}
+      style={[styles.foto, tamanho, { backgroundColor: theme.photo }]}
       resizeMode="cover"
     />
   );
 }
 
 const styles = StyleSheet.create({
-  foto: { borderRadius: radius.paper, borderWidth: StyleSheet.hairlineWidth },
+  foto: { borderRadius: radius.sm },
   vazia: { alignItems: 'center', justifyContent: 'center' },
 });

@@ -5,13 +5,14 @@ import { mensagemDeErro } from '../../api/erros';
 import type { AlvoTipo } from '../../api/tipos';
 import { dataCurta, diaIso, diaPorExtenso, hora, reais } from '../../comum/formato';
 import { Botao } from '../../components/Botao';
+import { BotaoVoltar } from '../../components/BotaoVoltar';
 import { CarimboFonte } from '../../components/CarimboFonte';
 import { Carregando, Falha } from '../../components/Estado';
-import { LinkTexto } from '../../components/Secao';
+import { LinkTexto, Secao } from '../../components/Secao';
 import { Tela } from '../../components/Tela';
 import { rotaDoAlvo } from '../../perfis/rotas';
 import { NOME_TIPO, fonteDaUrl, protocolo } from '../../feed/rotulos';
-import { rules, space, typography } from '../../theme/tokens';
+import { radius, rules, space, typography } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
 
 const ORDEM_ALVO: AlvoTipo[] = ['pessoa', 'partido', 'proposicao', 'assunto'];
@@ -42,13 +43,15 @@ export default function DetalheDoEvento() {
 
   return (
     <Tela
+      topo={<BotaoVoltar />}
       sobretitulo={`${NOME_TIPO[e.tipo]} · Nº ${protocolo(e)}`}
       titulo={e.titulo}
       rodape={
         <>
-          <Botao rotulo="Voltar" variante="texto" aoTocar={() => (router.canGoBack() ? router.back() : router.replace('/'))} />
           <Botao
             rotulo="Abrir na fonte oficial"
+            iconeFinal="external-link"
+            estilo={styles.fonteOficial}
             dica={`Abre ${fonte.nome} no navegador`}
             aoTocar={() => void Linking.openURL(e.fonte.url)}
           />
@@ -67,8 +70,8 @@ export default function DetalheDoEvento() {
       {e.resumo ? <Text style={[typography.body, { color: theme.ink }]}>{e.resumo}</Text> : null}
 
       {e.erratas?.length ? (
-        <View style={[styles.errata, { borderColor: theme.stamp, backgroundColor: theme.stampWash }]}>
-          <Text role="heading" style={[typography.overline, { color: theme.stamp }]}>
+        <View style={[styles.errata, { borderColor: theme.accent, backgroundColor: theme.accentWash }]}>
+          <Text role="heading" style={[typography.overline, { color: theme.accent }]}>
             Errata
           </Text>
           {e.erratas.map((x) => (
@@ -85,12 +88,12 @@ export default function DetalheDoEvento() {
       ) : null}
 
       {alvos.length ? (
-        <View>
-          <Text role="heading" style={[typography.overline, styles.secao, { color: theme.ink2 }]}>
-            Envolvidos
-          </Text>
-          {alvos.map((a) => (
-            <View key={`${a.tipo}:${a.id}`} style={[styles.alvo, { borderBottomColor: theme.rule }]}>
+        <Secao titulo="Envolvidos">
+          {alvos.map((a, i) => (
+            <View
+              key={`${a.tipo}:${a.id}`}
+              style={[styles.alvo, i < alvos.length - 1 && { borderBottomWidth: rules.hairline, borderBottomColor: theme.line }]}
+            >
               <Text style={[typography.overline, { color: theme.ink3 }]}>
                 {[NOME_ALVO[a.tipo], a.papel].filter(Boolean).join(' · ')}
               </Text>
@@ -106,10 +109,10 @@ export default function DetalheDoEvento() {
               )}
             </View>
           ))}
-        </View>
+        </Secao>
       ) : null}
 
-      <View style={[styles.fonte, { borderColor: theme.stamp }]}>
+      <View style={[styles.fonte, { backgroundColor: theme.surface, boxShadow: theme.shadowCard }]}>
         <Text role="heading" style={[typography.overline, { color: theme.ink2 }]}>
           Fonte
         </Text>
@@ -139,9 +142,9 @@ export default function DetalheDoEvento() {
 }
 
 const styles = StyleSheet.create({
-  secao: { paddingBottom: space.xs },
-  alvo: { paddingVertical: space.sm, gap: space.xxs, borderBottomWidth: rules.hairline },
-  fonte: { gap: space.sm, padding: space.md, borderWidth: 1, borderRadius: 2 },
-  errata: { gap: space.sm, padding: space.md, borderWidth: 1, borderRadius: 2 },
+  fonteOficial: { flex: 1 },
+  alvo: { paddingVertical: space.sm, gap: space.xxs },
+  fonte: { gap: space.sm, padding: space.md + 2, borderRadius: radius.card },
+  errata: { gap: space.sm, padding: space.md + 2, borderWidth: 1, borderRadius: radius.card },
   itemErrata: { gap: space.xxs },
 });

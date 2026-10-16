@@ -48,7 +48,7 @@ function Rotas() {
     <Stack
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: theme.paper },
+        contentStyle: { backgroundColor: theme.background },
       }}
     >
       <Stack.Protected guard={local.onboardingConcluido}>

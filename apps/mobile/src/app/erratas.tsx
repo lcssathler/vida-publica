@@ -4,6 +4,7 @@ import { useErratas } from '../api/consultas';
 import { mensagemDeErro } from '../api/erros';
 import { dataCurta, diaPorExtenso } from '../comum/formato';
 import { Botao } from '../components/Botao';
+import { BotaoVoltar } from '../components/BotaoVoltar';
 import { Carregando, Falha, Vazio } from '../components/Estado';
 import { LinkTexto } from '../components/Secao';
 import { Tela } from '../components/Tela';
@@ -18,7 +19,6 @@ export default function Erratas() {
   const theme = useTheme();
   const router = useRouter();
   const erratas = useErratas();
-  const voltar = () => (router.canGoBack() ? router.back() : router.replace('/'));
 
   if (erratas.isPending) return <Carregando rotulo="Carregando as erratas" />;
   if (erratas.isError) {
@@ -31,7 +31,7 @@ export default function Erratas() {
       sobretitulo="Correções"
       titulo="Erratas"
       descricao="Quando um registro estava errado, a correção fica aqui, com a data. Erratas não são apagadas."
-      rodape={<Botao rotulo="Voltar" variante="texto" aoTocar={voltar} />}
+      topo={<BotaoVoltar />}
     >
       {lista.length === 0 ? <Vazio mensagem="Nenhuma errata publicada." /> : null}
       {lista.map((x) => (

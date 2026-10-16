@@ -8,13 +8,14 @@ import type { ItemLinhaDoTempo, Proposta } from '../../api/tipos';
 import { dataCurta, dataSimples, diaPorExtenso, hora } from '../../comum/formato';
 import { Alternar } from '../../components/Alternar';
 import { Botao } from '../../components/Botao';
+import { BotaoVoltar } from '../../components/BotaoVoltar';
 import { Carregando, Falha, Vazio } from '../../components/Estado';
 import { LinkTexto, Secao } from '../../components/Secao';
 import { NOME_TIPO } from '../../feed/rotulos';
 import { situacaoMudou } from '../../propostas/linha';
 import { AvisoSemConexao } from '../../offline/AvisoSemConexao';
 import { Placar } from '../../propostas/Placar';
-import { rules, space, typography } from '../../theme/tokens';
+import { radius, space, typography } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
 
 const NOME_CASA = { camara: 'Câmara', senado: 'Senado' } as const;
@@ -32,7 +33,7 @@ export default function DetalheDaProposta() {
 
   const itens = proposta.data.linhaDoTempo;
   return (
-    <SafeAreaView style={[styles.tela, { backgroundColor: theme.paper }]} edges={['top', 'left', 'right', 'bottom']}>
+    <SafeAreaView style={[styles.tela, { backgroundColor: theme.background }]} edges={['top', 'left', 'right', 'bottom']}>
       <FlatList
         testID="linha-da-proposta"
         data={itens}
@@ -58,7 +59,7 @@ function Cabecalho({ p }: { p: Proposta }) {
   return (
     <View style={styles.cabecalho}>
       <AvisoSemConexao />
-      <Botao rotulo="‹ Voltar" variante="texto" estilo={styles.voltar} aoTocar={() => (router.canGoBack() ? router.back() : router.replace('/'))} />
+      <BotaoVoltar />
       <View style={[styles.titulo, { borderBottomColor: theme.ink }]}>
         <Text style={[typography.overline, { color: theme.ink2 }]}>
           {[NOME_CASA[p.casa], p.descricaoTipo].filter(Boolean).join(' · ')}
@@ -215,7 +216,7 @@ function ItemDaLinha({
   return (
     <View style={styles.item}>
       <View style={styles.trilho}>
-        <View style={[styles.marca, { borderColor: theme.ink, backgroundColor: item.tipo === 'votacao' ? theme.ink : theme.paper }]} />
+        <View style={[styles.marca, { borderColor: theme.ink, backgroundColor: item.tipo === 'votacao' ? theme.ink : theme.background }]} />
         {!ultimo ? <View style={[styles.fio, { backgroundColor: theme.rule }]} /> : null}
       </View>
       <View style={styles.conteudoItem}>
@@ -237,15 +238,14 @@ const styles = StyleSheet.create({
   tela: { flex: 1 },
   conteudo: { paddingHorizontal: space.xl, paddingBottom: space.xxl },
   cabecalho: { gap: space.lg, paddingTop: space.md, paddingBottom: space.md },
-  voltar: { alignSelf: 'flex-start', paddingHorizontal: 0 },
-  titulo: { gap: space.xxs, paddingBottom: space.md, borderBottomWidth: rules.double.top },
+  titulo: { gap: space.xxs, paddingHorizontal: space.xs },
   situacao: { gap: space.xxs, paddingVertical: space.xs },
   linha: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: space.md },
   autor: { gap: 0 },
-  tituloLinha: { gap: space.xxs, paddingBottom: space.xs, borderBottomWidth: rules.double.top },
+  tituloLinha: { gap: space.xxs, paddingHorizontal: space.xs },
   item: { flexDirection: 'row', gap: space.md },
   trilho: { width: 12, alignItems: 'center' },
-  marca: { width: 10, height: 10, borderWidth: 1.5, borderRadius: 1, marginTop: space.lg },
+  marca: { width: 10, height: 10, borderWidth: 1.5, borderRadius: radius.pill, marginTop: space.lg },
   fio: { flex: 1, width: 1 },
   conteudoItem: { flex: 1, gap: space.xs, paddingVertical: space.md },
 });

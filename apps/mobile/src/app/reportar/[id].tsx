@@ -92,7 +92,7 @@ export default function ReportarErro() {
         style={[
           typography.body,
           styles.campo,
-          { color: theme.ink, borderColor: theme.ink2, backgroundColor: theme.paperRaised },
+          { color: theme.ink, borderColor: theme.rule, backgroundColor: theme.surface },
         ]}
       />
       <Text style={[typography.caption, { color: theme.ink2 }]}>
@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
     minHeight: 120,
     textAlignVertical: 'top',
     borderWidth: 1,
-    borderRadius: radius.paper,
+    borderRadius: radius.lg,
     padding: space.sm,
   },
 });

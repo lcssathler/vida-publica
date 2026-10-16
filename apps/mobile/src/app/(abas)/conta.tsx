@@ -56,7 +56,7 @@ export default function ContaTela() {
 
   const c = conta.data;
   return (
-    <Tela titulo="Conta" descricao="Preferências deste aparelho e da sua conta.">
+    <Tela comBarra titulo="Conta" descricao="Preferências deste aparelho e da sua conta.">
       <SecaoConta anonima={c.anonima} identidades={c.identidades} criadaEm={c.criadaEm} />
       <SecaoPreferencias p={c.preferencias} />
       <SecaoCorrecoes />
@@ -409,5 +409,5 @@ const styles = StyleSheet.create({
   ajuste: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   valor: { minWidth: 48, textAlign: 'center' },
   inicio: { alignSelf: 'flex-start' },
-  confirmar: { gap: space.sm, padding: space.md, borderWidth: 1, borderRadius: radius.paper },
+  confirmar: { gap: space.sm, padding: space.md, borderWidth: 1, borderRadius: radius.md },
 });

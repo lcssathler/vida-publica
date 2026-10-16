@@ -55,6 +55,25 @@ export function diaCurto(iso: string): string {
   return `${DIAS[p.semana]} · ${dois(p.dia)} ${MESES[p.mes]} ${p.ano}`;
 }
 
+/**
+ * Nome do dia no cabeçalho do feed: "Hoje", "Ontem" ou "14 de outubro"
+ * (com o ano quando não é o atual). `agora` em ms, para testar.
+ */
+export function diaRelativo(iso: string, agora: number = Date.now()): string {
+  const dia = diaIso(iso);
+  const hoje = new Date(agora).toISOString();
+  if (dia === diaIso(hoje)) return 'Hoje';
+  if (dia === diaIso(new Date(agora - 24 * 60 * 60 * 1000).toISOString())) return 'Ontem';
+  const p = emBrasilia(iso);
+  const ano = p.ano === emBrasilia(hoje).ano ? '' : ` de ${p.ano}`;
+  return `${p.dia} de ${MESES_EXTENSO[p.mes]}${ano}`;
+}
+
+/** "qua", dia da semana abreviado ao lado do nome do dia. */
+export function semanaCurta(iso: string): string {
+  return DIAS[emBrasilia(iso).semana].toLowerCase();
+}
+
 /** "quarta-feira, 14 de outubro de 2026", para o leitor de tela. */
 export function diaPorExtenso(iso: string): string {
   const p = emBrasilia(iso);

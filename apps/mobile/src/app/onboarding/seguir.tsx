@@ -60,7 +60,7 @@ export default function QuemSeguir() {
 
   return (
     <Tela
-      sobretitulo="Passo 2 de 4"
+      passo={{ atual: 2, total: 4 }}
       titulo="Quem você quer acompanhar?"
       descricao={`Quem representa ${local.uf ? NOME_ESTADO[local.uf] : 'seu estado'} no Congresso hoje. Você pode mudar depois.`}
       rodape={

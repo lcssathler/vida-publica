@@ -98,7 +98,7 @@ describe('Feed', () => {
     });
     await fireEvent.press(await screen.findByRole('button', { name: 'Ver tudo' }));
     expect(await screen.findByText('Registro visto')).toBeOnTheScreen();
-    expect(screen.getByRole('radio', { name: 'Tudo' })).toBeChecked();
+    expect(screen.getByRole('radio', { name: 'Geral' })).toBeChecked();
     expect(api.pedidos.at(-1)?.caminho).toBe('/feed?escopo=todos&limite=20');
   });
 

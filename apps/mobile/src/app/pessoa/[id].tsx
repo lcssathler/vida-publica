@@ -6,7 +6,7 @@ import { mensagemDeErro } from '../../api/erros';
 import type { DoadoresCandidatura, PerfilPessoa } from '../../api/tipos';
 import { capitalizar, dataSimples, inteiro, plural, reais } from '../../comum/formato';
 import { Alternar } from '../../components/Alternar';
-import { Botao } from '../../components/Botao';
+import { BotaoVoltar } from '../../components/BotaoVoltar';
 import { Carregando, Falha } from '../../components/Estado';
 import { FotoOficial } from '../../components/FotoOficial';
 import { Dado, LinkTexto, Secao } from '../../components/Secao';
@@ -44,7 +44,7 @@ function Cabecalho({ p }: { p: PerfilPessoa }) {
 
   return (
     <View style={styles.cabecalho}>
-      <Botao rotulo="‹ Voltar" variante="texto" estilo={styles.voltar} aoTocar={() => (router.canGoBack() ? router.back() : router.replace('/'))} />
+      <BotaoVoltar />
       <View style={styles.identidade}>
         <FotoOficial foto={p.foto} nome={p.nome} largura={72} />
         <View style={styles.nomes}>
@@ -245,7 +245,6 @@ function Candidatura({ c, limite }: { c: DoadoresCandidatura; limite: number }) 
 
 const styles = StyleSheet.create({
   cabecalho: { gap: space.lg },
-  voltar: { alignSelf: 'flex-start', paddingHorizontal: 0 },
   identidade: { flexDirection: 'row', gap: space.lg, alignItems: 'flex-start' },
   nomes: { flex: 1, gap: space.xxs },
   filiacao: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md },

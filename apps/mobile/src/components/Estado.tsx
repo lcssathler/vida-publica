@@ -8,12 +8,12 @@ export function Carregando({ rotulo = 'Carregando' }: { rotulo?: string }) {
   const theme = useTheme();
   return (
     <View
-      style={[styles.centro, { backgroundColor: theme.paper }]}
+      style={[styles.centro, { backgroundColor: theme.background }]}
       accessible
       role="progressbar"
       aria-label={rotulo}
     >
-      <ActivityIndicator color={theme.stamp} />
+      <ActivityIndicator color={theme.accent} />
       <Text style={[typography.caption, { color: theme.ink2 }]}>{rotulo}…</Text>
     </View>
   );
@@ -29,7 +29,7 @@ export interface FalhaProps {
 export function Falha({ titulo = 'Não carregou', mensagem, aoTentar }: FalhaProps) {
   const theme = useTheme();
   return (
-    <View style={[styles.centro, { backgroundColor: theme.paper }]} aria-live="polite">
+    <View style={[styles.centro, { backgroundColor: theme.background }]} aria-live="polite">
       <Text role="heading" style={[typography.title, styles.texto, { color: theme.ink }]}>
         {titulo}
       </Text>

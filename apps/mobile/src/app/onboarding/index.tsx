@@ -43,7 +43,7 @@ export default function EscolherEstado() {
 
   return (
     <Tela
-      sobretitulo="Passo 1 de 4"
+      passo={{ atual: 1, total: 4 }}
       titulo="Onde você vota?"
       descricao="Com o estado, o app sugere os senadores e deputados federais que representam você."
       rodape={
@@ -73,7 +73,7 @@ export default function EscolherEstado() {
           style={[
             typography.data,
             styles.campo,
-            { color: theme.ink, borderColor: theme.ink2, backgroundColor: theme.paperRaised },
+            { color: theme.ink, borderColor: theme.rule, backgroundColor: theme.surface },
           ]}
         />
         <Text style={[typography.caption, { color: theme.ink2 }]} aria-live="polite">
@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
   campo: {
     minHeight: toque.minimo,
     borderWidth: 1,
-    borderRadius: radius.paper,
+    borderRadius: radius.lg,
     paddingHorizontal: space.md,
     fontSize: 17,
   },

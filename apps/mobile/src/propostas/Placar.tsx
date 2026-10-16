@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import type { ItemVotacao } from '../api/tipos';
 import { inteiro } from '../comum/formato';
-import { space, typography } from '../theme/tokens';
+import { radius, space, typography } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
 
 type DadosPlacar = NonNullable<ItemVotacao['placar']>;
@@ -39,5 +39,5 @@ export function Placar({ placar }: { placar: DadosPlacar }) {
 
 const styles = StyleSheet.create({
   placar: { gap: space.xs },
-  barra: { flexDirection: 'row', height: 8, borderWidth: StyleSheet.hairlineWidth, borderRadius: 1, overflow: 'hidden' },
+  barra: { flexDirection: 'row', height: 8, borderRadius: radius.pill, overflow: 'hidden' },
 });

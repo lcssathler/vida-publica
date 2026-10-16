@@ -45,7 +45,7 @@ export default function PrePerguntaNotificacoes() {
 
   return (
     <Tela
-      sobretitulo="Passo 4 de 4"
+      passo={{ atual: 4, total: 4 }}
       titulo="Quer ser avisado?"
       descricao="Quando algo acontecer com quem você segue, o app pode mandar um aviso."
       rodape={

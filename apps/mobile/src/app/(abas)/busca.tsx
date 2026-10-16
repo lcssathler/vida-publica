@@ -34,7 +34,7 @@ export default function Busca() {
   const buscando = termo.trim().length >= 2;
 
   return (
-    <Tela titulo="Busca" descricao="Pessoas, partidos, propostas e assuntos. Sem acento também acha.">
+    <Tela comBarra titulo="Busca" descricao="Pessoas, partidos, propostas e assuntos. Sem acento também acha.">
       <TextInput
         value={texto}
         onChangeText={(t) => {
@@ -51,7 +51,7 @@ export default function Busca() {
         style={[
           typography.body,
           styles.campo,
-          { color: theme.ink, borderColor: theme.ink2, backgroundColor: theme.paperRaised },
+          { color: theme.ink, borderColor: theme.rule, backgroundColor: theme.surface },
         ]}
       />
       {texto.trim().length === 1 ? (
@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
   campo: {
     minHeight: toque.minimo,
     borderWidth: 1,
-    borderRadius: radius.paper,
+    borderRadius: radius.lg,
     paddingHorizontal: space.md,
   },
   resultados: { gap: space.xl },

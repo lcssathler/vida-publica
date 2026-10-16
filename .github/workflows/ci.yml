@@ -78,7 +78,7 @@ jobs:
           uv sync --frozen
           uv run pytest -m integration
       - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -132,7 +132,7 @@ jobs:
           if [ -f pnpm-lock.yaml ]; then echo "present=true" >> "$GITHUB_OUTPUT"; else echo "present=false" >> "$GITHUB_OUTPUT"; fi
       - uses: pnpm/action-setup@v4
         if: steps.detect.outputs.present == 'true'
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         if: steps.detect.outputs.present == 'true'
         with:
           node-version-file: .nvmrc

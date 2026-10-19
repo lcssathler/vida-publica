@@ -1,8 +1,12 @@
 /**
  * Tokens do design "Cívico" (direção B, paleta Bronze): cartões claros
  * flutuando sobre areia no modo claro e sobre grafite no escuro, com um único
- * acento bronze. O acento só marca interface (abas, etiquetas, links); nenhuma
- * cor codifica dado, e verde e vermelho não aparecem em dados.
+ * acento bronze. O acento só marca interface (abas, etiquetas, links), e
+ * nenhuma cor identifica partido ou campo político.
+ *
+ * Única cor de dado: o voto. Sim em verde suave e Não em vermelho suave,
+ * sempre com o ícone (✓ ou ✕) e a palavra, nunca só a cor. Resultado de
+ * votação, orientação de bancada e valores ficam em tom neutro.
  */
 
 export type ColorScheme = 'light' | 'dark';

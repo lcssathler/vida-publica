@@ -6,7 +6,8 @@ App do Vida Pública em Expo (SDK 57) com Expo Router. Consome a API de `apps/ap
 
 Cada ato público vira um cartão numerado, datado e com a fonte oficial. As regras ficam em `src/theme/tokens.ts`:
 
-- Cartões claros flutuando sobre areia (modo claro) ou grafite (modo escuro), com um único acento bronze. O acento só marca interface (abas, etiquetas, links): nenhuma cor codifica dado, e verde e vermelho não aparecem em dados.
+- Cartões claros flutuando sobre areia (modo claro) ou grafite (modo escuro), com um único acento bronze. O acento só marca interface (abas, etiquetas, links), e nenhuma cor identifica partido ou campo político.
+- Única cor de dado: o voto. Sim em verde suave e Não em vermelho suave, sempre com ícone (✓ ou ✕) e a palavra, nunca só a cor. Resultado de votação, orientação de bancada e valores ficam em tom neutro.
 - Tipografia: Geist (interface e títulos) e Geist Mono (números, datas, siglas), SIL Open Font License. Ícones de traço Feather (`@expo/vector-icons`), sempre decorativos.
 - Raios de 8 a 18 pt (`radius`), cápsulas em 999; sombras leves só nos cartões e na barra (`shadowCard`, `shadowBar`, no formato `boxShadow`).
 - Navegação em cápsula flutuante só com ícones; o nome de cada aba é o que o leitor de tela lê. Movimento curto (`movimento`), e a marca da aba não anima com "reduzir movimento" ligado.

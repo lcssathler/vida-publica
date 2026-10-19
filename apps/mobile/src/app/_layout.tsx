@@ -3,13 +3,13 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
-import { useColorScheme } from 'react-native';
 import { novoQueryClient } from '../api/queryClient';
 import { deveGuardar, persistidor, VALIDADE_CACHE_MS } from '../offline/cache';
 import { useAvisos } from '../notificacoes/avisos';
 import { ligarConexao } from '../offline/conexao';
 import { SessaoProvider, useSessao } from '../sessao/Sessao';
 import { fonts } from '../theme/fonts';
+import { useEsquema } from '../theme/preferencia';
 import { useTheme } from '../theme/useTheme';
 
 ligarConexao();
@@ -24,7 +24,7 @@ const persistencia = {
 export default function RootLayout() {
   const [fontsLoaded] = useFonts(fonts);
   const [consultas] = useState(novoQueryClient);
-  const scheme = useColorScheme();
+  const scheme = useEsquema();
 
   if (!fontsLoaded) return null;
 

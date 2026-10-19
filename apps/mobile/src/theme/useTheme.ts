@@ -1,6 +1,6 @@
-import { useColorScheme } from 'react-native';
 import { palettes, type Palette } from './tokens';
+import { useEsquema } from './preferencia';
 
 export function useTheme(): Palette {
-  return palettes[useColorScheme() === 'dark' ? 'dark' : 'light'];
+  return palettes[useEsquema()];
 }

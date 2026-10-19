@@ -15,6 +15,7 @@ import type { Plataforma } from '../api/tipos';
 import { Carregando, Falha } from '../components/Estado';
 import { API_URL } from '../config';
 import { persistidor } from '../offline/cache';
+import { definirTema } from '../theme/preferencia';
 import { cofre } from './cofre';
 import { ESTADO_INICIAL, gravarLocal, lerLocal, type EstadoLocal } from './local';
 
@@ -70,6 +71,11 @@ export function SessaoProvider({ children, cliente: injetado }: { children: Reac
   useEffect(() => {
     if (local) void gravarLocal(local).catch(() => {});
   }, [local]);
+
+  const tema = local?.tema;
+  useEffect(() => {
+    if (tema) definirTema(tema);
+  }, [tema]);
 
   useEffect(
     () =>

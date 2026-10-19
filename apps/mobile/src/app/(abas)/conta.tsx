@@ -18,6 +18,7 @@ import { persistidor } from '../../offline/cache';
 import { NOME_ESTADO } from '../../onboarding/estados';
 import { useSessao } from '../../sessao/Sessao';
 import { ESTADO_INICIAL } from '../../sessao/local';
+import type { PreferenciaDeTema } from '../../theme/preferencia';
 import { radius, space, toque, typography } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
 
@@ -58,6 +59,7 @@ export default function ContaTela() {
   return (
     <Tela comBarra titulo="Conta" descricao="Preferências deste aparelho e da sua conta.">
       <SecaoConta anonima={c.anonima} identidades={c.identidades} criadaEm={c.criadaEm} />
+      <SecaoAparencia />
       <SecaoPreferencias p={c.preferencias} />
       <SecaoCorrecoes />
       <SecaoPrivacidade anonima={c.anonima} />
@@ -137,6 +139,37 @@ function SecaoConta({ anonima, identidades, criadaEm }: { anonima: boolean; iden
           {aviso}
         </Text>
       ) : null}
+    </Secao>
+  );
+}
+
+const TEMAS: { valor: PreferenciaDeTema; rotulo: string }[] = [
+  { valor: 'sistema', rotulo: 'Automático' },
+  { valor: 'claro', rotulo: 'Claro' },
+  { valor: 'escuro', rotulo: 'Escuro' },
+];
+
+/** Tema do app: fica só neste aparelho, como o estado local. */
+function SecaoAparencia() {
+  const theme = useTheme();
+  const { local, atualizarLocal } = useSessao();
+  return (
+    <Secao titulo="Aparência">
+      <View style={styles.grade} role="radiogroup" aria-label="Tema">
+        {TEMAS.map((t) => (
+          <Alternar
+            key={t.valor}
+            papel="radio"
+            rotulo={t.rotulo}
+            descricao={`Tema ${t.rotulo.toLowerCase()}`}
+            marcado={local.tema === t.valor}
+            aoAlternar={() => atualizarLocal({ tema: t.valor })}
+          />
+        ))}
+      </View>
+      <Text style={[typography.caption, { color: theme.ink2 }]}>
+        {local.tema === 'sistema' ? 'Segue o modo claro ou escuro do aparelho.' : 'Vale só para este aparelho.'}
+      </Text>
     </Secao>
   );
 }

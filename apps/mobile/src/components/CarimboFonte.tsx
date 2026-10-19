@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
-import { radius, space, typography } from '../theme/tokens';
+import { space, typography } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
+import { Icone } from './Icone';
 
 export interface CarimboFonteProps {
   /** Nome curto exibido no carimbo, ex.: "CÂMARA". */
@@ -22,7 +23,7 @@ function partes(data: string): { dia: number; mes: number; ano: string } {
   return { dia: Number(dia), mes: Number(mes) - 1, ano };
 }
 
-/** Selo da fonte oficial: tinta violeta, inclinado −2°, como carimbo de cartório. */
+/** Selo da fonte oficial: escudo e sigla com a data do dado, discreto no pé do cartão. */
 export function CarimboFonte({ sigla, nome, data }: CarimboFonteProps) {
   const theme = useTheme();
   const { dia, mes, ano } = partes(data);
@@ -32,22 +33,15 @@ export function CarimboFonte({ sigla, nome, data }: CarimboFonteProps) {
     <View
       accessible
       aria-label={`Fonte: ${nome}, dado de ${dia} de ${MESES_EXTENSO[mes]} de ${ano}`}
-      style={[styles.carimbo, { borderColor: theme.stamp }]}
+      style={styles.carimbo}
     >
-      <Text style={[typography.dataSmall, styles.texto, { color: theme.stamp }]}>{rotulo}</Text>
+      <Icone nome="shield" tamanho={13} cor={theme.ink3} />
+      <Text style={[typography.dataSmall, styles.texto, { color: theme.ink2 }]}>{rotulo}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  carimbo: {
-    alignSelf: 'flex-start',
-    borderWidth: 1,
-    borderRadius: radius.paper,
-    paddingHorizontal: space.sm,
-    paddingVertical: space.xxs,
-    transform: [{ rotate: '-2deg' }],
-    opacity: 0.92,
-  },
+  carimbo: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: space.xs },
   texto: { textTransform: 'uppercase' },
 });

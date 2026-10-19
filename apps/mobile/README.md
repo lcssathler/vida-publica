@@ -2,21 +2,26 @@
 
 App do Vida Pública em Expo (SDK 57) com Expo Router. Consome a API de `apps/api`.
 
-## Design "Protocolo"
+## Design "Cívico" (paleta Bronze)
 
-Cada ato público vira um registro numerado, datado e carimbado, como no Diário Oficial. As regras ficam em `src/theme/tokens.ts`:
+Cada ato público vira um cartão numerado, datado e com a fonte oficial. As regras ficam em `src/theme/tokens.ts`:
 
-- Tinta sobre papel, um único acento (violeta de carimbo). Nenhuma cor carrega significado político; verde e vermelho não aparecem em dados.
-- Tipografia: Newsreader (manchetes), Schibsted Grotesk (interface) e IBM Plex Mono (números, datas, siglas). Todas SIL Open Font License.
-- Raio de 2 pt, sem sombras no conteúdo; hierarquia por fios.
+- Cartões claros flutuando sobre areia (modo claro) ou grafite (modo escuro), com um único acento bronze. O acento só marca interface (abas, etiquetas, links): nenhuma cor codifica dado, e verde e vermelho não aparecem em dados.
+- Tipografia: Geist (interface e títulos) e Geist Mono (números, datas, siglas), SIL Open Font License. Ícones de traço Feather (`@expo/vector-icons`), sempre decorativos.
+- Raios de 8 a 18 pt (`radius`), cápsulas em 999; sombras leves só nos cartões e na barra (`shadowCard`, `shadowBar`, no formato `boxShadow`).
+- Navegação em cápsula flutuante só com ícones; o nome de cada aba é o que o leitor de tela lê. Movimento curto (`movimento`), e a marca da aba não anima com "reduzir movimento" ligado.
 - Contraste testado automaticamente (WCAG AA) nos modos claro e escuro.
 - Alvo de toque mínimo de 48 pt (`toque.minimo`); acessibilidade pelas props `role` e `aria-*`, que valem no Android, no iOS e na web.
 
 | Componente | Papel |
 | --- | --- |
-| `Registro` | Item do feed: tipo, manchete factual, contexto, carimbo da fonte, data de coleta e protocolo. Lido como uma frase completa pelo leitor de tela |
-| `CarimboFonte` | Selo da fonte oficial com a data do dado |
-| `Tela` | Folha com cabeçalho (fio duplo), conteúdo e pé de ações |
+| `Registro` | Cartão do feed: etiqueta do tipo, manchete factual, contexto, fonte, data de coleta e protocolo. Lido como uma frase completa pelo leitor de tela |
+| `CarimboFonte` | Fonte oficial com a data do dado, no pé do cartão |
+| `Tela` | Fundo, título grande, barra de passos (onboarding), conteúdo e pé de ações |
+| `Secao` | Título pequeno sobre um cartão agrupado |
+| `AbaTexto`, `FaixaDeAbas` | Abas de texto com traço no acento embaixo da escolhida |
+| `CabecalhoDeDia`, `VoceParouAqui` | "Hoje", "Ontem" ou a data, e a divisa do que já foi visto |
+| `BotaoVoltar`, `Icone` | Voltar com ícone e ícones decorativos |
 | `Botao`, `Alternar` | Ação e liga/desliga (seguir, escolher); o estado marcado não depende só da cor |
 | `FotoOficial` | Foto 3×4 da Câmara ou do Senado, sempre com o crédito ao lado |
 | `Carregando`, `Falha`, `Vazio` | Estados de tela, anunciados ao leitor de tela |

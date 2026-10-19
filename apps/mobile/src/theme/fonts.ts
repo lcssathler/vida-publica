@@ -1,24 +1,24 @@
+import Feather from '@expo/vector-icons/Feather';
 import {
-  IBMPlexMono_400Regular,
-  IBMPlexMono_500Medium,
-} from '@expo-google-fonts/ibm-plex-mono';
+  Geist_400Regular,
+  Geist_500Medium,
+  Geist_600SemiBold,
+  Geist_700Bold,
+} from '@expo-google-fonts/geist';
 import {
-  Newsreader_500Medium,
-  Newsreader_500Medium_Italic,
-} from '@expo-google-fonts/newsreader';
-import {
-  SchibstedGrotesk_400Regular,
-  SchibstedGrotesk_500Medium,
-  SchibstedGrotesk_600SemiBold,
-} from '@expo-google-fonts/schibsted-grotesk';
+  GeistMono_400Regular,
+  GeistMono_500Medium,
+  GeistMono_600SemiBold,
+} from '@expo-google-fonts/geist-mono';
 
-/** Fontes do design "Protocolo" (todas SIL Open Font License). */
+/** Fontes do design "Cívico" (Geist e Geist Mono, SIL Open Font License) e os ícones Feather (MIT). */
 export const fonts = {
-  Newsreader_500Medium,
-  Newsreader_500Medium_Italic,
-  SchibstedGrotesk_400Regular,
-  SchibstedGrotesk_500Medium,
-  SchibstedGrotesk_600SemiBold,
-  IBMPlexMono_400Regular,
-  IBMPlexMono_500Medium,
+  Geist_400Regular,
+  Geist_500Medium,
+  Geist_600SemiBold,
+  Geist_700Bold,
+  GeistMono_400Regular,
+  GeistMono_500Medium,
+  GeistMono_600SemiBold,
+  ...Feather.font,
 };

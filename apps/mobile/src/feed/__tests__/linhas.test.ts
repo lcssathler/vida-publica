@@ -1,4 +1,14 @@
-import { dataCurta, diaCurto, diaIso, diaPorExtenso, hora, inteiro, reais } from '../../comum/formato';
+import {
+  dataCurta,
+  diaCurto,
+  diaIso,
+  diaPorExtenso,
+  diaRelativo,
+  hora,
+  inteiro,
+  reais,
+  semanaCurta,
+} from '../../comum/formato';
 import { evento } from '../../test/fabricas';
 import { montarLinhas } from '../linhas';
 import { assuntoDoEvento, fonteDaUrl, protocolo } from '../rotulos';
@@ -10,6 +20,15 @@ describe('formato', () => {
     expect(diaCurto('2026-10-14T17:32:00.000Z')).toBe('QUA · 14 OUT 2026');
     expect(diaPorExtenso('2026-10-14T17:32:00.000Z')).toBe('quarta-feira, 14 de outubro de 2026');
     expect(dataCurta('2026-01-05T12:00:00.000Z')).toBe('05/01/2026');
+  });
+
+  it('nomeia o dia como Hoje, Ontem ou a data por extenso (no horário de Brasília)', () => {
+    const agora = Date.parse('2026-10-15T02:30:00.000Z'); // 14/10, 23:30 em Brasília
+    expect(diaRelativo('2026-10-14T12:00:00.000Z', agora)).toBe('Hoje');
+    expect(diaRelativo('2026-10-13T12:00:00.000Z', agora)).toBe('Ontem');
+    expect(diaRelativo('2026-10-01T12:00:00.000Z', agora)).toBe('1 de outubro');
+    expect(diaRelativo('2025-12-31T12:00:00.000Z', agora)).toBe('31 de dezembro de 2025');
+    expect(semanaCurta('2026-10-14T12:00:00.000Z')).toBe('qua');
   });
 
   it('fato só com data (meia-noite em Brasília) não mostra hora', () => {

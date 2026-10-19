@@ -5,7 +5,7 @@ import { mensagemDeErro } from '../../api/erros';
 import type { PerfilPartido } from '../../api/tipos';
 import { capitalizar, plural, reais } from '../../comum/formato';
 import { Alternar } from '../../components/Alternar';
-import { Botao } from '../../components/Botao';
+import { BotaoVoltar } from '../../components/BotaoVoltar';
 import { Carregando, Falha } from '../../components/Estado';
 import { Dado, LinkTexto, Secao } from '../../components/Secao';
 import { nomeEsfera, nomeFonteRepasse } from '../../feed/rotulos';
@@ -43,7 +43,7 @@ function Cabecalho({ p }: { p: PerfilPartido }) {
 
   return (
     <View style={styles.cabecalho}>
-      <Botao rotulo="‹ Voltar" variante="texto" estilo={styles.voltar} aoTocar={() => (router.canGoBack() ? router.back() : router.replace('/'))} />
+      <BotaoVoltar />
       <View style={[styles.titulo, { borderBottomColor: theme.ink }]}>
         <Text style={[typography.overline, { color: theme.ink2 }]}>Partido · nº {p.numero}</Text>
         <Text role="heading" style={[typography.display, { color: theme.ink }]}>
@@ -127,8 +127,7 @@ function Cabecalho({ p }: { p: PerfilPartido }) {
 
 const styles = StyleSheet.create({
   cabecalho: { gap: space.lg },
-  voltar: { alignSelf: 'flex-start', paddingHorizontal: 0 },
-  titulo: { gap: space.xxs, paddingBottom: space.md, borderBottomWidth: rules.double.top },
+  titulo: { gap: space.xxs, paddingHorizontal: space.xs },
   linha: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: space.sm },
   parlamentar: { paddingBottom: space.xs, borderBottomWidth: rules.hairline },
 });

@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   FILTROS_PADRAO,
@@ -11,17 +11,19 @@ import {
   type FiltrosFeed,
 } from '../../api/consultas';
 import { mensagemDeErro } from '../../api/erros';
-import { diaCurto, diaPorExtenso } from '../../comum/formato';
+import { AbaTexto, FaixaDeAbas } from '../../components/AbaTexto';
 import { Alternar } from '../../components/Alternar';
 import { Botao } from '../../components/Botao';
 import { Carregando, Falha, Vazio } from '../../components/Estado';
+import { Icone } from '../../components/Icone';
+import { CabecalhoDeDia, VoceParouAqui } from '../../components/Marcos';
 import { montarLinhas, type Linha } from '../../feed/linhas';
 import { RegistroDoEvento } from '../../feed/RegistroDoEvento';
 import { CATEGORIAS, NOMES_CATEGORIAS, type Categoria } from '../../feed/rotulos';
 import { categoriasDoLink } from '../../notificacoes/link';
 import { AvisoSemConexao } from '../../offline/AvisoSemConexao';
 import { useSessao } from '../../sessao/Sessao';
-import { rules, space, typography } from '../../theme/tokens';
+import { barra, radius, space, toque, typography } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
 
 /** Assuntos oferecidos no filtro: os seguidos e os de mais propostas. */
@@ -88,56 +90,82 @@ export default function Feed() {
   const quantosFiltros = filtros.categorias.length + filtros.assuntos.length;
   const naoSegueNada = seguindo.data?.length === 0;
 
+  const escopos = [
+    { valor: 'seguindo' as const, rotulo: 'Seguindo' },
+    { valor: 'todos' as const, rotulo: 'Geral' },
+  ];
+
   const cabecalho = (
     <View style={styles.cabecalho}>
       <AvisoSemConexao atualizadoEm={feed.dataUpdatedAt || undefined} />
-      <View style={[styles.titulo, { borderBottomColor: theme.ink }]}>
-        <Text role="heading" style={[typography.headline, { color: theme.ink }]}>
+      <View style={styles.titulo}>
+        <Text role="heading" style={styles.oculto}>
           Vida Pública
         </Text>
-        <Text style={[typography.caption, { color: theme.ink2 }]}>
-          Atos públicos registrados nas fontes oficiais
-        </Text>
+        {/* De quem são os registros: o próprio título é a escolha. */}
+        <View style={styles.escopos} role="radiogroup" aria-label="O que mostrar">
+          {escopos.map(({ valor, rotulo }) => {
+            const marcado = filtros.escopo === valor;
+            return (
+              <Pressable
+                key={valor}
+                role="radio"
+                aria-label={rotulo}
+                aria-checked={marcado}
+                onPress={() => setFiltros((f) => ({ ...f, escopo: valor }))}
+                style={styles.escopo}
+              >
+                <Text style={[typography.display, { color: marcado ? theme.ink : theme.inactive }]}>{rotulo}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+        <Pressable
+          role="button"
+          aria-label={quantosFiltros ? `Filtros (${quantosFiltros})` : 'Filtros'}
+          accessibilityHint={abertos ? 'Esconde os filtros por assunto' : 'Mostra os filtros por assunto'}
+          aria-expanded={abertos}
+          onPress={() => setAbertos((a) => !a)}
+          style={({ pressed }) => [
+            styles.botaoFiltros,
+            { backgroundColor: abertos ? theme.ink : theme.surface, boxShadow: theme.shadowCard },
+            pressed && styles.apertado,
+          ]}
+        >
+          <Icone nome="sliders" tamanho={20} cor={abertos ? theme.background : theme.ink} />
+          {quantosFiltros ? (
+            <View style={[styles.contador, { backgroundColor: theme.accent }]}>
+              <Text style={[typography.dataSmall, styles.contadorTexto, { color: theme.surface }]}>{quantosFiltros}</Text>
+            </View>
+          ) : null}
+        </Pressable>
       </View>
-      <View style={styles.linha} role="radiogroup" aria-label="O que mostrar">
-        <Alternar
-          papel="radio"
-          rotulo="Quem eu sigo"
-          marcado={filtros.escopo === 'seguindo'}
-          aoAlternar={() => setFiltros((f) => ({ ...f, escopo: 'seguindo' }))}
-        />
-        <Alternar
-          papel="radio"
+
+      {/* Tipo de registro: abas de texto sublinhadas (dá para marcar mais de uma). */}
+      <FaixaDeAbas rotulo="Tipo de registro">
+        <AbaTexto
+          papel="checkbox"
           rotulo="Tudo"
-          marcado={filtros.escopo === 'todos'}
-          aoAlternar={() => setFiltros((f) => ({ ...f, escopo: 'todos' }))}
+          descricao="Todos os tipos"
+          marcada={filtros.categorias.length === 0}
+          aoTocar={() => setFiltros((f) => ({ ...f, categorias: [] }))}
         />
-        <View style={styles.espaco} />
-        <Botao
-          variante="texto"
-          rotulo={quantosFiltros ? `Filtros (${quantosFiltros})` : 'Filtros'}
-          dica={abertos ? 'Esconde os filtros' : 'Mostra os filtros por tipo e assunto'}
-          aoTocar={() => setAbertos((a) => !a)}
-        />
-      </View>
+        {NOMES_CATEGORIAS.map((c: Categoria) => (
+          <AbaTexto
+            key={c}
+            papel="checkbox"
+            rotulo={CATEGORIAS[c].nome}
+            marcada={filtros.categorias.includes(c)}
+            aoTocar={() => setFiltros((f) => ({ ...f, categorias: alternar(f.categorias, c) }))}
+          />
+        ))}
+      </FaixaDeAbas>
+
       {abertos ? (
-        <View style={[styles.filtros, { borderColor: theme.rule }]}>
-          <Text role="heading" style={[typography.overline, { color: theme.ink2 }]}>
-            Tipo
-          </Text>
-          <View style={styles.grade}>
-            {NOMES_CATEGORIAS.map((c: Categoria) => (
-              <Alternar
-                key={c}
-                rotulo={CATEGORIAS[c].nome}
-                marcado={filtros.categorias.includes(c)}
-                aoAlternar={() => setFiltros((f) => ({ ...f, categorias: alternar(f.categorias, c) }))}
-              />
-            ))}
-          </View>
+        <View style={[styles.filtros, { backgroundColor: theme.surface, boxShadow: theme.shadowCard }]}>
           {opcoesAssunto.length ? (
             <>
-              <Text role="heading" style={[typography.overline, { color: theme.ink2 }]}>
+              <Text role="heading" style={[typography.overline, { color: theme.ink }]}>
                 Assunto
               </Text>
               <View style={styles.grade}>
@@ -151,7 +179,9 @@ export default function Feed() {
                 ))}
               </View>
             </>
-          ) : null}
+          ) : (
+            <Text style={[typography.body, { color: theme.ink2 }]}>Nenhum assunto para filtrar ainda.</Text>
+          )}
           {quantosFiltros ? (
             <Botao
               variante="secundario"
@@ -166,22 +196,8 @@ export default function Feed() {
   );
 
   const renderizarLinha = ({ item }: { item: Linha }) => {
-    if (item.tipo === 'dia') {
-      return (
-        <View style={[styles.dia, { borderBottomColor: theme.ink }]} role="heading" aria-label={diaPorExtenso(item.iso)}>
-          <Text style={[typography.dataSmall, { color: theme.ink }]}>{diaCurto(item.iso)}</Text>
-        </View>
-      );
-    }
-    if (item.tipo === 'parou') {
-      return (
-        <View style={styles.parou} accessible role="heading" aria-label="Você parou aqui. Daqui para baixo, registros já vistos.">
-          <View style={[styles.fio, { backgroundColor: theme.stamp }]} />
-          <Text style={[typography.overline, { color: theme.stamp }]}>Você parou aqui</Text>
-          <View style={[styles.fio, { backgroundColor: theme.stamp }]} />
-        </View>
-      );
-    }
+    if (item.tipo === 'dia') return <CabecalhoDeDia iso={item.iso} />;
+    if (item.tipo === 'parou') return <VoceParouAqui />;
     return (
       <RegistroDoEvento
         evento={item.evento}
@@ -211,7 +227,7 @@ export default function Feed() {
     if (feed.isFetchingNextPage) {
       return (
         <View style={styles.rodape} role="progressbar" aria-label="Carregando mais registros">
-          <ActivityIndicator color={theme.stamp} />
+          <ActivityIndicator color={theme.accent} />
         </View>
       );
     }
@@ -234,7 +250,7 @@ export default function Feed() {
   };
 
   return (
-    <SafeAreaView style={[styles.tela, { backgroundColor: theme.paper }]} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={[styles.tela, { backgroundColor: theme.background }]} edges={['top', 'left', 'right']}>
       <FlatList
         testID="lista-feed"
         data={linhas}
@@ -254,8 +270,8 @@ export default function Feed() {
           <RefreshControl
             refreshing={feed.isRefetching && !feed.isFetchingNextPage}
             onRefresh={() => void feed.refetch()}
-            tintColor={theme.stamp}
-            colors={[theme.stamp]}
+            tintColor={theme.accent}
+            colors={[theme.accent]}
           />
         }
       />
@@ -265,17 +281,37 @@ export default function Feed() {
 
 const styles = StyleSheet.create({
   tela: { flex: 1 },
-  conteudo: { paddingHorizontal: space.xl, paddingBottom: space.xxl },
-  cabecalho: { gap: space.md, paddingTop: space.lg, paddingBottom: space.sm },
-  titulo: { gap: space.xxs, paddingBottom: space.md, borderBottomWidth: rules.double.top },
-  linha: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: space.sm },
-  espaco: { flex: 1 },
-  filtros: { gap: space.sm, paddingVertical: space.md, borderTopWidth: rules.hairline, borderBottomWidth: rules.hairline },
+  conteudo: { paddingHorizontal: space.lg, paddingBottom: barra.reserva },
+  cabecalho: { gap: space.md, paddingTop: space.lg, paddingBottom: space.xs },
+  titulo: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md },
+  oculto: { position: 'absolute', width: 1, height: 1, overflow: 'hidden', opacity: 0 },
+  escopos: { flexDirection: 'row', alignItems: 'center', gap: space.lg + 2, paddingLeft: space.xs, flexShrink: 1 },
+  escopo: { minHeight: toque.minimo, justifyContent: 'center' },
+  botaoFiltros: {
+    width: toque.minimo,
+    height: toque.minimo,
+    minHeight: toque.minimo,
+    borderRadius: radius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  apertado: { transform: [{ scale: 0.95 }] },
+  contador: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    minWidth: 16,
+    height: 16,
+    paddingHorizontal: 3,
+    borderRadius: radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  contadorTexto: { fontSize: 10, lineHeight: 12 },
+  filtros: { gap: space.sm, padding: space.md + 2, borderRadius: radius.card },
   grade: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   limpar: { alignSelf: 'flex-start' },
-  dia: { paddingTop: space.lg, paddingBottom: space.xs, borderBottomWidth: rules.hairline },
-  parou: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingVertical: space.md },
-  fio: { flex: 1, height: 1 },
   vazio: { alignItems: 'center', gap: space.md },
   rodape: { alignItems: 'center', gap: space.sm, paddingVertical: space.xl },
 });
+

@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { dataCurta, hora } from '../comum/formato';
-import { space, typography } from '../theme/tokens';
+import { radius, space, typography } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
 import { useConectado } from './conexao';
 
@@ -33,5 +33,5 @@ export function AvisoSemConexao({ atualizadoEm }: { atualizadoEm?: number }) {
 }
 
 const styles = StyleSheet.create({
-  aviso: { paddingHorizontal: space.md, paddingVertical: space.sm, borderRadius: 2 },
+  aviso: { paddingHorizontal: space.md + 2, paddingVertical: space.md, borderRadius: radius.lg },
 });

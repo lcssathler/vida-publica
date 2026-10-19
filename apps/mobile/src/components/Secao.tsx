@@ -1,22 +1,29 @@
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { rules, space, toque, typography } from '../theme/tokens';
+import { radius, space, toque, typography } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
 
-/** Bloco com título em versalete e fio fino embaixo do título. */
-export function Secao({ titulo, children }: { titulo: string; children: ReactNode }) {
+/**
+ * Bloco com título pequeno acima de um cartão. Os filhos ficam dentro do
+ * cartão; `solto` deixa os filhos sem cartão (quando já são cartões).
+ */
+export function Secao({ titulo, children, solto }: { titulo: string; children: ReactNode; solto?: boolean }) {
   const theme = useTheme();
   return (
     <View style={styles.secao}>
-      <Text role="heading" style={[typography.overline, styles.titulo, { color: theme.ink2, borderBottomColor: theme.rule }]}>
+      <Text role="heading" style={[typography.overline, styles.titulo, { color: theme.ink }]}>
         {titulo}
       </Text>
-      {children}
+      {solto ? (
+        children
+      ) : (
+        <View style={[styles.cartao, { backgroundColor: theme.surface, boxShadow: theme.shadowCard }]}>{children}</View>
+      )}
     </View>
   );
 }
 
-/** Texto que leva a outra tela (perfil, proposta), no acento do carimbo e sublinhado. */
+/** Texto que leva a outra tela (perfil, proposta), no acento. */
 export function LinkTexto({
   rotulo,
   aoTocar,
@@ -37,7 +44,15 @@ export function LinkTexto({
       hitSlop={8}
       style={({ pressed }) => [styles.link, pressed && styles.apertado]}
     >
-      <Text style={[typography[estilo], styles.sublinhado, { color: theme.stamp }]}>{rotulo}</Text>
+      <Text
+        style={[
+          typography[estilo],
+          estilo === 'label' && styles.sublinhado,
+          { color: estilo === 'label' ? theme.accent : theme.ink },
+        ]}
+      >
+        {rotulo}
+      </Text>
     </Pressable>
   );
 }
@@ -46,7 +61,7 @@ export function LinkTexto({
 export function Dado({ rotulo, valor, detalhe }: { rotulo: string; valor: string; detalhe?: string }) {
   const theme = useTheme();
   return (
-    <View accessible style={[styles.dado, { borderBottomColor: theme.rule }]}>
+    <View accessible style={[styles.dado, { borderBottomColor: theme.line }]}>
       <View style={styles.dadoTexto}>
         <Text style={[typography.body, { color: theme.ink }]}>{rotulo}</Text>
         {detalhe ? <Text style={[typography.caption, { color: theme.ink2 }]}>{detalhe}</Text> : null}
@@ -57,8 +72,9 @@ export function Dado({ rotulo, valor, detalhe }: { rotulo: string; valor: string
 }
 
 const styles = StyleSheet.create({
-  secao: { gap: space.xs },
-  titulo: { paddingBottom: space.xs, borderBottomWidth: rules.hairline },
+  secao: { gap: space.sm },
+  titulo: { fontSize: 13, paddingHorizontal: space.xs },
+  cartao: { borderRadius: radius.card, paddingHorizontal: space.md + 2, paddingVertical: space.xs, overflow: 'hidden' },
   link: { minHeight: toque.minimo, justifyContent: 'center', alignSelf: 'flex-start' },
   apertado: { opacity: 0.6 },
   sublinhado: { textDecorationLine: 'underline' },
@@ -66,8 +82,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: space.md,
-    paddingVertical: space.sm,
-    borderBottomWidth: rules.hairline,
+    paddingVertical: space.md,
+    borderBottomWidth: 1,
   },
   dadoTexto: { flex: 1, gap: space.xxs },
 });

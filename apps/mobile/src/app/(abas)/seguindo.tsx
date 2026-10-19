@@ -42,11 +42,12 @@ export default function Seguindo() {
 
   return (
     <Tela
+      comBarra
       titulo="Seguindo"
       descricao={`${inteiro(itens.length)} de ${inteiro(LIMITE)} itens. O feed "Quem eu sigo" mostra o que acontece com eles.`}
     >
       {desfeito ? (
-        <View style={[styles.aviso, { borderColor: theme.ink, backgroundColor: theme.paperRaised }]} aria-live="polite">
+        <View style={[styles.aviso, { borderColor: theme.rule, backgroundColor: theme.surface }]} aria-live="polite">
           <Text style={[typography.body, styles.avisoTexto, { color: theme.ink }]}>
             Você deixou de seguir {desfeito.nome}.
           </Text>
@@ -101,7 +102,7 @@ const styles = StyleSheet.create({
     gap: space.sm,
     paddingLeft: space.md,
     borderWidth: 1,
-    borderRadius: radius.paper,
+    borderRadius: radius.card,
   },
   avisoTexto: { flex: 1 },
   vazio: { alignItems: 'center', gap: space.md },

@@ -27,7 +27,7 @@ export function LinhaDeAlvo({ alvo, nome, detalhe, sobre, aoDeixar }: LinhaDeAlv
   const rota = rotaDoAlvo(alvo);
 
   return (
-    <View style={[styles.linha, { borderBottomColor: theme.rule }]}>
+    <View style={[styles.linha, { borderBottomColor: theme.line }]}>
       <View style={styles.texto}>
         {sobre ? <Text style={[typography.overline, { color: theme.ink3 }]}>{sobre}</Text> : null}
         {rota ? (

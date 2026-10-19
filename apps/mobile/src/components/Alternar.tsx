@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text } from 'react-native';
 import { radius, space, toque, typography } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
+import { Icone } from './Icone';
 
 export interface AlternarProps {
   /** Texto visível, ex.: "Seguir" ou o nome do assunto. */
@@ -14,11 +15,16 @@ export interface AlternarProps {
   desabilitado?: boolean;
   /** radio quando só um do grupo pode ser escolhido (estado); switch para ligar e desligar. */
   papel?: 'checkbox' | 'radio' | 'switch';
+  /**
+   * opcao: escolha num grupo (estado, assunto), marcada em tinta cheia.
+   * seguir: botão de seguir, marcado no acento suave.
+   */
+  aparencia?: 'opcao' | 'seguir';
 }
 
 /**
  * Botão de liga/desliga (seguir, escolher assunto). O estado não depende só
- * da cor: marcado ganha "✓" e o leitor de tela anuncia "marcado".
+ * da cor: marcado ganha o ✓ e o leitor de tela anuncia "marcado".
  */
 export function Alternar({
   rotulo,
@@ -28,9 +34,16 @@ export function Alternar({
   aoAlternar,
   desabilitado,
   papel = 'checkbox',
+  aparencia,
 }: AlternarProps) {
   const theme = useTheme();
-  const texto = marcado ? `✓ ${rotuloMarcado ?? rotulo}` : rotulo;
+  const tipo = aparencia ?? (rotuloMarcado ? 'seguir' : 'opcao');
+  const texto = marcado ? (rotuloMarcado ?? rotulo) : rotulo;
+  const cores = marcado
+    ? tipo === 'seguir'
+      ? { fundo: theme.accentWash, borda: theme.accentWash, texto: theme.accent }
+      : { fundo: theme.ink, borda: theme.ink, texto: theme.background }
+    : { fundo: theme.surface, borda: theme.rule, texto: theme.ink };
 
   return (
     <Pressable
@@ -43,13 +56,17 @@ export function Alternar({
       hitSlop={4}
       style={({ pressed }) => [
         styles.alternar,
-        marcado
-          ? { backgroundColor: theme.stampWash, borderColor: theme.stamp }
-          : { backgroundColor: 'transparent', borderColor: theme.ink2 },
-        (pressed || desabilitado) && styles.apagado,
+        { backgroundColor: cores.fundo, borderColor: cores.borda },
+        pressed && styles.apertado,
+        desabilitado && styles.apagado,
       ]}
     >
-      <Text style={[typography.label, { color: marcado ? theme.stamp : theme.ink }]}>{texto}</Text>
+      {marcado ? (
+        <Icone nome="check" tamanho={15} cor={cores.texto} />
+      ) : tipo === 'seguir' && papel === 'checkbox' ? (
+        <Icone nome="plus" tamanho={15} cor={cores.texto} />
+      ) : null}
+      <Text style={[typography.label, { color: cores.texto }]}>{texto}</Text>
     </Pressable>
   );
 }
@@ -57,12 +74,15 @@ export function Alternar({
 const styles = StyleSheet.create({
   alternar: {
     alignSelf: 'flex-start',
+    flexDirection: 'row',
+    gap: space.xs,
     minHeight: toque.minimo,
-    paddingHorizontal: space.md,
+    paddingHorizontal: space.md + 2,
     borderWidth: 1,
-    borderRadius: radius.paper,
+    borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  apagado: { opacity: 0.6 },
+  apertado: { transform: [{ scale: 0.97 }] },
+  apagado: { opacity: 0.5 },
 });

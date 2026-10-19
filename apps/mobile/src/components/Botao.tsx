@@ -1,11 +1,12 @@
-import { Pressable, StyleSheet, Text, type StyleProp, type ViewStyle } from 'react-native';
+import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import { radius, space, toque, typography } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
+import { Icone, type NomeIcone } from './Icone';
 
 export interface BotaoProps {
   rotulo: string;
   aoTocar: () => void;
-  /** primario: tinta cheia; secundario: contorno; texto: só o rótulo, no acento. */
+  /** primario: tinta cheia; secundario: cartão com contorno; texto: só o rótulo, no acento. */
   variante?: 'primario' | 'secundario' | 'texto';
   desabilitado?: boolean;
   ocupado?: boolean;
@@ -13,6 +14,10 @@ export interface BotaoProps {
   descricao?: string;
   /** Descrição extra lida pelo leitor de tela (o que acontece ao tocar). */
   dica?: string;
+  /** Ícone antes do rótulo. */
+  icone?: NomeIcone;
+  /** Ícone depois do rótulo (ex.: seta para fora numa fonte oficial). */
+  iconeFinal?: NomeIcone;
   estilo?: StyleProp<ViewStyle>;
 }
 
@@ -24,14 +29,16 @@ export function Botao({
   ocupado,
   descricao,
   dica,
+  icone,
+  iconeFinal,
   estilo,
 }: BotaoProps) {
   const theme = useTheme();
   const inativo = desabilitado || ocupado;
   const cores = {
-    primario: { fundo: theme.ink, texto: theme.paper, borda: theme.ink },
-    secundario: { fundo: 'transparent', texto: theme.ink, borda: theme.ink },
-    texto: { fundo: 'transparent', texto: theme.stamp, borda: 'transparent' },
+    primario: { fundo: theme.ink, texto: theme.background, borda: theme.ink },
+    secundario: { fundo: theme.surface, texto: theme.ink, borda: theme.rule },
+    texto: { fundo: 'transparent', texto: theme.accent, borda: 'transparent' },
   }[variante];
 
   return (
@@ -47,27 +54,35 @@ export function Botao({
         styles.botao,
         { backgroundColor: cores.fundo, borderColor: cores.borda },
         variante === 'texto' && styles.texto,
-        (pressed || inativo) && styles.apagado,
+        pressed && styles.apertado,
+        inativo && styles.apagado,
         estilo,
       ]}
     >
-      <Text style={[typography.label, { color: cores.texto }]}>
-        {ocupado ? 'Aguarde…' : rotulo}
-      </Text>
+      <View style={styles.conteudo}>
+        {icone ? <Icone nome={icone} tamanho={18} cor={cores.texto} /> : null}
+        <Text style={[typography.label, styles.rotulo, { color: cores.texto }]}>
+          {ocupado ? 'Aguarde…' : rotulo}
+        </Text>
+        {iconeFinal ? <Icone nome={iconeFinal} tamanho={18} cor={cores.texto} /> : null}
+      </View>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   botao: {
-    minHeight: toque.minimo,
+    minHeight: toque.minimo + 4,
     minWidth: toque.minimo,
-    paddingHorizontal: space.lg,
+    paddingHorizontal: space.xl,
     borderWidth: 1,
-    borderRadius: radius.paper,
+    borderRadius: radius.lg,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  texto: { paddingHorizontal: space.sm },
-  apagado: { opacity: 0.6 },
+  conteudo: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  rotulo: { fontSize: 15 },
+  texto: { paddingHorizontal: space.sm, minHeight: toque.minimo },
+  apertado: { opacity: 0.85, transform: [{ scale: 0.98 }] },
+  apagado: { opacity: 0.5 },
 });

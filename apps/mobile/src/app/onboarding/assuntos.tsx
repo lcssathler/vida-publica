@@ -27,7 +27,7 @@ export default function EscolherAssuntos() {
 
   return (
     <Tela
-      sobretitulo="Passo 3 de 4"
+      passo={{ atual: 3, total: 4 }}
       titulo="Que assuntos interessam a você?"
       descricao="Os temas oficiais que a Câmara e o Senado dão às propostas. O feed mostra o que andar nesses assuntos."
       rodape={

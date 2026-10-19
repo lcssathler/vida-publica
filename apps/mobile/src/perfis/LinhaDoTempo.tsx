@@ -5,15 +5,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useEventosDoPerfil } from '../api/consultas';
 import { mensagemDeErro } from '../api/erros';
 import type { CategoriaPerfil, ContagemCategoria } from '../api/tipos';
-import { diaCurto, diaPorExtenso, inteiro } from '../comum/formato';
-import { Alternar } from '../components/Alternar';
+import { inteiro } from '../comum/formato';
+import { AbaTexto, FaixaDeAbas } from '../components/AbaTexto';
 import { Botao } from '../components/Botao';
 import { Vazio } from '../components/Estado';
+import { CabecalhoDeDia } from '../components/Marcos';
 import { montarLinhas, type Linha } from '../feed/linhas';
 import { RegistroDoEvento } from '../feed/RegistroDoEvento';
 import { CATEGORIAS } from '../feed/rotulos';
 import { AvisoSemConexao } from '../offline/AvisoSemConexao';
-import { rules, space, typography } from '../theme/tokens';
+import { space, typography } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
 
 export interface LinhaDoTempoProps {
@@ -42,43 +43,35 @@ export function PerfilComLinhaDoTempo({ alvo, categorias, cabecalho }: LinhaDoTe
     <View style={styles.cabecalho}>
       <AvisoSemConexao />
       {cabecalho}
-      <View style={[styles.tituloLinha, { borderBottomColor: theme.ink }]}>
-        <Text role="heading" style={[typography.title, { color: theme.ink }]}>
-          Linha do tempo
-        </Text>
-      </View>
+      <Text role="heading" style={[typography.headline, styles.tituloLinha, { color: theme.ink }]}>
+        Linha do tempo
+      </Text>
       {comEventos.length ? (
-        <View style={styles.grade} role="radiogroup" aria-label="Categoria">
-          <Alternar
-            papel="radio"
-            rotulo={`Tudo ${inteiro(total)}`}
+        <FaixaDeAbas rotulo="Categoria" papel="radiogroup">
+          <AbaTexto
+            rotulo="Tudo"
+            contagem={inteiro(total)}
             descricao={`Tudo, ${total} registros`}
-            marcado={categoria === null}
-            aoAlternar={() => setCategoria(null)}
+            marcada={categoria === null}
+            aoTocar={() => setCategoria(null)}
           />
           {comEventos.map((c) => (
-            <Alternar
+            <AbaTexto
               key={c.categoria}
-              papel="radio"
-              rotulo={`${CATEGORIAS[c.categoria].nome} ${inteiro(c.eventos)}`}
+              rotulo={CATEGORIAS[c.categoria].nome}
+              contagem={inteiro(c.eventos)}
               descricao={`${CATEGORIAS[c.categoria].nome}, ${c.eventos} registros`}
-              marcado={categoria === c.categoria}
-              aoAlternar={() => setCategoria(c.categoria)}
+              marcada={categoria === c.categoria}
+              aoTocar={() => setCategoria(c.categoria)}
             />
           ))}
-        </View>
+        </FaixaDeAbas>
       ) : null}
     </View>
   );
 
   const renderizar = ({ item }: { item: Linha }) => {
-    if (item.tipo === 'dia') {
-      return (
-        <View style={[styles.dia, { borderBottomColor: theme.ink }]} role="heading" aria-label={diaPorExtenso(item.iso)}>
-          <Text style={[typography.dataSmall, { color: theme.ink }]}>{diaCurto(item.iso)}</Text>
-        </View>
-      );
-    }
+    if (item.tipo === 'dia') return <CabecalhoDeDia iso={item.iso} />;
     if (item.tipo === 'parou') return null;
     return (
       <RegistroDoEvento
@@ -92,7 +85,7 @@ export function PerfilComLinhaDoTempo({ alvo, categorias, cabecalho }: LinhaDoTe
     if (eventos.isPending || eventos.isFetchingNextPage) {
       return (
         <View style={styles.rodape} role="progressbar" aria-label="Carregando registros">
-          <ActivityIndicator color={theme.stamp} />
+          <ActivityIndicator color={theme.accent} />
         </View>
       );
     }
@@ -120,7 +113,7 @@ export function PerfilComLinhaDoTempo({ alvo, categorias, cabecalho }: LinhaDoTe
   };
 
   return (
-    <SafeAreaView style={[styles.tela, { backgroundColor: theme.paper }]} edges={['top', 'left', 'right', 'bottom']}>
+    <SafeAreaView style={[styles.tela, { backgroundColor: theme.background }]} edges={['top', 'left', 'right', 'bottom']}>
       <FlatList
         testID="linha-do-tempo"
         data={linhas}
@@ -140,10 +133,8 @@ export function PerfilComLinhaDoTempo({ alvo, categorias, cabecalho }: LinhaDoTe
 
 const styles = StyleSheet.create({
   tela: { flex: 1 },
-  conteudo: { paddingHorizontal: space.xl, paddingBottom: space.xxl },
+  conteudo: { paddingHorizontal: space.lg, paddingBottom: space.xxl },
   cabecalho: { gap: space.lg, paddingTop: space.md },
-  tituloLinha: { paddingBottom: space.xs, borderBottomWidth: rules.double.top },
-  grade: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
-  dia: { paddingTop: space.lg, paddingBottom: space.xs, borderBottomWidth: rules.hairline },
+  tituloLinha: { paddingHorizontal: space.xs, marginTop: space.sm },
   rodape: { alignItems: 'center', gap: space.sm, paddingVertical: space.xl },
 });

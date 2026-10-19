@@ -1,24 +1,18 @@
 import Feather from '@expo/vector-icons/Feather';
+import { InstrumentSerif_400Regular } from '@expo-google-fonts/instrument-serif';
 import {
-  Geist_400Regular,
-  Geist_500Medium,
-  Geist_600SemiBold,
-  Geist_700Bold,
-} from '@expo-google-fonts/geist';
-import {
-  GeistMono_400Regular,
-  GeistMono_500Medium,
-  GeistMono_600SemiBold,
-} from '@expo-google-fonts/geist-mono';
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+} from '@expo-google-fonts/inter';
 
-/** Fontes do design "Cívico" (Geist e Geist Mono, SIL Open Font License) e os ícones Feather (MIT). */
+/** Fontes do design (Inter e Instrument Serif, SIL Open Font License) e os ícones Feather (MIT). */
 export const fonts = {
-  Geist_400Regular,
-  Geist_500Medium,
-  Geist_600SemiBold,
-  Geist_700Bold,
-  GeistMono_400Regular,
-  GeistMono_500Medium,
-  GeistMono_600SemiBold,
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+  InstrumentSerif_400Regular,
   ...Feather.font,
 };

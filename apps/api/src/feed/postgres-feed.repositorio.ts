@@ -151,6 +151,8 @@ export class PostgresFeedRepositorio extends FeedRepositorio {
       papel: string;
       nome: string | null;
       seguindo: boolean;
+      foto_url: string | null;
+      foto_credito: string | null;
     }>(
       `SELECT a.evento_id, a.alvo_tipo, a.alvo_id, a.papel,
               CASE a.alvo_tipo
@@ -159,7 +161,8 @@ export class PostgresFeedRepositorio extends FeedRepositorio {
                 WHEN 'proposicao' THEN pr.identificacao
                 ELSE a.alvo_id
               END AS nome,
-              s.usuario_id IS NOT NULL AS seguindo
+              s.usuario_id IS NOT NULL AS seguindo,
+              f.url AS foto_url, f.credito AS foto_credito
          FROM feed.evento_alvo a
          LEFT JOIN canon.pessoa pe
            ON pe.id = CASE WHEN a.alvo_tipo = 'pessoa' THEN a.alvo_id::uuid END
@@ -169,6 +172,21 @@ export class PostgresFeedRepositorio extends FeedRepositorio {
            ON pr.id = CASE WHEN a.alvo_tipo = 'proposicao' THEN a.alvo_id::uuid END
          LEFT JOIN app.seguindo s
            ON s.usuario_id = $2 AND s.alvo_tipo = a.alvo_tipo AND s.alvo_id = a.alvo_id
+         -- Foto oficial da pessoa, como no perfil: a da Câmara antes da do Senado.
+         LEFT JOIN LATERAL (
+           SELECT d.url_foto AS url, 'Câmara dos Deputados' AS credito, 1 AS ordem
+             FROM canon.pessoa_vinculo v
+             JOIN canon.camara_deputado d
+               ON d.id_camara = CASE WHEN v.fonte = 'camara' THEN v.id_fonte::integer END
+            WHERE v.pessoa_id = pe.id AND v.fonte = 'camara' AND d.url_foto IS NOT NULL
+           UNION ALL
+           SELECT ss.url_foto, 'Senado Federal', 2
+             FROM canon.pessoa_vinculo v
+             JOIN canon.senado_senador ss
+               ON ss.codigo_senado = CASE WHEN v.fonte = 'senado' THEN v.id_fonte::integer END
+            WHERE v.pessoa_id = pe.id AND v.fonte = 'senado' AND ss.url_foto IS NOT NULL
+           ORDER BY ordem LIMIT 1
+         ) f ON true
         WHERE a.evento_id = ANY($1::uuid[])
         ORDER BY a.alvo_tipo, a.papel, a.alvo_id`,
       [linhas.map((l) => l.id), usuarioId],
@@ -182,6 +200,9 @@ export class PostgresFeedRepositorio extends FeedRepositorio {
         papel: a.papel,
         nome: a.nome ?? a.alvo_id,
         seguindo: a.seguindo,
+        ...(a.alvo_tipo === 'pessoa'
+          ? { foto: a.foto_url ? { url: a.foto_url, credito: a.foto_credito ?? '' } : null }
+          : {}),
       });
       porEvento.set(a.evento_id, lista);
     }

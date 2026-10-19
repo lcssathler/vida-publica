@@ -53,7 +53,16 @@ function Rotas() {
     >
       <Stack.Protected guard={local.onboardingConcluido}>
         <Stack.Screen name="(abas)" />
-        <Stack.Screen name="evento/[id]" />
+        <Stack.Screen
+          name="evento/[id]"
+          options={{
+            presentation: 'formSheet',
+            sheetGrabberVisible: true,
+            sheetCornerRadius: 22,
+            sheetAllowedDetents: [0.92],
+            contentStyle: { backgroundColor: theme.sheet },
+          }}
+        />
         <Stack.Screen name="pessoa/[id]" />
         <Stack.Screen name="partido/[id]" />
         <Stack.Screen name="proposta/[id]" />

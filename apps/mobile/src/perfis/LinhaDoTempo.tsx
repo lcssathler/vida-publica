@@ -133,8 +133,8 @@ export function PerfilComLinhaDoTempo({ alvo, categorias, cabecalho }: LinhaDoTe
 
 const styles = StyleSheet.create({
   tela: { flex: 1 },
-  conteudo: { paddingHorizontal: space.lg, paddingBottom: space.xxl },
-  cabecalho: { gap: space.lg, paddingTop: space.md },
+  conteudo: { paddingBottom: space.xxl },
+  cabecalho: { gap: space.lg, paddingTop: space.md, paddingHorizontal: space.lg },
   tituloLinha: { paddingHorizontal: space.xs, marginTop: space.sm },
   rodape: { alignItems: 'center', gap: space.sm, paddingVertical: space.xl },
 });

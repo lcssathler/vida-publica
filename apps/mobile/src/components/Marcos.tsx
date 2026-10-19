@@ -1,15 +1,21 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { diaPorExtenso, diaRelativo, semanaCurta } from '../comum/formato';
-import { radius, space, typography } from '../theme/tokens';
+import { radius, recuo, space, typography } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
 
-/** Cabeçalho de dia numa lista de registros: "Hoje qua", "Ontem ter", "1 de outubro qui". */
-export function CabecalhoDeDia({ iso }: { iso: string }) {
+/** Cabeçalho de dia numa lista de registros: "Hoje.", "14 de outubro." e quantos registros há nele. */
+export function CabecalhoDeDia({ iso, quantidade }: { iso: string; quantidade?: number }) {
   const theme = useTheme();
   return (
     <View style={styles.dia} role="heading" aria-label={diaPorExtenso(iso)}>
-      <Text style={[typography.overline, styles.nomeDia, { color: theme.ink }]}>{diaRelativo(iso)}</Text>
-      <Text style={[typography.dataSmall, { color: theme.ink3 }]}>{semanaCurta(iso)}</Text>
+      <Text style={[typography.dia, { color: theme.ink }]}>{diaRelativo(iso)}.</Text>
+      {quantidade ? (
+        <Text style={[typography.caption, { color: theme.ink3 }]}>
+          {quantidade} {quantidade === 1 ? 'registro' : 'registros'}
+        </Text>
+      ) : (
+        <Text style={[typography.dataSmall, { color: theme.ink3 }]}>{semanaCurta(iso)}</Text>
+      )}
     </View>
   );
 }
@@ -29,8 +35,7 @@ export function VoceParouAqui() {
 }
 
 const styles = StyleSheet.create({
-  dia: { flexDirection: 'row', alignItems: 'baseline', gap: space.sm, paddingTop: space.md, paddingBottom: space.sm, paddingHorizontal: space.xs },
-  nomeDia: { fontSize: 13 },
+  dia: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md, paddingTop: space.lg + 2, paddingBottom: space.md, paddingHorizontal: recuo },
   parou: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingTop: space.xs, paddingBottom: space.md },
   fio: { flex: 1, height: 1, opacity: 0.5 },
   pilula: { paddingHorizontal: space.sm + 2, paddingVertical: space.xs, borderRadius: radius.pill },

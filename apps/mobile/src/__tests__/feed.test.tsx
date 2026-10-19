@@ -1,6 +1,7 @@
 import { fireEvent, screen, waitFor } from '@testing-library/react-native';
 import { Linking } from 'react-native';
 import Feed from '../app/(abas)/index';
+import Navegar from '../app/(abas)/navegar';
 import DetalheDoEvento from '../app/evento/[id]';
 import { evento } from '../test/fabricas';
 import { renderizar } from '../test/renderizar';
@@ -86,20 +87,31 @@ describe('Feed', () => {
     }
   });
 
-  it('quem não segue nada é convidado a ver tudo', async () => {
-    const { api } = await renderizar(<Feed />, {
+  it('quem não segue nada é convidado a ver tudo em Navegar', async () => {
+    await renderizar(<Feed />, {
       local: { onboardingConcluido: true },
       rotas: {
         'GET /seguindo': { corpo: { itens: [] } },
         ...assuntos,
         'GET /feed': { corpo: { itens: [], proximoCursor: null } },
+      },
+    });
+    expect(await screen.findByRole('button', { name: 'Ver tudo' })).toBeOnTheScreen();
+    expect(screen.getByText(/Veja tudo o que foi registrado em Navegar/)).toBeOnTheScreen();
+  });
+
+  it('Navegar mostra tudo o que foi registrado', async () => {
+    const { api } = await renderizar(<Navegar />, {
+      local: { onboardingConcluido: true },
+      rotas: {
+        'GET /seguindo': { corpo: { itens: [] } },
+        ...assuntos,
         'GET /feed?escopo=todos&limite=20': { corpo: { itens: [visto], proximoCursor: null } },
       },
     });
-    await fireEvent.press(await screen.findByRole('button', { name: 'Ver tudo' }));
     expect(await screen.findByText('Registro visto')).toBeOnTheScreen();
-    expect(screen.getByRole('radio', { name: 'Geral' })).toBeChecked();
-    expect(api.pedidos.at(-1)?.caminho).toBe('/feed?escopo=todos&limite=20');
+    expect(screen.getByText('Tudo o que foi registrado')).toBeOnTheScreen();
+    expect(api.pedidos.map((p) => p.caminho)).toContain('/feed?escopo=todos&limite=20');
   });
 
   it('429 mostra quanto esperar e permite tentar de novo', async () => {

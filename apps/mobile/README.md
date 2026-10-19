@@ -2,21 +2,21 @@
 
 App do Vida Pública em Expo (SDK 57) com Expo Router. Consome a API de `apps/api`.
 
-## Design "Cívico" (paleta Bronze)
+## Design "Cívico", escuro v2
 
-Cada ato público vira um cartão numerado, datado e com a fonte oficial. As regras ficam em `src/theme/tokens.ts`:
+Cada ato público vira uma publicação datada, com a fonte oficial. As regras ficam em `src/theme/tokens.ts`:
 
-- Cartões claros flutuando sobre areia (modo claro) ou grafite (modo escuro), com um único acento bronze. O acento só marca interface (abas, etiquetas, links), e nenhuma cor identifica partido ou campo político.
-- Única cor de dado: o voto. Sim em verde suave e Não em vermelho suave, sempre com ícone (✓ ou ✕) e a palavra, nunca só a cor. Resultado de votação, orientação de bancada e valores ficam em tom neutro.
-- Tipografia: Geist (interface e títulos) e Geist Mono (números, datas, siglas), SIL Open Font License. Ícones de traço Feather (`@expo/vector-icons`), sempre decorativos.
-- Raios de 8 a 18 pt (`radius`), cápsulas em 999; sombras leves só nos cartões e na barra (`shadowCard`, `shadowBar`, no formato `boxShadow`).
-- Navegação em cápsula flutuante só com ícones; o nome de cada aba é o que o leitor de tela lê. Movimento curto (`movimento`), e a marca da aba não anima com "reduzir movimento" ligado.
+- Escuro primeiro: fundo preto neutro, publicações em carvão de largura total separadas por faixas de 8 pt, texto creme e cobre discreto. O claro usa a mesma estrutura sobre areia. Registros sem pessoa (pauta, tramitação) viram cartões arredondados.
+- O acento só marca interface (abas, etiquetas, links), e nenhuma cor identifica partido ou campo político.
+- Cores de dado: voto, orientação de bancada e resultado de votação. Sim e aprovado em verde suave, Não e rejeitado em vermelho suave, sempre com ícone (✓ ou ✕) e a palavra, nunca só a cor. Valores em dinheiro ficam neutros.
+- Tipografia: Inter (interface) e Instrument Serif (títulos, dias e valores de votação), SIL Open Font License. Ícones de traço Feather (`@expo/vector-icons`), sempre decorativos. Foto oficial 3×4, nunca círculo.
+- Dock flutuante com Feed, Navegar, Seguindo, Busca e Conta; o destino ativo vira cápsula com o nome, que é o que o leitor de tela lê. O detalhe do registro abre num painel que sobe de baixo.
 - Contraste testado automaticamente (WCAG AA) nos modos claro e escuro.
 - Alvo de toque mínimo de 48 pt (`toque.minimo`); acessibilidade pelas props `role` e `aria-*`, que valem no Android, no iOS e na web.
 
 | Componente | Papel |
 | --- | --- |
-| `Registro` | Cartão do feed: etiqueta do tipo, manchete factual, contexto, fonte, data de coleta e protocolo. Lido como uma frase completa pelo leitor de tela |
+| `Registro` | Publicação do feed: tipo em caixa alta, pessoa com foto, manchete, caixa de voto, fonte e protocolo. Lida como uma frase completa pelo leitor de tela |
 | `CarimboFonte` | Fonte oficial com a data do dado, no pé do cartão |
 | `Tela` | Fundo, título grande, barra de passos (onboarding), conteúdo e pé de ações |
 | `Secao` | Título pequeno sobre um cartão agrupado |

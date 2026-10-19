@@ -4,7 +4,18 @@ import { rules, space, toque, typography } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
 
 /** Faixa rolável de abas de texto com um fio embaixo. */
-export function FaixaDeAbas({ children, rotulo, papel }: { children: ReactNode; rotulo: string; papel?: 'radiogroup' }) {
+export function FaixaDeAbas({
+  children,
+  rotulo,
+  papel,
+  recuoPai = space.lg,
+}: {
+  children: ReactNode;
+  rotulo: string;
+  papel?: 'radiogroup';
+  /** Recuo do contêiner: a faixa encosta nas bordas da tela. */
+  recuoPai?: number;
+}) {
   const theme = useTheme();
   return (
     <ScrollView
@@ -12,8 +23,8 @@ export function FaixaDeAbas({ children, rotulo, papel }: { children: ReactNode; 
       showsHorizontalScrollIndicator={false}
       role={papel}
       aria-label={rotulo}
-      style={[styles.faixa, { borderBottomColor: theme.rule }]}
-      contentContainerStyle={styles.faixaConteudo}
+      style={[styles.faixa, { borderBottomColor: theme.rule, marginHorizontal: -recuoPai }]}
+      contentContainerStyle={[styles.faixaConteudo, { paddingHorizontal: recuoPai + space.xs }]}
     >
       {children}
     </ScrollView>
@@ -57,8 +68,8 @@ export function AbaTexto({
 }
 
 const styles = StyleSheet.create({
-  faixa: { flexGrow: 0, borderBottomWidth: rules.hairline, marginHorizontal: -space.lg },
-  faixaConteudo: { gap: space.xl, paddingHorizontal: space.lg + space.xs },
+  faixa: { flexGrow: 0, borderBottomWidth: rules.hairline },
+  faixaConteudo: { gap: space.xl + 4 },
   aba: { minHeight: toque.minimo, justifyContent: 'center', borderBottomWidth: 2, marginBottom: -1 },
   texto: { fontSize: 14 },
 });

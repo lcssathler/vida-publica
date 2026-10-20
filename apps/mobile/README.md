@@ -6,7 +6,7 @@ App do Vida Pública em Expo (SDK 57) com Expo Router. Consome a API de `apps/ap
 
 Cada ato público vira uma publicação datada, com a fonte oficial. As regras ficam em `src/theme/tokens.ts`:
 
-- Escuro primeiro: fundo preto neutro, publicações em carvão de largura total separadas por faixas de 8 pt, texto creme e cobre discreto. O claro usa a mesma estrutura sobre areia. Registros sem pessoa (pauta, tramitação) viram cartões arredondados.
+- Escuro primeiro: fundo preto neutro, publicações em carvão de largura total separadas por faixas de 8 pt, texto creme e cobre discreto. O claro usa a mesma estrutura em preto e branco, sem cor de marca (o preto faz o papel do acento). Registros sem pessoa (pauta, tramitação) viram cartões arredondados.
 - O acento só marca interface (abas, etiquetas, links), e nenhuma cor identifica partido ou campo político.
 - Cores de dado: voto, orientação de bancada e resultado de votação. Sim e aprovado em verde suave, Não e rejeitado em vermelho suave, sempre com ícone (✓ ou ✕) e a palavra, nunca só a cor. Valores em dinheiro ficam neutros.
 - Tipografia: Inter (interface) e Instrument Serif (títulos, dias e valores de votação), SIL Open Font License. Ícones de traço Feather (`@expo/vector-icons`), sempre decorativos. Foto oficial 3×4, nunca círculo.

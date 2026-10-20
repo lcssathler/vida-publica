@@ -2,7 +2,7 @@
  * Tokens do design "Cívico", versão escura v2: publicações de largura total
  * separadas por faixas, Inter na interface e Instrument Serif nos destaques e
  * nos valores de votação. O escuro é preto neutro com carvão e cobre discreto;
- * o claro usa a mesma estrutura sobre areia. O acento só marca interface
+ * o claro é preto e branco, sem cor de marca. O acento só marca interface
  * (abas, etiquetas, links), e nenhuma cor identifica partido ou campo político.
  *
  * Cores de dado: voto, orientação de bancada e resultado de votação. Sim e
@@ -58,33 +58,33 @@ export interface Palette {
 
 export const palettes: Record<ColorScheme, Palette> = {
   light: {
-    background: '#EFE9DD',
-    surface: '#FFFDF8',
-    postGap: '#E4DCCB',
-    voteBox: '#F4EEE2',
-    sheet: '#FFFDF8',
-    ink: '#1F1A14',
-    ink2: '#5C5347',
-    ink3: '#6B6155',
-    rule: '#DED5C4',
-    line: '#EFE8DC',
-    accent: '#85592E',
-    accentWash: '#EEDFCC',
-    highlight: '#EEDFCC',
-    yes: '#266B40',
-    no: '#A3352A',
+    background: '#FFFFFF',
+    surface: '#FFFFFF',
+    postGap: '#EFEFEF',
+    voteBox: '#F5F5F5',
+    sheet: '#FFFFFF',
+    ink: '#000000',
+    ink2: '#4D4D4D',
+    ink3: '#666666',
+    rule: '#DEDEDE',
+    line: '#EBEBEB',
+    accent: '#000000',
+    accentWash: '#EFEFEF',
+    highlight: '#F5F5F5',
+    yes: '#1B7A3A',
+    no: '#C1272D',
     caution: '#6E4700',
     cautionBackground: '#F7EBD3',
-    error: '#A3352A',
-    inactive: '#857A6B',
-    photo: '#E3DACA',
-    bar: '#1F1A14',
-    barBorder: '#1F1A14',
-    barIcon: '#A89E90',
-    barActive: '#FFFDF8',
-    barActiveIcon: '#1F1A14',
-    shadowCard: '0px 1px 2px rgba(31, 26, 20, 0.06), 0px 4px 16px rgba(31, 26, 20, 0.04)',
-    shadowBar: '0px 10px 28px rgba(31, 26, 20, 0.28)',
+    error: '#C1272D',
+    inactive: '#8A8A8A',
+    photo: '#E6E6E6',
+    bar: '#111111',
+    barBorder: '#111111',
+    barIcon: '#9E9E9E',
+    barActive: '#FFFFFF',
+    barActiveIcon: '#111111',
+    shadowCard: '0px 1px 2px rgba(0, 0, 0, 0.06), 0px 4px 16px rgba(0, 0, 0, 0.04)',
+    shadowBar: '0px 10px 28px rgba(0, 0, 0, 0.28)',
   },
   dark: {
     background: '#111112',

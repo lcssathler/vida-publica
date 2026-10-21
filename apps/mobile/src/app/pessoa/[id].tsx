@@ -6,7 +6,7 @@ import { mensagemDeErro } from '../../api/erros';
 import type { DoadoresCandidatura, PerfilPessoa } from '../../api/tipos';
 import { capitalizar, dataSimples, inteiro, plural, reais } from '../../comum/formato';
 import { Alternar } from '../../components/Alternar';
-import { BotaoVoltar } from '../../components/BotaoVoltar';
+import { BarraVoltar } from '../../components/BotaoVoltar';
 import { Carregando, Falha } from '../../components/Estado';
 import { FotoOficial } from '../../components/FotoOficial';
 import { Dado, LinkTexto, Secao } from '../../components/Secao';
@@ -44,31 +44,34 @@ function Cabecalho({ p }: { p: PerfilPessoa }) {
 
   return (
     <View style={styles.cabecalho}>
-      <BotaoVoltar />
+      <BarraVoltar
+        acao={
+          <Alternar
+            rotulo="Seguir"
+            rotuloMarcado="Seguindo"
+            descricao={`Seguir ${p.nome}`}
+            marcado={segue}
+            aoAlternar={() =>
+              seguir.mutate({ alvo: { tipo: 'pessoa', id: p.id }, seguir: !segue, nome: p.nome, detalhe: resumo })
+            }
+          />
+        }
+      />
       <View style={styles.identidade}>
         <FotoOficial foto={p.foto} nome={p.nome} largura={72} />
         <View style={styles.nomes}>
-          <Text role="heading" style={[typography.headline, { color: theme.ink }]}>
+          {resumo ? <Text style={[typography.tipo, { color: theme.accent }]}>{resumo}</Text> : null}
+          <Text role="heading" style={[typography.display, { color: theme.ink }]}>
             {p.nome}
           </Text>
           {p.nomeCivil && p.nomeCivil.toLowerCase() !== p.nome.toLowerCase() ? (
             <Text style={[typography.caption, { color: theme.ink2 }]}>{capitalizar(p.nomeCivil)}</Text>
           ) : null}
-          {resumo ? <Text style={[typography.label, { color: theme.ink }]}>{resumo}</Text> : null}
           {p.foto ? (
-            <Text style={[typography.dataSmall, { color: theme.ink3 }]}>Foto: {p.foto.credito}</Text>
+            <Text style={[typography.caption, { color: theme.ink3 }]}>Foto: {p.foto.credito}</Text>
           ) : null}
         </View>
       </View>
-      <Alternar
-        rotulo="Seguir"
-        rotuloMarcado="Seguindo"
-        descricao={`Seguir ${p.nome}`}
-        marcado={segue}
-        aoAlternar={() =>
-          seguir.mutate({ alvo: { tipo: 'pessoa', id: p.id }, seguir: !segue, nome: p.nome, detalhe: resumo })
-        }
-      />
       {seguir.isError ? (
         <Text style={[typography.body, { color: theme.error }]} aria-live="assertive">
           {mensagemDeErro(seguir.error)}
@@ -245,8 +248,8 @@ function Candidatura({ c, limite }: { c: DoadoresCandidatura; limite: number }) 
 
 const styles = StyleSheet.create({
   cabecalho: { gap: space.lg },
-  identidade: { flexDirection: 'row', gap: space.lg, alignItems: 'flex-start' },
-  nomes: { flex: 1, gap: space.xxs },
+  identidade: { flexDirection: 'row', gap: space.lg, alignItems: 'flex-end' },
+  nomes: { flex: 1, gap: space.xs + 2 },
   filiacao: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md },
   bloco: { gap: 0, paddingBottom: space.sm },
   grade: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },

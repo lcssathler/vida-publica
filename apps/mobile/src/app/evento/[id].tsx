@@ -126,7 +126,7 @@ export default function DetalheDoEvento() {
       ) : null}
 
       {alvos.length ? (
-        <Secao titulo="Envolvidos">
+        <Secao titulo="Envolvidos" recuo={space.xxl}>
           {alvos.map((a, i) => (
             <View
               key={`${a.tipo}:${a.id}`}
@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
   rotuloDetalhe: { fontSize: 14 },
   valorDetalhe: { fontSize: 14, textAlign: 'right', flexShrink: 1 },
   alvo: { paddingVertical: space.sm, gap: space.xxs },
-  fonte: { gap: space.sm, padding: space.md + 2, borderRadius: radius.card },
-  errata: { gap: space.sm, padding: space.md + 2, borderWidth: 1, borderRadius: radius.card },
+  fonte: { gap: space.sm, padding: space.md + 2, borderRadius: radius.md },
+  errata: { gap: space.sm, padding: space.md + 2, borderWidth: 1, borderRadius: radius.md },
   itemErrata: { gap: space.xxs },
 });

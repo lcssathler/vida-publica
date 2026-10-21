@@ -14,7 +14,7 @@ import { montarLinhas, type Linha } from '../feed/linhas';
 import { RegistroDoEvento } from '../feed/RegistroDoEvento';
 import { CATEGORIAS } from '../feed/rotulos';
 import { AvisoSemConexao } from '../offline/AvisoSemConexao';
-import { space, typography } from '../theme/tokens';
+import { recuo, space, typography } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
 
 export interface LinhaDoTempoProps {
@@ -43,11 +43,11 @@ export function PerfilComLinhaDoTempo({ alvo, categorias, cabecalho }: LinhaDoTe
     <View style={styles.cabecalho}>
       <AvisoSemConexao />
       {cabecalho}
-      <Text role="heading" style={[typography.headline, styles.tituloLinha, { color: theme.ink }]}>
-        Linha do tempo
+      <Text role="heading" style={[typography.dia, styles.tituloLinha, { color: theme.ink }]}>
+        Linha do tempo.
       </Text>
       {comEventos.length ? (
-        <FaixaDeAbas rotulo="Categoria" papel="radiogroup">
+        <FaixaDeAbas rotulo="Categoria" papel="radiogroup" recuoPai={recuo}>
           <AbaTexto
             rotulo="Tudo"
             contagem={inteiro(total)}
@@ -134,7 +134,7 @@ export function PerfilComLinhaDoTempo({ alvo, categorias, cabecalho }: LinhaDoTe
 const styles = StyleSheet.create({
   tela: { flex: 1 },
   conteudo: { paddingBottom: space.xxl },
-  cabecalho: { gap: space.lg, paddingTop: space.md, paddingHorizontal: space.lg },
-  tituloLinha: { paddingHorizontal: space.xs, marginTop: space.sm },
+  cabecalho: { gap: space.lg, paddingHorizontal: recuo },
+  tituloLinha: { marginTop: space.sm },
   rodape: { alignItems: 'center', gap: space.sm, paddingVertical: space.xl },
 });

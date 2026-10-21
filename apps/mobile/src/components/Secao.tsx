@@ -1,24 +1,68 @@
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { radius, space, toque, typography } from '../theme/tokens';
+import { recuo as recuoPadrao, rules, space, toque, typography } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
 
 /**
- * Bloco com título pequeno acima de um cartão. Os filhos ficam dentro do
- * cartão; `solto` deixa os filhos sem cartão (quando já são cartões).
+ * Bloco de largura total: fundo de publicação, fio em cima e a faixa embaixo,
+ * como as publicações do feed. `recuo` é o recuo do contêiner (o bloco encosta
+ * nas bordas da tela e devolve o recuo por dentro).
  */
-export function Secao({ titulo, children, solto }: { titulo: string; children: ReactNode; solto?: boolean }) {
+export function Bloco({ children, recuo = recuoPadrao }: { children: ReactNode; recuo?: number }) {
+  const theme = useTheme();
+  return (
+    <View
+      style={[
+        styles.bloco,
+        {
+          backgroundColor: theme.surface,
+          borderTopColor: theme.line,
+          borderBottomColor: theme.postGap,
+          marginHorizontal: -recuo,
+          paddingHorizontal: recuo,
+        },
+      ]}
+    >
+      {children}
+    </View>
+  );
+}
+
+/**
+ * Seção: rótulo em caixa alta no acento e, embaixo, um bloco de largura
+ * total. `solto` deixa os filhos sem bloco (quando já são cartões).
+ */
+export function Secao({
+  titulo,
+  children,
+  solto,
+  recuo,
+}: {
+  titulo: string;
+  children: ReactNode;
+  solto?: boolean;
+  recuo?: number;
+}) {
   const theme = useTheme();
   return (
     <View style={styles.secao}>
-      <Text role="heading" style={[typography.overline, styles.titulo, { color: theme.ink }]}>
+      <Text role="heading" style={[typography.tipo, { color: theme.accent }]}>
         {titulo}
       </Text>
-      {solto ? (
-        children
-      ) : (
-        <View style={[styles.cartao, { backgroundColor: theme.surface, boxShadow: theme.shadowCard }]}>{children}</View>
-      )}
+      {solto ? children : <Bloco recuo={recuo}>{children}</Bloco>}
+    </View>
+  );
+}
+
+/** Título de grupo em serifa com ponto final ("Senado.") e a contagem à direita. */
+export function TituloDeGrupo({ titulo, contagem }: { titulo: string; contagem?: string }) {
+  const theme = useTheme();
+  return (
+    <View style={styles.grupo}>
+      <Text role="heading" style={[typography.dia, { color: theme.ink }]}>
+        {titulo}.
+      </Text>
+      {contagem ? <Text style={[typography.caption, { color: theme.ink3 }]}>{contagem}</Text> : null}
     </View>
   );
 }
@@ -72,9 +116,9 @@ export function Dado({ rotulo, valor, detalhe }: { rotulo: string; valor: string
 }
 
 const styles = StyleSheet.create({
-  secao: { gap: space.sm },
-  titulo: { fontSize: 13, paddingHorizontal: space.xs },
-  cartao: { borderRadius: radius.card, paddingHorizontal: space.md + 2, paddingVertical: space.xs, overflow: 'hidden' },
+  secao: { gap: space.sm + 2 },
+  bloco: { paddingVertical: space.xs, borderTopWidth: rules.hairline, borderBottomWidth: rules.faixa },
+  grupo: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: space.md, paddingTop: space.sm },
   link: { minHeight: toque.minimo, justifyContent: 'center', alignSelf: 'flex-start' },
   apertado: { opacity: 0.6 },
   sublinhado: { textDecorationLine: 'underline' },

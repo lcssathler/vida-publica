@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
   ponto: { position: 'absolute', top: 10, right: 9, width: 8, height: 8, borderRadius: radius.pill, borderWidth: 2 },
   contexto: { flexDirection: 'row', alignItems: 'center', gap: space.sm - 2, marginTop: space.xs },
   pontoContexto: { width: 5, height: 5, borderRadius: radius.pill },
-  filtros: { gap: space.sm, padding: space.lg, borderRadius: radius.card, marginHorizontal: recuo, marginTop: space.xs },
+  filtros: { gap: space.sm, padding: space.lg, borderRadius: radius.md, marginHorizontal: recuo, marginTop: space.xs },
   grade: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   limpar: { alignSelf: 'flex-start' },
   vazio: { alignItems: 'center', gap: space.md },

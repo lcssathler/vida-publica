@@ -8,8 +8,9 @@ import type { ItemLinhaDoTempo, Proposta } from '../../api/tipos';
 import { dataCurta, dataSimples, diaPorExtenso, hora } from '../../comum/formato';
 import { Alternar } from '../../components/Alternar';
 import { Botao } from '../../components/Botao';
-import { BotaoVoltar } from '../../components/BotaoVoltar';
+import { BarraVoltar } from '../../components/BotaoVoltar';
 import { Carregando, Falha, Vazio } from '../../components/Estado';
+import { Icone } from '../../components/Icone';
 import { LinkTexto, Secao } from '../../components/Secao';
 import { NOME_TIPO } from '../../feed/rotulos';
 import { situacaoMudou } from '../../propostas/linha';
@@ -58,10 +59,22 @@ function Cabecalho({ p }: { p: Proposta }) {
 
   return (
     <View style={styles.cabecalho}>
+      <BarraVoltar
+        acao={
+          <Alternar
+            rotulo="Seguir"
+            rotuloMarcado="Seguindo"
+            descricao={`Seguir ${p.identificacao}`}
+            marcado={segue}
+            aoAlternar={() =>
+              seguir.mutate({ alvo: { tipo: 'proposicao', id: p.id }, seguir: !segue, nome: p.identificacao, detalhe: p.ementa })
+            }
+          />
+        }
+      />
       <AvisoSemConexao />
-      <BotaoVoltar />
-      <View style={[styles.titulo, { borderBottomColor: theme.ink }]}>
-        <Text style={[typography.overline, { color: theme.ink2 }]}>
+      <View style={styles.titulo}>
+        <Text style={[typography.tipo, { color: theme.accent }]}>
           {[NOME_CASA[p.casa], p.descricaoTipo].filter(Boolean).join(' · ')}
         </Text>
         <Text role="heading" style={[typography.display, { color: theme.ink }]}>
@@ -69,17 +82,7 @@ function Cabecalho({ p }: { p: Proposta }) {
         </Text>
         {p.apelido ? <Text style={[typography.title, { color: theme.ink }]}>{p.apelido}</Text> : null}
       </View>
-      {p.ementa ? <Text style={[typography.body, { color: theme.ink }]}>{p.ementa}</Text> : null}
-
-      <Alternar
-        rotulo="Seguir"
-        rotuloMarcado="Seguindo"
-        descricao={`Seguir ${p.identificacao}`}
-        marcado={segue}
-        aoAlternar={() =>
-          seguir.mutate({ alvo: { tipo: 'proposicao', id: p.id }, seguir: !segue, nome: p.identificacao, detalhe: p.ementa })
-        }
-      />
+      {p.ementa ? <Text style={[typography.body, { color: theme.ink2 }]}>{p.ementa}</Text> : null}
       {seguir.isError ? (
         <Text style={[typography.body, { color: theme.error }]} aria-live="assertive">
           {mensagemDeErro(seguir.error)}
@@ -138,14 +141,14 @@ function Cabecalho({ p }: { p: Proposta }) {
 
       <View style={styles.linha}>
         {p.urlInteiroTeor ? (
-          <Botao variante="secundario" rotulo="Inteiro teor" dica="Abre o texto da proposta no site da Casa" aoTocar={() => void Linking.openURL(p.urlInteiroTeor!)} />
+          <Botao variante="texto" icone="file-text" rotulo="Inteiro teor" estilo={styles.link} dica="Abre o texto da proposta no site da Casa" aoTocar={() => void Linking.openURL(p.urlInteiroTeor!)} />
         ) : null}
-        <Botao variante="secundario" rotulo="Fonte oficial" dica="Abre os dados abertos da proposta" aoTocar={() => void Linking.openURL(p.fonte.url)} />
+        <Botao variante="texto" icone="external-link" rotulo="Fonte oficial" estilo={styles.link} dica="Abre os dados abertos da proposta" aoTocar={() => void Linking.openURL(p.fonte.url)} />
       </View>
 
-      <View style={[styles.tituloLinha, { borderBottomColor: theme.ink }]}>
-        <Text role="heading" style={[typography.title, { color: theme.ink }]}>
-          Linha do tempo
+      <View style={styles.tituloLinha}>
+        <Text role="heading" style={[typography.dia, { color: theme.ink }]}>
+          Linha do tempo.
         </Text>
         <Text style={[typography.caption, { color: theme.ink2 }]}>Da etapa mais recente à mais antiga</Text>
       </View>
@@ -190,9 +193,20 @@ function ItemDaLinha({
     sobre = [ROTULO_ITEM.votacao, item.orgao, item.nominal ? 'nominal' : 'simbólica'].filter(Boolean).join(' · ');
     corpo = (
       <>
-        <Text style={[typography.bodyStrong, { color: theme.ink }]}>
-          {item.aprovada === true ? 'Aprovada' : item.aprovada === false ? 'Rejeitada' : 'Resultado não informado'}
-        </Text>
+        {item.aprovada === null || item.aprovada === undefined ? (
+          <Text style={[typography.bodyStrong, { color: theme.ink }]}>Resultado não informado</Text>
+        ) : (
+          <View style={styles.resultado}>
+            <Icone
+              nome={item.aprovada ? 'check-circle' : 'x-circle'}
+              tamanho={18}
+              cor={item.aprovada ? theme.yes : theme.no}
+            />
+            <Text style={[typography.bodyStrong, { color: item.aprovada ? theme.yes : theme.no }]}>
+              {item.aprovada ? 'Aprovada' : 'Rejeitada'}
+            </Text>
+          </View>
+        )}
         {item.descricao ? <Text style={[typography.body, { color: theme.ink2 }]}>{item.descricao}</Text> : null}
         {item.placar ? <Placar placar={item.placar} /> : null}
         <LinkTexto rotulo="Fonte da votação" descricao="Abre a votação nos dados abertos" aoTocar={() => void Linking.openURL(item.fonte.url)} />
@@ -216,7 +230,7 @@ function ItemDaLinha({
   return (
     <View style={styles.item}>
       <View style={styles.trilho}>
-        <View style={[styles.marca, { borderColor: theme.ink, backgroundColor: item.tipo === 'votacao' ? theme.ink : theme.background }]} />
+        <View style={[styles.marca, { borderColor: theme.accent, backgroundColor: item.tipo === 'votacao' ? theme.accent : theme.background }]} />
         {!ultimo ? <View style={[styles.fio, { backgroundColor: theme.rule }]} /> : null}
       </View>
       <View style={styles.conteudoItem}>
@@ -227,7 +241,7 @@ function ItemDaLinha({
           {dataCurta(item.data)}
           {quando ? ` · ${quando}` : ''}
         </Text>
-        <Text style={[typography.overline, { color: theme.ink2 }]}>{sobre}</Text>
+        <Text style={[typography.tipo, { color: theme.accent }]}>{sobre}</Text>
         {corpo}
       </View>
     </View>
@@ -237,12 +251,14 @@ function ItemDaLinha({
 const styles = StyleSheet.create({
   tela: { flex: 1 },
   conteudo: { paddingHorizontal: space.xl, paddingBottom: space.xxl },
-  cabecalho: { gap: space.lg, paddingTop: space.md, paddingBottom: space.md },
-  titulo: { gap: space.xxs, paddingHorizontal: space.xs },
+  cabecalho: { gap: space.lg, paddingBottom: space.md },
+  titulo: { gap: space.xs + 2 },
+  link: { paddingHorizontal: 0 },
+  resultado: { flexDirection: 'row', alignItems: 'center', gap: space.xs + 2 },
   situacao: { gap: space.xxs, paddingVertical: space.xs },
   linha: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: space.md },
   autor: { gap: 0 },
-  tituloLinha: { gap: space.xxs, paddingHorizontal: space.xs },
+  tituloLinha: { gap: space.xs, paddingTop: space.sm },
   item: { flexDirection: 'row', gap: space.md },
   trilho: { width: 12, alignItems: 'center' },
   marca: { width: 10, height: 10, borderWidth: 1.5, borderRadius: radius.pill, marginTop: space.lg },

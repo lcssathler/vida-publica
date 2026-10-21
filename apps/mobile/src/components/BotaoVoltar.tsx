@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
-import { Pressable, StyleSheet } from 'react-native';
-import { radius, toque } from '../theme/tokens';
+import type { ReactNode } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { recuo, rules, space, toque } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
 import { Icone } from './Icone';
 
@@ -13,11 +14,7 @@ export function BotaoVoltar({ icone = 'chevron-left', rotulo = 'Voltar' }: { ico
       role="button"
       aria-label={rotulo}
       onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
-      style={({ pressed }) => [
-        styles.botao,
-        { backgroundColor: theme.surface, boxShadow: theme.shadowCard },
-        pressed && styles.apertado,
-      ]}
+      style={({ pressed }) => [styles.botao, pressed && styles.apertado]}
     >
       <Icone nome={icone} tamanho={22} cor={theme.ink} />
     </Pressable>
@@ -29,10 +26,25 @@ const styles = StyleSheet.create({
     width: toque.minimo,
     height: toque.minimo,
     minHeight: toque.minimo,
-    borderRadius: radius.lg,
+    marginLeft: -space.md,
     alignItems: 'center',
     justifyContent: 'center',
-    alignSelf: 'flex-start',
   },
-  apertado: { transform: [{ scale: 0.95 }] },
+  apertado: { opacity: 0.6 },
+});
+
+/** Barra do alto das telas empilhadas: voltar à esquerda, uma ação à direita, fio embaixo. */
+export function BarraVoltar({ acao, recuo: r = recuo }: { acao?: ReactNode; recuo?: number }) {
+  const theme = useTheme();
+  return (
+    <View style={[barraStyles.barra, { borderBottomColor: theme.rule, marginHorizontal: -r, paddingHorizontal: r }]}>
+      <BotaoVoltar />
+      {acao ? <View style={barraStyles.acao}>{acao}</View> : null}
+    </View>
+  );
+}
+
+const barraStyles = StyleSheet.create({
+  barra: { flexDirection: 'row', alignItems: 'center', minHeight: 64, borderBottomWidth: rules.hairline },
+  acao: { marginLeft: 'auto' },
 });

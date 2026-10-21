@@ -40,6 +40,6 @@ export function FotoOficial({ foto, nome, largura = 36 }: { foto: Foto | null; n
 }
 
 const styles = StyleSheet.create({
-  foto: { borderRadius: radius.sm },
+  foto: { borderRadius: radius.foto },
   vazia: { alignItems: 'center', justifyContent: 'center' },
 });

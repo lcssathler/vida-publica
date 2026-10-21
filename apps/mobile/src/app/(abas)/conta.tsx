@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useEffect, useState, type ReactNode } from 'react';
-import { Linking, Platform, StyleSheet, Text, View } from 'react-native';
+import { Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useConta, useSalvarPreferencias } from '../../api/consultas';
 import { ErroApi, mensagemDeErro } from '../../api/erros';
 import { FUSOS, UFS, type Preferencias, type Uf } from '../../api/tipos';
@@ -9,6 +9,7 @@ import { dataCurta } from '../../comum/formato';
 import { Alternar } from '../../components/Alternar';
 import { Botao } from '../../components/Botao';
 import { Carregando, Falha } from '../../components/Estado';
+import { Icone, type NomeIcone } from '../../components/Icone';
 import { LinkTexto, Secao } from '../../components/Secao';
 import { Tela } from '../../components/Tela';
 import { appleDisponivel, entrar, googleDisponivel, LoginCancelado, type Provedor } from '../../conta/login';
@@ -18,6 +19,7 @@ import { persistidor } from '../../offline/cache';
 import { NOME_ESTADO } from '../../onboarding/estados';
 import { useSessao } from '../../sessao/Sessao';
 import { ESTADO_INICIAL } from '../../sessao/local';
+import type { PreferenciaDeTema } from '../../theme/preferencia';
 import { radius, space, toque, typography } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
 
@@ -58,6 +60,7 @@ export default function ContaTela() {
   return (
     <Tela comBarra titulo="Conta" descricao="Preferências deste aparelho e da sua conta.">
       <SecaoConta anonima={c.anonima} identidades={c.identidades} criadaEm={c.criadaEm} />
+      <SecaoAparencia />
       <SecaoPreferencias p={c.preferencias} />
       <SecaoCorrecoes />
       <SecaoPrivacidade anonima={c.anonima} />
@@ -141,6 +144,43 @@ function SecaoConta({ anonima, identidades, criadaEm }: { anonima: boolean; iden
   );
 }
 
+const TEMAS: { valor: PreferenciaDeTema; rotulo: string; icone: NomeIcone }[] = [
+  { valor: 'sistema', rotulo: 'Automático', icone: 'smartphone' },
+  { valor: 'claro', rotulo: 'Claro', icone: 'sun' },
+  { valor: 'escuro', rotulo: 'Escuro', icone: 'moon' },
+];
+
+/** Tema do app: fica só neste aparelho, como o estado local. */
+function SecaoAparencia() {
+  const theme = useTheme();
+  const { local, atualizarLocal } = useSessao();
+  return (
+    <Secao titulo="Aparência" solto>
+      <View style={[styles.segmento, { backgroundColor: theme.postGap }]} role="radiogroup" aria-label="Tema">
+        {TEMAS.map((t) => {
+          const marcado = local.tema === t.valor;
+          return (
+            <Pressable
+              key={t.valor}
+              role="radio"
+              aria-label={`Tema ${t.rotulo.toLowerCase()}`}
+              aria-checked={marcado}
+              onPress={() => atualizarLocal({ tema: t.valor })}
+              style={[styles.opcaoTema, marcado && { backgroundColor: theme.surface, borderColor: theme.rule }]}
+            >
+              <Icone nome={t.icone} tamanho={15} cor={marcado ? theme.ink : theme.ink2} />
+              <Text style={[typography.label, { color: marcado ? theme.ink : theme.ink2 }]}>{t.rotulo}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+      <Text style={[typography.caption, { color: theme.ink2 }]}>
+        {local.tema === 'sistema' ? 'Segue o modo claro ou escuro do aparelho.' : 'Vale só para este aparelho.'}
+      </Text>
+    </Secao>
+  );
+}
+
 function SecaoPreferencias({ p }: { p: Preferencias }) {
   const theme = useTheme();
   const { atualizarLocal, cliente } = useSessao();
@@ -174,13 +214,14 @@ function SecaoPreferencias({ p }: { p: Preferencias }) {
           <Botao variante="texto" rotulo={abrirEstados ? 'Fechar' : 'Mudar estado'} aoTocar={() => setAbrirEstados((a) => !a)} />
         </View>
         {abrirEstados ? (
-          <View style={styles.grade} role="radiogroup" aria-label="Estado">
+          <View role="radiogroup" aria-label="Estado">
             {[...UFS]
               .sort((a, b) => NOME_ESTADO[a].localeCompare(NOME_ESTADO[b], 'pt-BR'))
               .map((uf: Uf) => (
                 <Alternar
                   key={uf}
                   papel="radio"
+                  aparencia="linha"
                   rotulo={NOME_ESTADO[uf]}
                   marcado={p.uf === uf}
                   aoAlternar={() => {
@@ -239,11 +280,12 @@ function SecaoPreferencias({ p }: { p: Preferencias }) {
           <Botao variante="texto" rotulo={abrirFusos ? 'Fechar' : 'Mudar fuso'} aoTocar={() => setAbrirFusos((a) => !a)} />
         </View>
         {abrirFusos ? (
-          <View style={styles.grade} role="radiogroup" aria-label="Fuso">
+          <View role="radiogroup" aria-label="Fuso">
             {FUSOS.map((f) => (
               <Alternar
                 key={f}
                 papel="radio"
+                aparencia="linha"
                 rotulo={NOME_FUSO[f]}
                 marcado={p.fuso === f}
                 aoAlternar={() => {
@@ -405,9 +447,20 @@ const styles = StyleSheet.create({
   linha: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: space.sm },
   linhaEntre: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md, minHeight: toque.minimo },
   flex: { flex: 1 },
-  grade: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   ajuste: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   valor: { minWidth: 48, textAlign: 'center' },
   inicio: { alignSelf: 'flex-start' },
+  segmento: { flexDirection: 'row', gap: space.xs, padding: space.xs, borderRadius: radius.sm },
+  opcaoTema: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: space.xs + 2,
+    minHeight: toque.minimo,
+    borderRadius: radius.voto,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
   confirmar: { gap: space.sm, padding: space.md, borderWidth: 1, borderRadius: radius.md },
 });

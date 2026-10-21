@@ -25,6 +25,14 @@ describe.each(schemes)('paleta %s', (scheme) => {
     expect(contrastRatio(p.barIcon, p.bar)).toBeGreaterThanOrEqual(3);
   });
 
+  it('voto e resultado (verde e vermelho) passam 4,5:1 na publicação e na caixa de voto', () => {
+    for (const fundo of [p.surface, p.voteBox, p.sheet]) {
+      expect(contrastRatio(p.yes, fundo)).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(p.no, fundo)).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(p.ink2, fundo)).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
   it('opção inativa em título grande e contornos passam 3:1 (WCAG 1.4.3 e 1.4.11)', () => {
     expect(contrastRatio(p.inactive, p.background)).toBeGreaterThanOrEqual(3);
     expect(contrastRatio(p.ink2, p.background)).toBeGreaterThanOrEqual(3);

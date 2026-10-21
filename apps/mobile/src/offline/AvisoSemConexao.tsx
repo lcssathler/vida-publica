@@ -33,5 +33,5 @@ export function AvisoSemConexao({ atualizadoEm }: { atualizadoEm?: number }) {
 }
 
 const styles = StyleSheet.create({
-  aviso: { paddingHorizontal: space.md + 2, paddingVertical: space.md, borderRadius: radius.lg },
+  aviso: { paddingHorizontal: space.md + 2, paddingVertical: space.md, borderRadius: radius.md },
 });

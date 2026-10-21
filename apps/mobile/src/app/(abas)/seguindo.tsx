@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
     gap: space.sm,
     paddingLeft: space.md,
     borderWidth: 1,
-    borderRadius: radius.card,
+    borderRadius: radius.md,
   },
   avisoTexto: { flex: 1 },
   vazio: { alignItems: 'center', gap: space.md },

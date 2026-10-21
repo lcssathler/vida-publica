@@ -6,9 +6,9 @@ import { dataCurta, diaPorExtenso } from '../comum/formato';
 import { Botao } from '../components/Botao';
 import { BotaoVoltar } from '../components/BotaoVoltar';
 import { Carregando, Falha, Vazio } from '../components/Estado';
-import { LinkTexto } from '../components/Secao';
+import { Bloco, LinkTexto } from '../components/Secao';
 import { Tela } from '../components/Tela';
-import { rules, space, typography } from '../theme/tokens';
+import { space, typography } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
 
 /**
@@ -35,17 +35,18 @@ export default function Erratas() {
     >
       {lista.length === 0 ? <Vazio mensagem="Nenhuma errata publicada." /> : null}
       {lista.map((x) => (
-        <View key={x.id} style={[styles.errata, { borderBottomColor: theme.rule }]}>
+        <Bloco key={x.id}>
+          <View style={styles.errata}>
           <Text
-            style={[typography.data, { color: theme.ink2 }]}
+            style={[typography.tipo, { color: theme.accent }]}
             aria-label={`Publicada em ${diaPorExtenso(x.publicadaEm)}`}
           >
-            {dataCurta(x.publicadaEm)}
+            Correção · {dataCurta(x.publicadaEm)}
           </Text>
           <Text role="heading" style={[typography.bodyStrong, { color: theme.ink }]}>
             {x.titulo}
           </Text>
-          <Text style={[typography.body, { color: theme.ink }]}>{x.texto}</Text>
+          <Text style={[typography.body, { color: theme.ink2 }]}>{x.texto}</Text>
           {x.evento ? (
             <LinkTexto
               rotulo="Ver o registro corrigido"
@@ -53,7 +54,8 @@ export default function Erratas() {
               aoTocar={() => router.push({ pathname: '/evento/[id]', params: { id: x.evento!.id } })}
             />
           ) : null}
-        </View>
+          </View>
+        </Bloco>
       ))}
       {erratas.hasNextPage ? (
         <Botao
@@ -68,5 +70,5 @@ export default function Erratas() {
 }
 
 const styles = StyleSheet.create({
-  errata: { gap: space.xs, paddingBottom: space.md, borderBottomWidth: rules.hairline },
+  errata: { gap: space.sm, paddingVertical: space.md },
 });

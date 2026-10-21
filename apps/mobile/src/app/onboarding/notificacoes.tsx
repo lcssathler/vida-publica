@@ -3,17 +3,19 @@ import { StyleSheet, Text, View } from 'react-native';
 import { useSalvarPreferencias } from '../../api/consultas';
 import { mensagemDeErro } from '../../api/erros';
 import { Botao } from '../../components/Botao';
+import { Icone, type NomeIcone } from '../../components/Icone';
+import { Bloco } from '../../components/Secao';
 import { Tela } from '../../components/Tela';
 import { pedirPermissaoDoSistema } from '../../notificacoes/permissao';
 import { useSessao } from '../../sessao/Sessao';
 import { rules, space, typography } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
 
-const REGRAS = [
-  'Só sobre quem e o que você segue: votos, pauta, propostas e campanha.',
-  'Dinheiro e despesas chegam juntos, num resumo por semana.',
-  'No máximo 5 por dia, nunca entre 22h e 7h (dá para mudar depois).',
-  'Cada aviso leva ao registro com a fonte oficial.',
+const REGRAS: { icone: NomeIcone; texto: string }[] = [
+  { icone: 'users', texto: 'Só sobre quem e o que você segue: votos, pauta, propostas e campanha.' },
+  { icone: 'dollar-sign', texto: 'Dinheiro e despesas chegam juntos, num resumo por semana.' },
+  { icone: 'clock', texto: 'No máximo 5 por dia, nunca entre 22h e 7h (dá para mudar depois).' },
+  { icone: 'shield', texto: 'Cada aviso leva ao registro com a fonte oficial.' },
 ];
 
 /**
@@ -67,14 +69,17 @@ export default function PrePerguntaNotificacoes() {
         </>
       }
     >
-      <View>
-        {REGRAS.map((regra, i) => (
-          <View key={regra} style={[styles.regra, { borderBottomColor: theme.rule }]}>
-            <Text style={[typography.data, { color: theme.ink3 }]}>{String(i + 1).padStart(2, '0')}</Text>
-            <Text style={[typography.body, styles.textoRegra, { color: theme.ink }]}>{regra}</Text>
+      <Bloco>
+        {REGRAS.map(({ icone, texto }, i) => (
+          <View
+            key={texto}
+            style={[styles.regra, i < REGRAS.length - 1 && { borderBottomWidth: rules.hairline, borderBottomColor: theme.line }]}
+          >
+            <Icone nome={icone} tamanho={18} cor={theme.accent} />
+            <Text style={[typography.body, styles.textoRegra, { color: theme.ink }]}>{texto}</Text>
           </View>
         ))}
-      </View>
+      </Bloco>
       {aviso ? (
         <Text style={[typography.body, { color: theme.error }]} aria-live="assertive">
           {aviso}
@@ -85,11 +90,6 @@ export default function PrePerguntaNotificacoes() {
 }
 
 const styles = StyleSheet.create({
-  regra: {
-    flexDirection: 'row',
-    gap: space.md,
-    paddingVertical: space.md,
-    borderBottomWidth: rules.hairline,
-  },
+  regra: { flexDirection: 'row', alignItems: 'flex-start', gap: space.md, paddingVertical: space.md },
   textoRegra: { flex: 1 },
 });

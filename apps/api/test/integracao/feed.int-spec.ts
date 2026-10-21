@@ -135,6 +135,8 @@ describe('PostgresFeedRepositorio (integração)', () => {
       papel: 'candidato',
       nome: 'Candidata Fictícia',
       seguindo: true,
+      // Candidata sem cadastro na Câmara nem no Senado: sem foto oficial.
+      foto: null,
     });
     await expect(feed.evento(ids.seguidores, u)).resolves.not.toBeNull();
     await expect(

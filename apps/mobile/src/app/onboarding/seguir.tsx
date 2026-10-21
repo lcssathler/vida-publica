@@ -7,6 +7,7 @@ import { Alternar } from '../../components/Alternar';
 import { Botao } from '../../components/Botao';
 import { Carregando, Falha } from '../../components/Estado';
 import { FotoOficial } from '../../components/FotoOficial';
+import { Secao } from '../../components/Secao';
 import { Tela } from '../../components/Tela';
 import { NOME_ESTADO } from '../../onboarding/estados';
 import { useSessao } from '../../sessao/Sessao';
@@ -36,7 +37,7 @@ export default function QuemSeguir() {
     const segue = estaSeguindo({ tipo: 'pessoa', id: p.id });
     const detalhe = [p.cargo, p.partido].filter(Boolean).join(' · ');
     return (
-      <View key={p.id} style={[styles.item, { borderBottomColor: theme.rule }]}>
+      <View key={p.id} style={[styles.item, { borderBottomColor: theme.line }]}>
         <FotoOficial foto={p.foto} nome={p.nome} />
         <View style={styles.texto}>
           <Text style={[typography.bodyStrong, { color: theme.ink }]}>{p.nome}</Text>
@@ -79,24 +80,13 @@ export default function QuemSeguir() {
           {mensagemDeErro(seguir.error)}
         </Text>
       ) : null}
-      <View>
-        <Text role="heading" style={[typography.overline, styles.secao, { color: theme.ink2 }]}>
-          Senado · {senado.length}
-        </Text>
-        {senado.map(item)}
-      </View>
-      <View>
-        <Text role="heading" style={[typography.overline, styles.secao, { color: theme.ink2 }]}>
-          Câmara dos Deputados · {camara.length}
-        </Text>
-        {camara.map(item)}
-      </View>
+      <Secao titulo={`Senado · ${senado.length}`}>{senado.map(item)}</Secao>
+      <Secao titulo={`Câmara dos Deputados · ${camara.length}`}>{camara.map(item)}</Secao>
     </Tela>
   );
 }
 
 const styles = StyleSheet.create({
-  secao: { paddingBottom: space.xs },
   item: {
     flexDirection: 'row',
     alignItems: 'center',

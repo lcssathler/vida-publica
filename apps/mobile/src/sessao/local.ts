@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Uf } from '../api/tipos';
+import type { PreferenciaDeTema } from '../theme/preferencia';
 
 /** Posição de um registro no feed: a ordem é (ocorridoEm, id) decrescente. */
 export interface Marco {
@@ -18,6 +19,8 @@ export interface EstadoLocal {
   avisos: boolean;
   /** "Você parou aqui": o registro do topo na última visita, por escopo do feed. */
   parouAqui: Partial<Record<'seguindo' | 'todos', Marco>>;
+  /** Tema escolhido na Conta. */
+  tema: PreferenciaDeTema;
 }
 
 export const ESTADO_INICIAL: EstadoLocal = {
@@ -25,6 +28,7 @@ export const ESTADO_INICIAL: EstadoLocal = {
   uf: null,
   avisos: false,
   parouAqui: {},
+  tema: 'sistema',
 };
 
 const CHAVE = 'vp.local.v1';

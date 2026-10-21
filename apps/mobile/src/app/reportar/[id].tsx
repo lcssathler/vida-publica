@@ -6,6 +6,7 @@ import { mensagemDeErro } from '../../api/erros';
 import type { MotivoReporte } from '../../api/tipos';
 import { Alternar } from '../../components/Alternar';
 import { Botao } from '../../components/Botao';
+import { Bloco } from '../../components/Secao';
 import { Tela } from '../../components/Tela';
 import { radius, space, typography } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
@@ -68,18 +69,21 @@ export default function ReportarErro() {
         </>
       }
     >
-      <View role="radiogroup" aria-label="Motivo" style={styles.motivos}>
-        {MOTIVOS.map((m) => (
-          <Alternar
-            key={m.valor}
-            papel="radio"
-            rotulo={m.rotulo}
-            marcado={motivo === m.valor}
-            aoAlternar={() => setMotivo(m.valor)}
-          />
-        ))}
-      </View>
-      <Text style={[typography.label, { color: theme.ink }]}>Detalhes (opcional)</Text>
+      <Bloco>
+        <View role="radiogroup" aria-label="Motivo">
+          {MOTIVOS.map((m) => (
+            <Alternar
+              key={m.valor}
+              papel="radio"
+              aparencia="linha"
+              rotulo={m.rotulo}
+              marcado={motivo === m.valor}
+              aoAlternar={() => setMotivo(m.valor)}
+            />
+          ))}
+        </View>
+      </Bloco>
+      <Text style={[typography.tipo, { color: theme.accent }]}>Detalhes (opcional)</Text>
       <TextInput
         value={texto}
         onChangeText={(t) => setTexto(t.slice(0, MAXIMO))}
@@ -108,12 +112,11 @@ export default function ReportarErro() {
 }
 
 const styles = StyleSheet.create({
-  motivos: { gap: space.sm },
   campo: {
     minHeight: 120,
     textAlignVertical: 'top',
     borderWidth: 1,
-    borderRadius: radius.lg,
-    padding: space.sm,
+    borderRadius: radius.sm,
+    padding: space.md,
   },
 });

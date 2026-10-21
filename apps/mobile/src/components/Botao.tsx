@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
     minWidth: toque.minimo,
     paddingHorizontal: space.xl,
     borderWidth: 1,
-    borderRadius: radius.lg,
+    borderRadius: radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },

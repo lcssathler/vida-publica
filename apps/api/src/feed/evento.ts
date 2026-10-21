@@ -29,6 +29,8 @@ export interface AlvoDoEvento {
   nome: string;
   /** O usuário segue este alvo. */
   seguindo: boolean;
+  /** Foto oficial da pessoa (Câmara ou Senado), só em alvos do tipo pessoa. */
+  foto?: { url: string; credito: string } | null;
 }
 
 /** Evento publicado, como o app recebe. Sempre com a fonte. */

@@ -1,75 +1,36 @@
 import { Tabs } from 'expo-router';
-import { useEffect, useState, type ComponentProps } from 'react';
-import { AccessibilityInfo, Animated, Easing, Platform, Pressable, StyleSheet, View } from 'react-native';
+import type { ComponentProps } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icone, type NomeIcone } from '../../components/Icone';
-import { barra, movimento, space, toque } from '../../theme/tokens';
+import { barra, space, toque } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
 
 type PropsDaBarra = Parameters<NonNullable<ComponentProps<typeof Tabs>['tabBar']>>[0];
 
 const ICONES: Record<string, NomeIcone> = {
-  index: 'align-left',
+  index: 'grid',
+  navegar: 'compass',
+  seguindo: 'users',
   busca: 'search',
-  seguindo: 'bookmark',
   conta: 'user',
 };
 
-const LARGURA_ITEM = 64;
-const VAO = 4;
-
-function useMovimentoReduzido(): boolean {
-  const [reduzido, setReduzido] = useState(false);
-  useEffect(() => {
-    void AccessibilityInfo.isReduceMotionEnabled().then(setReduzido);
-    const inscricao = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduzido);
-    return () => inscricao.remove();
-  }, []);
-  return reduzido;
-}
-
 /**
- * Barra de navegação flutuante: cápsula só com ícones, centralizada acima da
- * borda. O nome de cada aba é o que o leitor de tela lê. A marca da aba ativa
- * desliza até a aba tocada.
+ * Dock flutuante: cápsula com os destinos; o ativo vira uma cápsula clara com
+ * o nome, os outros ficam só com o ícone. O nome de cada aba é o que o leitor
+ * de tela lê.
  */
-function BarraFlutuante({ state, descriptors, navigation }: PropsDaBarra) {
+function Dock({ state, descriptors, navigation }: PropsDaBarra) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
-  const reduzido = useMovimentoReduzido();
-  const [posicao] = useState(() => new Animated.Value(state.index));
-
-  useEffect(() => {
-    if (reduzido) {
-      posicao.setValue(state.index);
-      return;
-    }
-    Animated.timing(posicao, {
-      toValue: state.index,
-      duration: movimento.padrao,
-      easing: Easing.bezier(...movimento.curva),
-      useNativeDriver: Platform.OS !== 'web',
-    }).start();
-  }, [state.index, reduzido, posicao]);
-
-  const deslocamento = posicao.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, LARGURA_ITEM + VAO],
-  });
 
   return (
     <View pointerEvents="box-none" style={[styles.ancora, { bottom: insets.bottom + barra.margemInferior }]}>
       <View
         role="tablist"
-        style={[
-          styles.barra,
-          { backgroundColor: theme.bar, borderColor: theme.barBorder, boxShadow: theme.shadowBar },
-        ]}
+        style={[styles.dock, { backgroundColor: theme.bar, borderColor: theme.barBorder, boxShadow: theme.shadowBar }]}
       >
-        <Animated.View
-          aria-hidden
-          style={[styles.marca, { backgroundColor: theme.barActive, transform: [{ translateX: deslocamento }] }]}
-        />
         {state.routes.map((rota, i) => {
           const ativa = state.index === i;
           const titulo = descriptors[rota.key].options.title ?? rota.name;
@@ -84,9 +45,14 @@ function BarraFlutuante({ state, descriptors, navigation }: PropsDaBarra) {
                 if (!ativa && !evento.defaultPrevented) navigation.navigate(rota.name, rota.params);
               }}
               onLongPress={() => navigation.emit({ type: 'tabLongPress', target: rota.key })}
-              style={styles.item}
+              style={({ pressed }) => [
+                styles.item,
+                ativa && [styles.itemAtivo, { backgroundColor: theme.barActive }],
+                pressed && !ativa && styles.apertado,
+              ]}
             >
-              <Icone nome={ICONES[rota.name] ?? 'circle'} tamanho={22} cor={ativa ? theme.barActiveIcon : theme.barIcon} />
+              <Icone nome={ICONES[rota.name] ?? 'circle'} tamanho={ativa ? 17 : 19} cor={ativa ? theme.barActiveIcon : theme.barIcon} />
+              {ativa ? <Text style={[styles.rotulo, { color: theme.barActiveIcon }]}>{titulo}</Text> : null}
             </Pressable>
           );
         })}
@@ -99,12 +65,13 @@ export default function Abas() {
   const theme = useTheme();
   return (
     <Tabs
-      tabBar={(props) => <BarraFlutuante {...props} />}
+      tabBar={(props) => <Dock {...props} />}
       screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: theme.background } }}
     >
       <Tabs.Screen name="index" options={{ title: 'Feed' }} />
-      <Tabs.Screen name="busca" options={{ title: 'Busca' }} />
+      <Tabs.Screen name="navegar" options={{ title: 'Navegar' }} />
       <Tabs.Screen name="seguindo" options={{ title: 'Seguindo' }} />
+      <Tabs.Screen name="busca" options={{ title: 'Busca' }} />
       <Tabs.Screen name="conta" options={{ title: 'Conta' }} />
     </Tabs>
   );
@@ -112,27 +79,25 @@ export default function Abas() {
 
 const styles = StyleSheet.create({
   ancora: { position: 'absolute', left: 0, right: 0, alignItems: 'center' },
-  barra: {
+  dock: {
     flexDirection: 'row',
-    gap: VAO,
+    alignItems: 'center',
+    gap: space.xs,
     padding: space.xs + 1,
-    borderRadius: 999,
+    borderRadius: 28,
     borderWidth: 1,
   },
-  marca: {
-    position: 'absolute',
-    top: space.xs + 1,
-    left: space.xs + 1,
-    width: LARGURA_ITEM,
-    height: toque.minimo,
-    borderRadius: 999,
-  },
   item: {
-    width: LARGURA_ITEM,
-    height: toque.minimo,
-    minHeight: toque.minimo,
-    borderRadius: 999,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: space.sm - 1,
+    minWidth: toque.minimo,
+    height: toque.minimo,
+    minHeight: toque.minimo,
+    borderRadius: 24,
   },
+  itemAtivo: { minWidth: 92, paddingHorizontal: space.md },
+  rotulo: { fontFamily: 'Inter_600SemiBold', fontSize: 13, lineHeight: 16 },
+  apertado: { opacity: 0.6 },
 });

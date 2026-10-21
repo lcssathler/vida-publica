@@ -1,12 +1,13 @@
 import { useRouter } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text } from 'react-native';
 import { useAssuntos, useEstaSeguindo, useSeguir } from '../../api/consultas';
 import { mensagemDeErro } from '../../api/erros';
 import { Alternar } from '../../components/Alternar';
 import { Botao } from '../../components/Botao';
 import { Carregando, Falha } from '../../components/Estado';
+import { Bloco } from '../../components/Secao';
 import { Tela } from '../../components/Tela';
-import { space, typography } from '../../theme/tokens';
+import { typography } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
 
 /** Passo 3: assuntos (temas oficiais das propostas) para seguir. */
@@ -46,7 +47,7 @@ export default function EscolherAssuntos() {
           {mensagemDeErro(seguir.error)}
         </Text>
       ) : null}
-      <View style={styles.grade}>
+      <Bloco>
         {ordenados.map((assunto) => {
           const alvo = { tipo: 'assunto' as const, id: assunto.nome };
           const segue = estaSeguindo(alvo);
@@ -55,16 +56,13 @@ export default function EscolherAssuntos() {
               key={assunto.nome}
               rotulo={assunto.nome}
               descricao={`${assunto.nome}, ${assunto.proposicoes} propostas`}
+              aparencia="linha"
               marcado={segue}
               aoAlternar={() => seguir.mutate({ alvo, seguir: !segue, nome: assunto.nome })}
             />
           );
         })}
-      </View>
+      </Bloco>
     </Tela>
   );
 }
-
-const styles = StyleSheet.create({
-  grade: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
-});

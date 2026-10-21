@@ -90,6 +90,8 @@ export interface AlvoDoEvento extends Alvo {
   papel: string;
   nome: string;
   seguindo: boolean;
+  /** Foto oficial, só em alvos do tipo pessoa. */
+  foto?: Foto | null;
 }
 
 /** Evento publicado, sempre com a fonte. */

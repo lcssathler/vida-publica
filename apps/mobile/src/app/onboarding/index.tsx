@@ -6,6 +6,7 @@ import { mensagemDeErro } from '../../api/erros';
 import type { Uf } from '../../api/tipos';
 import { Alternar } from '../../components/Alternar';
 import { Botao } from '../../components/Botao';
+import { Bloco } from '../../components/Secao';
 import { Tela } from '../../components/Tela';
 import { ESTADOS_POR_NOME, NOME_ESTADO, digitosCep, estadoDoCep, formatarCep } from '../../onboarding/estados';
 import { useSessao } from '../../sessao/Sessao';
@@ -56,9 +57,7 @@ export default function EscolherEstado() {
       }
     >
       <View style={styles.bloco}>
-        <Text style={[typography.label, { color: theme.ink }]}>
-          CEP (opcional)
-        </Text>
+        <Text style={[typography.tipo, { color: theme.accent }]}>CEP (opcional)</Text>
         <TextInput
           value={cep}
           onChangeText={aoDigitarCep}
@@ -86,21 +85,24 @@ export default function EscolherEstado() {
       </View>
 
       <View style={styles.bloco}>
-        <Text role="heading" style={[typography.overline, { color: theme.ink2 }]}>
+        <Text role="heading" style={[typography.tipo, { color: theme.accent }]}>
           Ou escolha o estado
         </Text>
-        <View style={styles.grade} role="radiogroup">
-          {ESTADOS_POR_NOME.map((sigla) => (
-            <Alternar
-              key={sigla}
-              rotulo={NOME_ESTADO[sigla]}
-              descricao={NOME_ESTADO[sigla]}
-              papel="radio"
-              marcado={uf === sigla}
-              aoAlternar={() => setUf(sigla)}
-            />
-          ))}
-        </View>
+        <Bloco>
+          <View role="radiogroup">
+            {ESTADOS_POR_NOME.map((sigla) => (
+              <Alternar
+                key={sigla}
+                rotulo={NOME_ESTADO[sigla]}
+                descricao={NOME_ESTADO[sigla]}
+                papel="radio"
+                aparencia="linha"
+                marcado={uf === sigla}
+                aoAlternar={() => setUf(sigla)}
+              />
+            ))}
+          </View>
+        </Bloco>
       </View>
 
       {salvar.isError ? (
@@ -113,13 +115,12 @@ export default function EscolherEstado() {
 }
 
 const styles = StyleSheet.create({
-  bloco: { gap: space.sm },
+  bloco: { gap: space.sm + 2 },
   campo: {
     minHeight: toque.minimo,
     borderWidth: 1,
-    borderRadius: radius.lg,
+    borderRadius: radius.sm,
     paddingHorizontal: space.md,
     fontSize: 17,
   },
-  grade: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
 });

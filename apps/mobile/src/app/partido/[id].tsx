@@ -5,12 +5,12 @@ import { mensagemDeErro } from '../../api/erros';
 import type { PerfilPartido } from '../../api/tipos';
 import { capitalizar, plural, reais } from '../../comum/formato';
 import { Alternar } from '../../components/Alternar';
-import { BotaoVoltar } from '../../components/BotaoVoltar';
+import { BarraVoltar } from '../../components/BotaoVoltar';
 import { Carregando, Falha } from '../../components/Estado';
 import { Dado, LinkTexto, Secao } from '../../components/Secao';
 import { nomeEsfera, nomeFonteRepasse } from '../../feed/rotulos';
 import { PerfilComLinhaDoTempo } from '../../perfis/LinhaDoTempo';
-import { rules, space, typography } from '../../theme/tokens';
+import { radius, rules, space, typography } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
 
 /** Perfil de partido: história, parlamentares em exercício, repasses e a linha do tempo. */
@@ -43,26 +43,36 @@ function Cabecalho({ p }: { p: PerfilPartido }) {
 
   return (
     <View style={styles.cabecalho}>
-      <BotaoVoltar />
-      <View style={[styles.titulo, { borderBottomColor: theme.ink }]}>
-        <Text style={[typography.overline, { color: theme.ink2 }]}>Partido · nº {p.numero}</Text>
-        <Text role="heading" style={[typography.display, { color: theme.ink }]}>
-          {p.sigla}
-        </Text>
-        {p.nome ? <Text style={[typography.body, { color: theme.ink }]}>{capitalizar(p.nome)}</Text> : null}
-        {periodo ? (
-          <Text style={[typography.data, { color: theme.ink2 }]}>Registros no TSE: {periodo}</Text>
-        ) : null}
-      </View>
-      <Alternar
-        rotulo="Seguir"
-        rotuloMarcado="Seguindo"
-        descricao={`Seguir o partido ${p.sigla}`}
-        marcado={segue}
-        aoAlternar={() =>
-          seguir.mutate({ alvo: { tipo: 'partido', id: p.id }, seguir: !segue, nome: p.sigla, detalhe: p.nome })
+      <BarraVoltar
+        acao={
+          <Alternar
+            rotulo="Seguir"
+            rotuloMarcado="Seguindo"
+            descricao={`Seguir o partido ${p.sigla}`}
+            marcado={segue}
+            aoAlternar={() =>
+              seguir.mutate({ alvo: { tipo: 'partido', id: p.id }, seguir: !segue, nome: p.sigla, detalhe: p.nome })
+            }
+          />
         }
       />
+      <View style={styles.identidade}>
+        <View style={[styles.sigla, { backgroundColor: theme.voteBox, borderColor: theme.line }]} aria-hidden>
+          <Text style={[typography.dia, { color: theme.ink }]} numberOfLines={1} adjustsFontSizeToFit>
+            {p.sigla}
+          </Text>
+        </View>
+        <View style={styles.titulo}>
+          <Text style={[typography.tipo, { color: theme.accent }]}>Partido · nº {p.numero}</Text>
+          <Text role="heading" style={[typography.display, { color: theme.ink }]}>
+            {p.sigla}
+          </Text>
+        </View>
+      </View>
+      {p.nome ? <Text style={[typography.body, { color: theme.ink }]}>{capitalizar(p.nome)}</Text> : null}
+      {periodo ? (
+        <Text style={[typography.caption, { color: theme.ink2 }]}>Registros no TSE: {periodo}</Text>
+      ) : null}
       {seguir.isError ? (
         <Text style={[typography.body, { color: theme.error }]} aria-live="assertive">
           {mensagemDeErro(seguir.error)}
@@ -93,7 +103,7 @@ function Cabecalho({ p }: { p: PerfilPartido }) {
       {p.emExercicio.length ? (
         <Secao titulo={`No Congresso hoje · ${p.emExercicio.length}`}>
           {[...senado, ...camara].map((e) => (
-            <View key={e.id} style={[styles.parlamentar, { borderBottomColor: theme.rule }]}>
+            <View key={e.id} style={[styles.parlamentar, { borderBottomColor: theme.line }]}>
               <LinkTexto
                 rotulo={e.nome}
                 estilo="bodyStrong"
@@ -127,7 +137,9 @@ function Cabecalho({ p }: { p: PerfilPartido }) {
 
 const styles = StyleSheet.create({
   cabecalho: { gap: space.lg },
-  titulo: { gap: space.xxs, paddingHorizontal: space.xs },
+  identidade: { flexDirection: 'row', alignItems: 'center', gap: space.lg },
+  sigla: { width: 64, height: 64, borderRadius: radius.md, borderWidth: 1, alignItems: 'center', justifyContent: 'center', padding: space.xs },
+  titulo: { flex: 1, gap: space.xs },
   linha: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: space.sm },
   parlamentar: { paddingBottom: space.xs, borderBottomWidth: rules.hairline },
 });

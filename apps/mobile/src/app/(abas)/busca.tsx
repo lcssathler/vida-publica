@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
   campo: {
     minHeight: toque.minimo,
     borderWidth: 1,
-    borderRadius: radius.lg,
+    borderRadius: radius.sm,
     paddingHorizontal: space.md,
   },
   resultados: { gap: space.xl },

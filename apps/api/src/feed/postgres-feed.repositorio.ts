@@ -201,7 +201,11 @@ export class PostgresFeedRepositorio extends FeedRepositorio {
         nome: a.nome ?? a.alvo_id,
         seguindo: a.seguindo,
         ...(a.alvo_tipo === 'pessoa'
-          ? { foto: a.foto_url ? { url: a.foto_url, credito: a.foto_credito ?? '' } : null }
+          ? {
+              foto: a.foto_url
+                ? { url: a.foto_url, credito: a.foto_credito ?? '' }
+                : null,
+            }
           : {}),
       });
       porEvento.set(a.evento_id, lista);

@@ -116,13 +116,14 @@ export function Alternar({
       ) : tipo === 'seguir' && papel === 'checkbox' ? (
         <Icone nome="plus" tamanho={14} cor={cores.texto} />
       ) : null}
-      <Text style={[typography.label, { color: cores.texto }]}>{texto}</Text>
+      <Text style={[typography.label, { color: cores.texto, flexShrink: 1 }]}>{texto}</Text>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   alternar: {
+    maxWidth: '100%',
     alignSelf: 'flex-start',
     flexDirection: 'row',
     gap: space.xs + 2,

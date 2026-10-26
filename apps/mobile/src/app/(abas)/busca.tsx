@@ -32,6 +32,7 @@ export default function Busca() {
   const termo = useAtrasado(texto);
   const busca = useBusca(termo, grupo);
   const buscando = termo.trim().length >= 2;
+  const atualizando = texto.trim() !== termo.trim() || busca.isFetching;
 
   return (
     <Tela comBarra titulo="Busca" descricao="Pessoas, partidos, propostas e assuntos. Sem acento também acha.">
@@ -58,6 +59,11 @@ export default function Busca() {
         <Text style={[typography.caption, { color: theme.ink2 }]}>Digite ao menos 2 letras.</Text>
       ) : null}
 
+      {buscando && atualizando ? (
+        <Text style={[typography.caption, { color: theme.ink2 }]} aria-live="polite">
+          Atualizando resultados…
+        </Text>
+      ) : null}
       {!buscando ? (
         <Explorar />
       ) : busca.isError ? (
@@ -97,7 +103,8 @@ function Resultados({
   return (
     <View style={styles.resultados}>
       <Text style={[typography.caption, { color: theme.ink2 }]} aria-live="polite">
-        {plural(total, 'resultado', 'resultados')}
+        {plural(total, 'resultado exibido', 'resultados exibidos')}
+        {` para “${r.q}”`}
         {grupo ? ` em ${NOME_GRUPO[grupo].toLowerCase()}` : ''}
       </Text>
       {grupo ? <Botao variante="texto" rotulo="Voltar a todos os grupos" aoTocar={() => aoEscolherGrupo(null)} estilo={styles.verMais} /> : null}

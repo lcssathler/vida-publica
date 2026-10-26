@@ -14,6 +14,7 @@ export interface BotaoProps {
   descricao?: string;
   /** Descrição extra lida pelo leitor de tela (o que acontece ao tocar). */
   dica?: string;
+  expandido?: boolean;
   /** Ícone antes do rótulo. */
   icone?: NomeIcone;
   /** Ícone depois do rótulo (ex.: seta para fora numa fonte oficial). */
@@ -29,6 +30,7 @@ export function Botao({
   ocupado,
   descricao,
   dica,
+  expandido,
   icone,
   iconeFinal,
   estilo,
@@ -48,6 +50,7 @@ export function Botao({
       accessibilityHint={dica}
       aria-disabled={!!inativo}
       aria-busy={!!ocupado}
+      aria-expanded={expandido}
       disabled={inativo}
       onPress={aoTocar}
       style={({ pressed }) => [
@@ -74,14 +77,16 @@ const styles = StyleSheet.create({
   botao: {
     minHeight: toque.minimo + 4,
     minWidth: toque.minimo,
+    maxWidth: '100%',
     paddingHorizontal: space.xl,
+    paddingVertical: space.sm,
     borderWidth: 1,
     borderRadius: radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },
   conteudo: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
-  rotulo: { fontSize: 15 },
+  rotulo: { fontSize: 15, flexShrink: 1 },
   texto: { paddingHorizontal: space.sm, minHeight: toque.minimo },
   apertado: { opacity: 0.85, transform: [{ scale: 0.98 }] },
   apagado: { opacity: 0.5 },

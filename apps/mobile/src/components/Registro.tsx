@@ -55,7 +55,9 @@ export function Registro(props: RegistroProps) {
   const { tipo, etiqueta, icone, projeto, hora, manchete, contexto, pessoa, fatos, fonte } = props;
   const { protocolo, coletadoEm, novo, aoTocar } = props;
   const theme = useTheme();
-  const empilhado = useWindowDimensions().fontScale > 1.3;
+  const { width, fontScale } = useWindowDimensions();
+  const empilhado = fontScale > 1.3;
+  const fatosEmpilhados = empilhado || width < 360 || fatos?.some((f) => f.valor.length > 12);
   const cartao = !pessoa;
   const frase = [novo ? 'Novo' : null, tipo, manchete, contexto, `Fonte: ${fonte.nome}`]
     .filter((parte): parte is string => Boolean(parte))
@@ -91,7 +93,7 @@ export function Registro(props: RegistroProps) {
         </View>
       ) : null}
 
-      <Text style={[cartao ? typography.headline : typography.title, styles.manchete, { color: theme.ink }]}>
+      <Text style={[cartao ? typography.postHeadline : typography.title, styles.manchete, { color: theme.ink }]}>
         {manchete}
       </Text>
       {contexto ? (
@@ -101,17 +103,16 @@ export function Registro(props: RegistroProps) {
       ) : null}
 
       {fatos?.length ? (
-        <View style={[styles.fatos, { backgroundColor: theme.voteBox }]}>
+        <View style={[styles.fatos, fatosEmpilhados && styles.fatosEmpilhados, { backgroundColor: theme.voteBox }]}>
           {fatos.map((f, i) => (
-            <View key={f.rotulo} style={[styles.fato, i > 0 && { borderLeftWidth: 1, borderLeftColor: theme.rule }]}>
+            <View key={f.rotulo} style={[styles.fato, i > 0 && (fatosEmpilhados
+              ? { borderTopWidth: 1, borderTopColor: theme.rule, paddingTop: space.md }
+              : { borderLeftWidth: 1, borderLeftColor: theme.rule })]}>
               <Text style={[typography.caption, { color: theme.ink2 }]}>{f.rotulo}</Text>
               <View style={styles.valor}>
                 <Icone nome={f.icone ?? ICONE_SENTIDO[f.sentido]} tamanho={20} cor={corSentido[f.sentido]} />
                 <Text
                   style={[typography.dataLarge, { color: corSentido[f.sentido] }]}
-                  numberOfLines={1}
-                  adjustsFontSizeToFit
-                  minimumFontScale={0.6}
                 >
                   {f.valor}
                 </Text>
@@ -124,9 +125,9 @@ export function Registro(props: RegistroProps) {
       <View style={[styles.rodape, { borderTopColor: theme.line }]}>
         <View style={styles.fonte}>
           <CarimboFonte {...fonte} />
-          <Text style={[typography.dataSmall, { color: theme.ink3 }]}>
+          {!aoTocar ? <Text style={[typography.dataSmall, { color: theme.ink3 }]}>
             coletado {coletadoEm.split('-').reverse().join('/')} · Nº {protocolo}
-          </Text>
+          </Text> : null}
         </View>
         {aoTocar ? <Icone nome="arrow-up-right" tamanho={18} cor={theme.ink3} /> : null}
       </View>
@@ -189,8 +190,9 @@ const styles = StyleSheet.create({
     borderRadius: radius.voto,
     minHeight: 83,
   },
+  fatosEmpilhados: { flexDirection: 'column', gap: space.md },
   fato: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: space.xs + 3, paddingHorizontal: space.sm },
-  valor: { flexDirection: 'row', alignItems: 'center', gap: space.xs + 2, maxWidth: '100%' },
+  valor: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: space.xs + 2, maxWidth: '100%' },
   rodape: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   FILTROS_PADRAO,
@@ -11,7 +11,6 @@ import {
   type FiltrosFeed,
 } from '../api/consultas';
 import { mensagemDeErro } from '../api/erros';
-import { AbaTexto, FaixaDeAbas } from '../components/AbaTexto';
 import { Alternar } from '../components/Alternar';
 import { Botao } from '../components/Botao';
 import { Carregando, Falha, Vazio } from '../components/Estado';
@@ -20,10 +19,13 @@ import { CabecalhoDeDia, VoceParouAqui } from '../components/Marcos';
 import { categoriasDoLink } from '../notificacoes/link';
 import { AvisoSemConexao } from '../offline/AvisoSemConexao';
 import { useSessao } from '../sessao/Sessao';
-import { barra, radius, recuo, space, toque, typography } from '../theme/tokens';
+import { radius, recuo, space, toque, typography } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
 import { montarLinhas, type Linha } from './linhas';
 import { RegistroDoEvento } from './RegistroDoEvento';
+import { Detalhes } from '../components/Detalhes';
+import { dataCurta } from '../comum/formato';
+import { fonteDaUrl } from './rotulos';
 import { CATEGORIAS, NOMES_CATEGORIAS, type Categoria } from './rotulos';
 
 /** Assuntos oferecidos no filtro: os seguidos e os de mais propostas. */
@@ -110,6 +112,16 @@ export function TelaFeed({ escopo }: { escopo: FiltrosFeed['escopo'] }) {
   const quantosFiltros = filtros.categorias.length + filtros.assuntos.length;
   const quantosAssuntos = filtros.assuntos.length;
   const naoSegueNada = seguindo.data?.length === 0;
+  const coletas = useMemo(() => {
+    const porFonte = new Map<string, string>();
+    for (const evento of eventos) {
+      const nome = fonteDaUrl(evento.fonte.url).nome;
+      const data = evento.fonte.coletadoEm;
+      const anterior = porFonte.get(nome);
+      if (Number.isFinite(Date.parse(data)) && (!anterior || Date.parse(data) > Date.parse(anterior))) porFonte.set(nome, data);
+    }
+    return [...porFonte].sort(([a], [b]) => a.localeCompare(b, 'pt-BR'));
+  }, [eventos]);
 
   const cabecalho = (
     <View style={styles.cabecalho}>
@@ -141,25 +153,24 @@ export function TelaFeed({ escopo }: { escopo: FiltrosFeed['escopo'] }) {
         </Pressable>
       </View>
 
-      {/* Tipo de registro: abas de texto sublinhadas (dá para marcar mais de uma). */}
-      <FaixaDeAbas rotulo="Tipo de registro" recuoPai={0}>
-        <AbaTexto
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} aria-label="Tipos de registro: selecione um ou mais" contentContainerStyle={styles.tipos}>
+        <Alternar
           papel="checkbox"
           rotulo="Tudo"
           descricao="Todos os tipos"
-          marcada={filtros.categorias.length === 0}
-          aoTocar={() => setFiltros((f) => ({ ...f, categorias: [] }))}
+          marcado={filtros.categorias.length === 0}
+          aoAlternar={() => setFiltros((f) => ({ ...f, categorias: [] }))}
         />
         {NOMES_CATEGORIAS.map((c: Categoria) => (
-          <AbaTexto
+          <Alternar
             key={c}
             papel="checkbox"
             rotulo={CATEGORIAS[c].nome}
-            marcada={filtros.categorias.includes(c)}
-            aoTocar={() => setFiltros((f) => ({ ...f, categorias: alternar(f.categorias, c) }))}
+            marcado={filtros.categorias.includes(c)}
+            aoAlternar={() => setFiltros((f) => ({ ...f, categorias: alternar(f.categorias, c) }))}
           />
         ))}
-      </FaixaDeAbas>
+      </ScrollView>
 
       <View style={styles.recuado}>
         <AvisoSemConexao atualizadoEm={feed.dataUpdatedAt || undefined} />
@@ -170,6 +181,22 @@ export function TelaFeed({ escopo }: { escopo: FiltrosFeed['escopo'] }) {
           {escopo === 'seguindo' ? 'Perfis que você segue' : 'Tudo o que foi registrado'}
         </Text>
       </View>
+      {coletas.length ? (
+        <View style={styles.recuado}>
+          <Detalhes titulo="Sobre os dados exibidos">
+            <Text style={[typography.caption, { color: theme.ink2 }]}>Coleta mais recente entre os registros desta lista, por fonte. Estas datas não indicam a última sincronização completa das fontes.</Text>
+            {coletas.map(([nome, data]) => (
+              <Text key={nome} style={[typography.caption, { color: theme.ink2 }]}>{nome}: {dataCurta(data)}</Text>
+            ))}
+          </Detalhes>
+        </View>
+      ) : null}
+      {quantosFiltros ? (
+        <View style={[styles.resumoFiltros, styles.recuado]}>
+          <Text style={[typography.caption, { color: theme.ink2 }]}>{quantosFiltros} {quantosFiltros === 1 ? 'filtro ativo' : 'filtros ativos'}</Text>
+          <Botao variante="texto" rotulo="Limpar filtros" aoTocar={() => setFiltros({ ...FILTROS_PADRAO, escopo })} />
+        </View>
+      ) : null}
 
       {abertos ? (
         <View style={[styles.filtros, { backgroundColor: theme.surface, boxShadow: theme.shadowCard }]}>
@@ -193,14 +220,6 @@ export function TelaFeed({ escopo }: { escopo: FiltrosFeed['escopo'] }) {
           ) : (
             <Text style={[typography.body, { color: theme.ink2 }]}>Nenhum assunto para filtrar ainda.</Text>
           )}
-          {quantosFiltros ? (
-            <Botao
-              variante="secundario"
-              rotulo="Limpar filtros"
-              aoTocar={() => setFiltros((f) => ({ ...FILTROS_PADRAO, escopo: f.escopo }))}
-              estilo={styles.limpar}
-            />
-          ) : null}
         </View>
       ) : null}
     </View>
@@ -298,7 +317,9 @@ export function TelaFeed({ escopo }: { escopo: FiltrosFeed['escopo'] }) {
 
 const styles = StyleSheet.create({
   tela: { flex: 1 },
-  conteudo: { paddingBottom: barra.reserva },
+  conteudo: { paddingBottom: space.lg },
+  tipos: { paddingHorizontal: recuo, gap: space.sm },
+  resumoFiltros: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' },
   cabecalho: { gap: space.sm, paddingBottom: space.xs },
   recuado: { paddingHorizontal: recuo },
   barraTopo: { flexDirection: 'row', alignItems: 'center', minHeight: 64, paddingLeft: recuo, paddingRight: space.sm },
@@ -319,7 +340,6 @@ const styles = StyleSheet.create({
   pontoContexto: { width: 5, height: 5, borderRadius: radius.pill },
   filtros: { gap: space.sm, padding: space.lg, borderRadius: radius.md, marginHorizontal: recuo, marginTop: space.xs },
   grade: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
-  limpar: { alignSelf: 'flex-start' },
   vazio: { alignItems: 'center', gap: space.md },
   rodape: { alignItems: 'center', gap: space.sm, paddingVertical: space.xl },
 });

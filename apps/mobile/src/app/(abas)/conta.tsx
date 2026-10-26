@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { useEffect, useState, type ReactNode } from 'react';
-import { Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { Linking, Platform, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useConta, useSalvarPreferencias } from '../../api/consultas';
 import { ErroApi, mensagemDeErro } from '../../api/erros';
 import { FUSOS, UFS, type Preferencias, type Uf } from '../../api/tipos';
@@ -109,7 +109,7 @@ function SecaoConta({ anonima, identidades, criadaEm }: { anonima: boolean; iden
   };
 
   return (
-    <Secao titulo="Sua conta">
+    <Secao titulo="Sua conta" espacada>
       <Text style={[typography.body, { color: theme.ink }]}>
         {anonima
           ? 'Conta anônima deste aparelho: sem nome, sem e-mail.'
@@ -154,9 +154,10 @@ const TEMAS: { valor: PreferenciaDeTema; rotulo: string; icone: NomeIcone }[] = 
 function SecaoAparencia() {
   const theme = useTheme();
   const { local, atualizarLocal } = useSessao();
+  const { width, fontScale } = useWindowDimensions();
   return (
     <Secao titulo="Aparência" solto>
-      <View style={[styles.segmento, { backgroundColor: theme.postGap }]} role="radiogroup" aria-label="Tema">
+      <View style={[styles.segmento, fontScale > 1.3 && styles.temasEmpilhados, { backgroundColor: theme.postGap }]} role="radiogroup" aria-label="Tema">
         {TEMAS.map((t) => {
           const marcado = local.tema === t.valor;
           return (
@@ -166,10 +167,10 @@ function SecaoAparencia() {
               aria-label={`Tema ${t.rotulo.toLowerCase()}`}
               aria-checked={marcado}
               onPress={() => atualizarLocal({ tema: t.valor })}
-              style={[styles.opcaoTema, marcado && { backgroundColor: theme.surface, borderColor: theme.rule }]}
+              style={[styles.opcaoTema, fontScale > 1.3 && styles.temaAmpliado, width < 360 && fontScale <= 1.3 && styles.temaCompacto, marcado && { backgroundColor: theme.surface, borderColor: theme.rule }]}
             >
               <Icone nome={t.icone} tamanho={15} cor={marcado ? theme.ink : theme.ink2} />
-              <Text style={[typography.label, { color: marcado ? theme.ink : theme.ink2 }]}>{t.rotulo}</Text>
+              <Text style={[typography.label, { color: marcado ? theme.ink : theme.ink2, flexShrink: 1 }]}>{t.rotulo}</Text>
             </Pressable>
           );
         })}
@@ -183,35 +184,45 @@ function SecaoAparencia() {
 
 function SecaoPreferencias({ p }: { p: Preferencias }) {
   const theme = useTheme();
-  const { atualizarLocal, cliente } = useSessao();
+  const { cliente } = useSessao();
   const salvar = useSalvarPreferencias();
   const [abrirEstados, setAbrirEstados] = useState(false);
   const [abrirFusos, setAbrirFusos] = useState(false);
   const [semPermissao, setSemPermissao] = useState(false);
+  const [pedindoPermissao, setPedindoPermissao] = useState(false);
+  const gravando = useRef(false);
+  const bloqueado = salvar.isPending || pedindoPermissao;
 
-  const mudar = (m: Partial<Preferencias>) => salvar.mutate(m);
+  const mudar = (m: Partial<Preferencias>, depois?: () => void) => {
+    if (gravando.current) return;
+    gravando.current = true;
+    salvar.mutate(m, {
+      onSuccess: depois,
+      onSettled: () => { gravando.current = false; },
+    });
+  };
 
   const alternarNotificacoes = async () => {
+    if (salvar.isPending || pedindoPermissao) return;
     setSemPermissao(false);
     if (p.notificacoes) {
       // Desligar para o envio (a API deixa de enfileirar) e apaga o token.
-      mudar({ notificacoes: false });
-      atualizarLocal({ avisos: false });
-      void esquecerAparelho(cliente).catch(() => {});
+      mudar({ notificacoes: false }, () => { void esquecerAparelho(cliente).catch(() => {}); });
       return;
     }
+    setPedindoPermissao(true);
     const permitido = await pedirPermissaoDoSistema().catch(() => false);
+    setPedindoPermissao(false);
     if (!permitido) return setSemPermissao(true);
     mudar({ notificacoes: true });
-    atualizarLocal({ avisos: true });
   };
 
   return (
     <>
-      <Secao titulo="Estado">
-        <View style={styles.linhaEntre}>
+      <Secao titulo="Estado" espacada>
+        <View style={styles.seletor}>
           <Text style={[typography.body, { color: theme.ink }]}>{p.uf ? NOME_ESTADO[p.uf] : 'Não escolhido'}</Text>
-          <Botao variante="texto" rotulo={abrirEstados ? 'Fechar' : 'Mudar estado'} aoTocar={() => setAbrirEstados((a) => !a)} />
+          <Botao variante="secundario" rotulo={abrirEstados ? 'Fechar estados' : 'Mudar estado'} expandido={abrirEstados} desabilitado={bloqueado} aoTocar={() => setAbrirEstados((a) => !a)} />
         </View>
         {abrirEstados ? (
           <View role="radiogroup" aria-label="Estado">
@@ -224,9 +235,9 @@ function SecaoPreferencias({ p }: { p: Preferencias }) {
                   aparencia="linha"
                   rotulo={NOME_ESTADO[uf]}
                   marcado={p.uf === uf}
+                  desabilitado={bloqueado}
                   aoAlternar={() => {
                     mudar({ uf });
-                    atualizarLocal({ uf });
                     setAbrirEstados(false);
                   }}
                 />
@@ -234,10 +245,20 @@ function SecaoPreferencias({ p }: { p: Preferencias }) {
           </View>
         ) : null}
       </Secao>
+      {salvar.isPending || pedindoPermissao ? (
+        <Text style={[typography.caption, { color: theme.ink2 }]} aria-live="polite">Salvando preferências…</Text>
+      ) : salvar.isSuccess ? (
+        <Text style={[typography.caption, { color: theme.ink2 }]} aria-live="polite">Preferências salvas.</Text>
+      ) : null}
+      {salvar.isError ? (
+        <Text style={[typography.body, { color: theme.error }]} aria-live="assertive">
+          {mensagemDeErro(salvar.error)}
+        </Text>
+      ) : null}
 
-      <Secao titulo="Avisos">
+      <Secao titulo="Avisos" espacada>
         <Linha rotulo="Avisos do que você segue" detalhe="Votos, pauta, propostas e campanha">
-          <Alternar papel="switch" rotulo="Desligados" rotuloMarcado="Ligados" descricao="Avisos do que você segue" marcado={p.notificacoes} aoAlternar={() => void alternarNotificacoes()} />
+          <Alternar papel="switch" rotulo="Desligados" rotuloMarcado="Ligados" descricao="Avisos do que você segue" marcado={p.notificacoes} desabilitado={bloqueado} aoAlternar={() => void alternarNotificacoes()} />
         </Linha>
         {semPermissao ? (
           <View style={styles.linha} aria-live="polite">
@@ -248,16 +269,18 @@ function SecaoPreferencias({ p }: { p: Preferencias }) {
           </View>
         ) : null}
         <Linha rotulo="Resumo semanal" detalhe="Dinheiro e despesas da semana">
-          <Alternar papel="switch" rotulo="Desligado" rotuloMarcado="Ligado" descricao="Resumo semanal" marcado={p.resumoSemanal} aoAlternar={() => mudar({ resumoSemanal: !p.resumoSemanal })} />
+          <Alternar papel="switch" rotulo="Desligado" rotuloMarcado="Ligado" descricao="Resumo semanal" marcado={p.resumoSemanal} desabilitado={bloqueado} aoAlternar={() => mudar({ resumoSemanal: !p.resumoSemanal })} />
         </Linha>
         <Ajuste
           rotulo="Máximo por dia"
+          desabilitado={bloqueado}
           valor={String(p.maxPorDia)}
           aoDiminuir={p.maxPorDia > 1 ? () => mudar({ maxPorDia: p.maxPorDia - 1 }) : undefined}
           aoAumentar={p.maxPorDia < 20 ? () => mudar({ maxPorDia: p.maxPorDia + 1 }) : undefined}
         />
         <Ajuste
           rotulo="Silêncio a partir de"
+          desabilitado={bloqueado}
           valor={p.silencioInicio}
           passo="1 hora"
           aoDiminuir={() => mudar({ silencioInicio: somarHora(p.silencioInicio, -1) })}
@@ -265,19 +288,20 @@ function SecaoPreferencias({ p }: { p: Preferencias }) {
         />
         <Ajuste
           rotulo="Silêncio até"
+          desabilitado={bloqueado}
           valor={p.silencioFim}
           passo="1 hora"
           aoDiminuir={() => mudar({ silencioFim: somarHora(p.silencioFim, -1) })}
           aoAumentar={() => mudar({ silencioFim: somarHora(p.silencioFim, 1) })}
         />
-        <View style={styles.linhaEntre}>
-          <View style={styles.flex}>
+        <View style={styles.seletor}>
+          <View style={styles.textos}>
             <Text style={[typography.body, { color: theme.ink }]}>Fuso</Text>
             <Text style={[typography.caption, { color: theme.ink2 }]}>
               {NOME_FUSO[p.fuso as (typeof FUSOS)[number]] ?? p.fuso}
             </Text>
           </View>
-          <Botao variante="texto" rotulo={abrirFusos ? 'Fechar' : 'Mudar fuso'} aoTocar={() => setAbrirFusos((a) => !a)} />
+          <Botao variante="secundario" rotulo={abrirFusos ? 'Fechar fusos' : 'Mudar fuso'} expandido={abrirFusos} desabilitado={bloqueado} aoTocar={() => setAbrirFusos((a) => !a)} />
         </View>
         {abrirFusos ? (
           <View role="radiogroup" aria-label="Fuso">
@@ -288,6 +312,7 @@ function SecaoPreferencias({ p }: { p: Preferencias }) {
                 aparencia="linha"
                 rotulo={NOME_FUSO[f]}
                 marcado={p.fuso === f}
+                desabilitado={bloqueado}
                 aoAlternar={() => {
                   mudar({ fuso: f });
                   setAbrirFusos(false);
@@ -295,11 +320,6 @@ function SecaoPreferencias({ p }: { p: Preferencias }) {
               />
             ))}
           </View>
-        ) : null}
-        {salvar.isError ? (
-          <Text style={[typography.body, { color: theme.error }]} aria-live="assertive">
-            {mensagemDeErro(salvar.error)}
-          </Text>
         ) : null}
       </Secao>
     </>
@@ -311,7 +331,7 @@ function SecaoCorrecoes() {
   const theme = useTheme();
   const router = useRouter();
   return (
-    <Secao titulo="Correções">
+    <Secao titulo="Correções" espacada>
       <Text style={[typography.body, { color: theme.ink2 }]}>
         Achou um erro num registro? Use “Reportar erro” no próprio registro. As correções
         publicadas ficam nas erratas.
@@ -353,7 +373,7 @@ function SecaoPrivacidade({ anonima }: { anonima: boolean }) {
   };
 
   return (
-    <Secao titulo="Privacidade">
+    <Secao titulo="Privacidade" espacada>
       <Botao
         variante="secundario"
         rotulo="Refazer o início"
@@ -404,9 +424,10 @@ function SecaoPrivacidade({ anonima }: { anonima: boolean }) {
 
 function Linha({ rotulo, detalhe, children }: { rotulo: string; detalhe?: string; children: ReactNode }) {
   const theme = useTheme();
+  const { width, fontScale } = useWindowDimensions();
   return (
-    <View style={styles.linhaEntre}>
-      <View style={styles.flex}>
+    <View style={[styles.linhaEntre, { borderBottomColor: theme.line }, (width < 400 || fontScale > 1.3) && styles.linhaEmpilhada]}>
+      <View style={[styles.flex, (width < 400 || fontScale > 1.3) && styles.textoEmpilhado]}>
         <Text style={[typography.body, { color: theme.ink }]}>{rotulo}</Text>
         {detalhe ? <Text style={[typography.caption, { color: theme.ink2 }]}>{detalhe}</Text> : null}
       </View>
@@ -420,12 +441,14 @@ function Ajuste({
   rotulo,
   valor,
   passo = '1',
+  desabilitado,
   aoDiminuir,
   aoAumentar,
 }: {
   rotulo: string;
   valor: string;
   passo?: string;
+  desabilitado?: boolean;
   aoDiminuir?: () => void;
   aoAumentar?: () => void;
 }) {
@@ -433,11 +456,11 @@ function Ajuste({
   return (
     <Linha rotulo={rotulo}>
       <View style={styles.ajuste}>
-        <Botao variante="secundario" rotulo="−" descricao={`Diminuir ${rotulo.toLowerCase()}`} dica={`Menos ${passo}`} desabilitado={!aoDiminuir} aoTocar={() => aoDiminuir?.()} />
+        <Botao variante="secundario" rotulo="−" descricao={`Diminuir ${rotulo.toLowerCase()}`} dica={`Valor atual: ${valor}. Menos ${passo}`} desabilitado={desabilitado || !aoDiminuir} aoTocar={() => aoDiminuir?.()} estilo={styles.botaoAjuste} />
         <Text style={[typography.data, styles.valor, { color: theme.ink }]} aria-live="polite" aria-label={`${rotulo}: ${valor}`}>
           {valor}
         </Text>
-        <Botao variante="secundario" rotulo="+" descricao={`Aumentar ${rotulo.toLowerCase()}`} dica={`Mais ${passo}`} desabilitado={!aoAumentar} aoTocar={() => aoAumentar?.()} />
+        <Botao variante="secundario" rotulo="+" descricao={`Aumentar ${rotulo.toLowerCase()}`} dica={`Valor atual: ${valor}. Mais ${passo}`} desabilitado={desabilitado || !aoAumentar} aoTocar={() => aoAumentar?.()} estilo={styles.botaoAjuste} />
       </View>
     </Linha>
   );
@@ -445,12 +468,20 @@ function Ajuste({
 
 const styles = StyleSheet.create({
   linha: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: space.sm },
-  linhaEntre: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md, minHeight: toque.minimo },
+  linhaEntre: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md, minHeight: toque.minimo, paddingBottom: space.md, borderBottomWidth: 1 },
+  linhaEmpilhada: { flexDirection: 'column', alignItems: 'stretch' },
   flex: { flex: 1 },
-  ajuste: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
-  valor: { minWidth: 48, textAlign: 'center' },
-  inicio: { alignSelf: 'flex-start' },
+  textoEmpilhado: { flex: 0, gap: space.xs },
+  textos: { gap: space.xs },
+  seletor: { gap: space.md, alignItems: 'stretch' },
+  ajuste: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.sm },
+  botaoAjuste: { paddingHorizontal: space.md },
+  valor: { minWidth: 48, textAlign: 'center', flexShrink: 1 },
+  inicio: { alignSelf: 'stretch' },
   segmento: { flexDirection: 'row', gap: space.xs, padding: space.xs, borderRadius: radius.sm },
+  temasEmpilhados: { flexDirection: 'column' },
+  temaAmpliado: { flex: 0, paddingVertical: space.sm },
+  temaCompacto: { flexDirection: 'column', paddingVertical: space.sm },
   opcaoTema: {
     flex: 1,
     flexDirection: 'row',

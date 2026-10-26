@@ -6,6 +6,8 @@ import { mensagemDeErro } from '../../api/erros';
 import type { Uf } from '../../api/tipos';
 import { Alternar } from '../../components/Alternar';
 import { Botao } from '../../components/Botao';
+import { CampoBusca } from '../../components/CampoBusca';
+import { correspondeBusca } from '../../comum/busca';
 import { Bloco } from '../../components/Secao';
 import { Tela } from '../../components/Tela';
 import { ESTADOS_POR_NOME, NOME_ESTADO, digitosCep, estadoDoCep, formatarCep } from '../../onboarding/estados';
@@ -24,6 +26,8 @@ export default function EscolherEstado() {
   const salvar = useSalvarPreferencias();
   const [uf, setUf] = useState<Uf | null>(local.uf);
   const [cep, setCep] = useState('');
+  const [busca, setBusca] = useState('');
+  const estados = ESTADOS_POR_NOME.filter((sigla) => correspondeBusca(`${NOME_ESTADO[sigla]} ${sigla}`, busca));
 
   const doCep = estadoDoCep(cep);
   const cepCompleto = digitosCep(cep).length === 8;
@@ -88,9 +92,11 @@ export default function EscolherEstado() {
         <Text role="heading" style={[typography.tipo, { color: theme.accent }]}>
           Ou escolha o estado
         </Text>
+        <CampoBusca valor={busca} aoMudar={setBusca} rotulo="Buscar estado" placeholder="Nome do estado ou sigla" />
+        {estados.length === 0 ? <Text style={[typography.body, { color: theme.ink2 }]}>Nenhum estado encontrado. Tente o nome ou a sigla.</Text> : null}
         <Bloco>
           <View role="radiogroup">
-            {ESTADOS_POR_NOME.map((sigla) => (
+            {estados.map((sigla) => (
               <Alternar
                 key={sigla}
                 rotulo={NOME_ESTADO[sigla]}

@@ -6,12 +6,12 @@ import type { AlvoTipo } from '../../api/tipos';
 import { dataCurta, diaIso, diaPorExtenso, hora } from '../../comum/formato';
 import { Botao } from '../../components/Botao';
 import { CarimboFonte } from '../../components/CarimboFonte';
-import { Carregando, Falha } from '../../components/Estado';
+import { EstadoComVolta } from '../../components/Estado';
 import { FotoOficial } from '../../components/FotoOficial';
 import { Icone } from '../../components/Icone';
 import { LinkTexto, Secao } from '../../components/Secao';
-import { ICONE_TIPO, fatosDoEvento, metaDaPessoa } from '../../feed/RegistroDoEvento';
-import { NOME_TIPO, fonteDaUrl, protocolo } from '../../feed/rotulos';
+import { ICONE_TIPO, fatosDoEvento, metaDaPessoa, tipoDoEvento } from '../../feed/RegistroDoEvento';
+import { fonteDaUrl, protocolo } from '../../feed/rotulos';
 import { rotaDoAlvo } from '../../perfis/rotas';
 import { radius, rules, space, toque, typography } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
@@ -36,9 +36,9 @@ export default function DetalheDoEvento() {
   const evento = useEvento(id);
   const fechar = () => (router.canGoBack() ? router.back() : router.replace('/'));
 
-  if (evento.isPending) return <Carregando rotulo="Carregando o registro" />;
+  if (evento.isPending) return <EstadoComVolta fechar carregando="Carregando o registro" />;
   if (evento.isError) {
-    return <Falha mensagem={mensagemDeErro(evento.error)} aoTentar={() => void evento.refetch()} />;
+    return <EstadoComVolta fechar mensagem={mensagemDeErro(evento.error)} aoTentar={() => void evento.refetch()} />;
   }
 
   const e = evento.data;
@@ -67,7 +67,7 @@ export default function DetalheDoEvento() {
       <View style={styles.topo}>
         <View style={styles.tipo}>
           <Icone nome={ICONE_TIPO[e.tipo]} tamanho={14} cor={theme.accent} />
-          <Text style={[typography.tipo, { color: theme.accent }]}>{NOME_TIPO[e.tipo]}</Text>
+          <Text style={[typography.tipo, { color: theme.accent }]}>{tipoDoEvento(e)}</Text>
           {projeto ? <Text style={[typography.caption, { color: theme.ink3 }]}>· {projeto}</Text> : null}
         </View>
         <Pressable role="button" aria-label="Fechar" onPress={fechar} style={styles.fechar}>

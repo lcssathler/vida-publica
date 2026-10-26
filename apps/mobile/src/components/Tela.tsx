@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AvisoSemConexao } from '../offline/AvisoSemConexao';
-import { barra, fontFamily, recuo, rules, space, typography } from '../theme/tokens';
+import { fontFamily, recuo, rules, space, typography } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
 
 export interface TelaProps {
@@ -43,6 +43,7 @@ export function Tela({
   comBarra,
 }: TelaProps) {
   const theme = useTheme();
+  const { fontScale } = useWindowDimensions();
   const tituloNaBarra = comBarra && !passo;
 
   const barraDoAlto =
@@ -101,15 +102,15 @@ export function Tela({
     </View>
   );
 
-  const reserva = comBarra ? { paddingBottom: barra.reserva } : null;
 
   return (
     <SafeAreaView
       style={[styles.tela, { backgroundColor: theme.background }]}
       edges={comBarra ? ['top', 'left', 'right'] : ['top', 'left', 'right', 'bottom']}
     >
+      <KeyboardAvoidingView style={styles.fixo} enabled={Platform.OS !== 'web'} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       {rolavel ? (
-        <ScrollView contentContainerStyle={[styles.conteudo, reserva]} keyboardShouldPersistTaps="handled">
+        <ScrollView contentContainerStyle={styles.conteudo} keyboardShouldPersistTaps="handled" keyboardDismissMode={Platform.OS === 'ios' ? 'on-drag' : 'none'}>
           {cabecalho}
           {children}
         </ScrollView>
@@ -119,7 +120,8 @@ export function Tela({
           {children}
         </View>
       )}
-      {rodape ? <View style={[styles.rodape, { backgroundColor: theme.background }]}>{rodape}</View> : null}
+      {rodape ? <View style={[styles.rodape, fontScale > 1.3 && styles.rodapeAmpliado, { backgroundColor: theme.background }]}>{rodape}</View> : null}
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -155,4 +157,5 @@ const styles = StyleSheet.create({
     paddingTop: space.md,
     paddingBottom: space.lg,
   },
+  rodapeAmpliado: { flexDirection: 'column', flexWrap: 'nowrap', alignItems: 'stretch' },
 });

@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
 import Busca from '../app/(abas)/busca';
 import ContaTela from '../app/(abas)/conta';
 import Seguindo from '../app/(abas)/seguindo';
@@ -27,6 +27,26 @@ const resultado = {
 };
 
 describe('Busca', () => {
+  it('identifica o termo dos resultados anteriores enquanto aguarda a nova consulta', async () => {
+    let liberar!: (valor: { corpo: typeof resultado }) => void;
+    const resposta = new Promise<{ corpo: typeof resultado }>((resolve) => { liberar = resolve; });
+    await renderizar(<Busca />, {
+      local: { uf: null },
+      rotas: {
+        'GET /seguindo': { corpo: { itens: [] } },
+        'GET /assuntos': { corpo: { itens: [] } },
+        'GET /busca?q=sao': { corpo: { ...resultado, q: 'sao' } },
+        'GET /busca?q=novo': () => resposta,
+      },
+    });
+    await fireEvent.changeText(screen.getByLabelText('Buscar'), 'sao');
+    await screen.findByText('7 resultados exibidos para “sao”');
+    await fireEvent.changeText(screen.getByLabelText('Buscar'), 'novo');
+    expect(await screen.findByText('Atualizando resultados…')).toBeOnTheScreen();
+    expect(screen.getByText('7 resultados exibidos para “sao”')).toBeOnTheScreen();
+    await act(async () => liberar({ corpo: { ...resultado, q: 'novo' } }));
+    expect(await screen.findByText('7 resultados exibidos para “novo”')).toBeOnTheScreen();
+  });
   it('busca sem acento enquanto digita, agrupa e expande um grupo', async () => {
     const { api } = await renderizar(<Busca />, {
       local: { uf: null },
@@ -40,12 +60,12 @@ describe('Busca', () => {
     await fireEvent.changeText(screen.getByLabelText('Buscar'), 's');
     expect(screen.getByText('Digite ao menos 2 letras.')).toBeOnTheScreen();
     await fireEvent.changeText(screen.getByLabelText('Buscar'), 'sao paulo');
-    expect(await screen.findByText('7 resultados')).toBeOnTheScreen();
+    expect(await screen.findByText('7 resultados exibidos para “sao paulo”')).toBeOnTheScreen();
     expect(screen.getByText('Partido Velho · hoje NOVO')).toBeOnTheScreen();
     expect(api.pedidos.filter((p) => p.caminho.startsWith('/busca')).map((p) => p.caminho)).toEqual(['/busca?q=sao%20paulo']);
 
     await fireEvent.press(screen.getByRole('button', { name: 'Ver mais pessoas' }));
-    expect(await screen.findByText('1 resultado em pessoas')).toBeOnTheScreen();
+    expect(await screen.findByText('1 resultado exibido para “sao paulo” em pessoas')).toBeOnTheScreen();
     await fireEvent.press(screen.getByRole('link', { name: 'Pessoa 0' }));
     expect(mockRoteador.push).toHaveBeenCalledWith({ pathname: '/pessoa/[id]', params: { id: 'p0' } });
   });
@@ -90,6 +110,19 @@ describe('Busca', () => {
 });
 
 describe('Seguindo', () => {
+  it('falha ao deixar de seguir restaura o item e não anuncia sucesso', async () => {
+    const item = { tipo: 'pessoa', id: 'p1', nome: 'Maria Exemplo', detalhe: null, desde: '2026-10-01' };
+    await renderizar(<Seguindo />, {
+      rotas: {
+        'GET /seguindo': { corpo: { itens: [item] } },
+        'DELETE /seguindo/pessoa/p1': { status: 422, corpo: { message: 'Não foi possível salvar a escolha' } },
+      },
+    });
+    await fireEvent.press(await screen.findByRole('checkbox', { name: 'Seguir Maria Exemplo' }));
+    expect(await screen.findByText('Não foi possível salvar a escolha')).toBeOnTheScreen();
+    expect(screen.queryByText('Você deixou de seguir Maria Exemplo.')).toBeNull();
+    expect(await screen.findByRole('checkbox', { name: 'Seguir Maria Exemplo' })).toBeChecked();
+  });
   it('agrupa por tipo, deixa de seguir e desfaz', async () => {
     let itens = [
       { tipo: 'pessoa', id: 'p1', nome: 'Maria Exemplo', detalhe: 'Deputada Federal · SP', desde: '2026-10-01' },
@@ -141,6 +174,21 @@ describe('Conta', () => {
     'PATCH /conta/preferencias': (p: { corpo: unknown }) => ({ corpo: { ...preferencias, ...(p.corpo as object) } }),
     'DELETE /conta': { status: 204 },
   };
+
+  it('não muda o estado local quando a API recusa a preferência', async () => {
+    const { local } = await renderizar(<ContaTela />, {
+      local: { uf: 'SP' },
+      rotas: {
+        ...rotas,
+        'PATCH /conta/preferencias': { status: 422, corpo: { message: 'Preferência não salva' } },
+      },
+    });
+    await fireEvent.press(await screen.findByRole('button', { name: 'Mudar estado' }));
+    await fireEvent.press(screen.getByRole('radio', { name: 'Minas Gerais' }));
+    expect(await screen.findByText('Preferência não salva')).toBeOnTheScreen();
+    expect(local().uf).toBe('SP');
+    expect(screen.getByText('São Paulo')).toBeOnTheScreen();
+  });
 
   it('ligar avisos pede a permissão e liga o registro; desligar apaga o token na API', async () => {
     jest.mocked(pedirPermissaoDoSistema).mockResolvedValue(true);

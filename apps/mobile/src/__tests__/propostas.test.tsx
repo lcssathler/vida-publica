@@ -83,7 +83,7 @@ describe('Proposta', () => {
     expect(screen.getByText('Saúde · Educação')).toBeOnTheScreen();
     expect(screen.getByText('Poder Executivo')).toBeOnTheScreen();
     expect(screen.getByLabelText('Placar: Sim 346 · Não 46 · Abstenção 3 · Outros 1')).toBeOnTheScreen();
-    expect(screen.getByText('Aprovada')).toBeOnTheScreen();
+    expect(screen.getByText('Subemenda: aprovada')).toBeOnTheScreen();
     expect(screen.getByText('Votação · PLEN · nominal')).toBeOnTheScreen();
     expect(screen.getByText('PL 1/2026 na pauta do Plenário')).toBeOnTheScreen();
     // A situação aparece só onde mudou: "Pronta para Pauta" uma vez (na etapa mais antiga).

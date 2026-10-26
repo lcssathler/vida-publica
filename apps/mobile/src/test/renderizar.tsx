@@ -4,10 +4,10 @@ import { useCallback, useMemo, useState, type ReactElement, type ReactNode } fro
 import { ClienteApi } from '../api/cliente';
 import { SessaoContexto } from '../sessao/Sessao';
 import { ESTADO_INICIAL, type EstadoLocal } from '../sessao/local';
-import { apiFalsa, cofreEmMemoria, type RespostaFalsa, type PedidoRegistrado } from './apiFalsa';
+import { apiFalsa, cofreEmMemoria, type Rota } from './apiFalsa';
 
 interface Opcoes {
-  rotas?: Record<string, RespostaFalsa | ((p: PedidoRegistrado) => RespostaFalsa)>;
+  rotas?: Record<string, Rota>;
   local?: Partial<EstadoLocal>;
 }
 

@@ -1,10 +1,11 @@
 import { Tabs } from 'expo-router';
 import type { ComponentProps } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icone, type NomeIcone } from '../../components/Icone';
 import { barra, space, toque } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
+import { useTecladoAberto } from '../../comum/useTecladoAberto';
 
 type PropsDaBarra = Parameters<NonNullable<ComponentProps<typeof Tabs>['tabBar']>>[0];
 
@@ -17,19 +18,22 @@ const ICONES: Record<string, NomeIcone> = {
 };
 
 /**
- * Dock flutuante: cápsula com os destinos; o ativo vira uma cápsula clara com
- * o nome, os outros ficam só com o ícone. O nome de cada aba é o que o leitor
- * de tela lê.
+ * Dock flutuante com destinos de largura estável e rótulos sempre visíveis.
  */
 function Dock({ state, descriptors, navigation }: PropsDaBarra) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const { width, fontScale } = useWindowDimensions();
+  const tecladoAberto = useTecladoAberto();
+  const ampliada = fontScale > 1.3;
+  const colunas = fontScale > 2 || width < 360 ? 2 : 3;
+  if (tecladoAberto) return null;
 
   return (
-    <View pointerEvents="box-none" style={[styles.ancora, { bottom: insets.bottom + barra.margemInferior }]}>
+    <View style={[styles.ancora, { paddingBottom: insets.bottom + barra.margemInferior, backgroundColor: theme.background }]}>
       <View
         role="tablist"
-        style={[styles.dock, { backgroundColor: theme.bar, borderColor: theme.barBorder, boxShadow: theme.shadowBar }]}
+        style={[styles.dock, ampliada && styles.dockAmpliado, { backgroundColor: theme.bar, borderColor: theme.barBorder, boxShadow: theme.shadowBar }]}
       >
         {state.routes.map((rota, i) => {
           const ativa = state.index === i;
@@ -47,12 +51,13 @@ function Dock({ state, descriptors, navigation }: PropsDaBarra) {
               onLongPress={() => navigation.emit({ type: 'tabLongPress', target: rota.key })}
               style={({ pressed }) => [
                 styles.item,
-                ativa && [styles.itemAtivo, { backgroundColor: theme.barActive }],
+                ampliada && { flex: 0, width: colunas === 2 ? '50%' : '33.333333%' },
+                ativa && { backgroundColor: theme.barActive },
                 pressed && !ativa && styles.apertado,
               ]}
             >
-              <Icone nome={ICONES[rota.name] ?? 'circle'} tamanho={ativa ? 17 : 19} cor={ativa ? theme.barActiveIcon : theme.barIcon} />
-              {ativa ? <Text style={[styles.rotulo, { color: theme.barActiveIcon }]}>{titulo}</Text> : null}
+              <Icone nome={ICONES[rota.name] ?? 'circle'} tamanho={19} cor={ativa ? theme.barActiveIcon : theme.barIcon} />
+              <Text style={[styles.rotulo, { color: ativa ? theme.barActiveIcon : theme.barIcon }]}>{titulo}</Text>
             </Pressable>
           );
         })}
@@ -78,26 +83,28 @@ export default function Abas() {
 }
 
 const styles = StyleSheet.create({
-  ancora: { position: 'absolute', left: 0, right: 0, alignItems: 'center' },
+  ancora: { paddingHorizontal: space.sm, paddingTop: space.sm, alignItems: 'center' },
   dock: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: space.xs,
+    width: '100%',
+    maxWidth: 440,
     padding: space.xs + 1,
     borderRadius: 28,
     borderWidth: 1,
   },
+  dockAmpliado: { flexWrap: 'wrap', justifyContent: 'center' },
   item: {
-    flexDirection: 'row',
+    flex: 1,
+    flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: space.sm - 1,
+    gap: space.xs,
     minWidth: toque.minimo,
-    height: toque.minimo,
-    minHeight: toque.minimo,
-    borderRadius: 24,
+    minHeight: toque.minimo + space.lg,
+    paddingVertical: space.sm,
+    borderRadius: 22,
   },
-  itemAtivo: { minWidth: 92, paddingHorizontal: space.md },
-  rotulo: { fontFamily: 'Inter_600SemiBold', fontSize: 13, lineHeight: 16 },
+  rotulo: { fontFamily: 'Inter_600SemiBold', fontSize: 11, lineHeight: 16, textAlign: 'center' },
   apertado: { opacity: 0.6 },
 });

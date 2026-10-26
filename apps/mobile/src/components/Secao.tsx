@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { recuo as recuoPadrao, rules, space, toque, typography } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
 
@@ -37,11 +37,14 @@ export function Secao({
   children,
   solto,
   recuo,
+  espacada,
 }: {
   titulo: string;
   children: ReactNode;
   solto?: boolean;
   recuo?: number;
+  /** Respiro entre controles de formulários, sem alterar a densidade dos registros. */
+  espacada?: boolean;
 }) {
   const theme = useTheme();
   return (
@@ -49,7 +52,7 @@ export function Secao({
       <Text role="heading" style={[typography.tipo, { color: theme.accent }]}>
         {titulo}
       </Text>
-      {solto ? children : <Bloco recuo={recuo}>{children}</Bloco>}
+      {solto ? children : <Bloco recuo={recuo}>{espacada ? <View style={styles.conteudoEspacado}>{children}</View> : children}</Bloco>}
     </View>
   );
 }
@@ -104,19 +107,21 @@ export function LinkTexto({
 /** Linha de dado: rótulo à esquerda, valor em mono à direita. */
 export function Dado({ rotulo, valor, detalhe }: { rotulo: string; valor: string; detalhe?: string }) {
   const theme = useTheme();
+  const { width, fontScale } = useWindowDimensions();
   return (
-    <View accessible style={[styles.dado, { borderBottomColor: theme.line }]}>
+    <View accessible style={[styles.dado, (width < 360 || fontScale > 1.3) && styles.dadoEmpilhado, { borderBottomColor: theme.line }]}>
       <View style={styles.dadoTexto}>
         <Text style={[typography.body, { color: theme.ink }]}>{rotulo}</Text>
         {detalhe ? <Text style={[typography.caption, { color: theme.ink2 }]}>{detalhe}</Text> : null}
       </View>
-      <Text style={[typography.data, { color: theme.ink }]}>{valor}</Text>
+      <Text style={[typography.data, { color: theme.ink, flexShrink: 1 }]}>{valor}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   secao: { gap: space.sm + 2 },
+  conteudoEspacado: { gap: space.md, paddingVertical: space.md },
   bloco: { paddingVertical: space.xs, borderTopWidth: rules.hairline, borderBottomWidth: rules.faixa },
   grupo: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: space.md, paddingTop: space.sm },
   link: { minHeight: toque.minimo, justifyContent: 'center', alignSelf: 'flex-start' },
@@ -130,4 +135,5 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   dadoTexto: { flex: 1, gap: space.xxs },
+  dadoEmpilhado: { flexDirection: 'column', gap: space.xs },
 });

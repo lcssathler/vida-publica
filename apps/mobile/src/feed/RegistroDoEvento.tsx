@@ -3,6 +3,13 @@ import { diaIso, hora, reais } from '../comum/formato';
 import type { NomeIcone } from '../components/Icone';
 import { Registro, type Fato } from '../components/Registro';
 import { NOME_TIPO, assuntoDoEvento, fonteDaUrl, protocolo } from './rotulos';
+import { resultadoDaVotacao } from '../propostas/resultado';
+
+export function tipoDoEvento(evento: EventoFeed): string {
+  return evento.tipo === 'voto_nominal' && /secret/i.test(String(evento.payload.voto ?? ''))
+    ? 'Votação secreta'
+    : NOME_TIPO[evento.tipo];
+}
 
 export interface RegistroDoEventoProps {
   evento: EventoFeed;
@@ -63,8 +70,7 @@ export function fatosDoEvento(evento: EventoFeed): Fato[] {
       fatos.push({ rotulo: `${bancada} orientou`, valor: orientou, sentido: sentido(orientou) });
     } else if (typeof p.aprovada === 'boolean') {
       fatos.push({
-        rotulo: 'Resultado',
-        valor: p.aprovada ? 'Aprovada' : 'Rejeitada',
+        ...resultadoDaVotacao(p.aprovada, evento.resumo),
         sentido: p.aprovada ? 'sim' : 'nao',
         icone: p.aprovada ? 'check-circle' : 'x-circle',
       });
@@ -84,8 +90,8 @@ export function RegistroDoEvento({ evento, novo, aoTocar }: RegistroDoEventoProp
   const fatos = fatosDoEvento(evento);
   return (
     <Registro
-      tipo={[NOME_TIPO[evento.tipo], assunto].filter(Boolean).join(' · ')}
-      etiqueta={NOME_TIPO[evento.tipo]}
+      tipo={[tipoDoEvento(evento), assunto].filter(Boolean).join(' · ')}
+      etiqueta={tipoDoEvento(evento)}
       icone={ICONE_TIPO[evento.tipo]}
       projeto={projeto}
       hora={hora(evento.ocorridoEm)}

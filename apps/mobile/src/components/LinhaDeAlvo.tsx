@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useEstaSeguindo, useSeguir } from '../api/consultas';
+import { mensagemDeErro } from '../api/erros';
 import type { Alvo } from '../api/tipos';
 import { rotaDoAlvo } from '../perfis/rotas';
 import { rules, space, typography } from '../theme/tokens';
@@ -14,20 +15,22 @@ export interface LinhaDeAlvoProps {
   detalhe?: string | null;
   /** Texto pequeno acima do nome, ex.: "Pessoa". */
   sobre?: string;
-  /** Chamado depois de deixar de seguir (para oferecer "Desfazer"). */
-  aoDeixar?: () => void;
+  /** A tela de gestão mantém a mutation viva quando uma linha sai da lista. */
+  aoAlternar?: (seguir: boolean) => void;
+  ocupado?: boolean;
 }
 
 /** Pessoa, partido, proposta ou assunto: nome (com link quando há tela), detalhe e seguir. */
-export function LinhaDeAlvo({ alvo, nome, detalhe, sobre, aoDeixar }: LinhaDeAlvoProps) {
+export function LinhaDeAlvo({ alvo, nome, detalhe, sobre, aoAlternar, ocupado }: LinhaDeAlvoProps) {
   const theme = useTheme();
+  const { fontScale } = useWindowDimensions();
   const router = useRouter();
   const seguir = useSeguir();
   const segue = useEstaSeguindo()(alvo);
   const rota = rotaDoAlvo(alvo);
 
   return (
-    <View style={[styles.linha, { borderBottomColor: theme.line }]}>
+    <View style={[styles.linha, fontScale > 1.3 && styles.empilhada, { borderBottomColor: theme.line }]}>
       <View style={styles.texto}>
         {sobre ? <Text style={[typography.overline, { color: theme.ink3 }]}>{sobre}</Text> : null}
         {rota ? (
@@ -40,15 +43,21 @@ export function LinhaDeAlvo({ alvo, nome, detalhe, sobre, aoDeixar }: LinhaDeAlv
             {detalhe}
           </Text>
         ) : null}
+        {!aoAlternar && seguir.isError ? (
+          <Text style={[typography.caption, { color: theme.error }]} aria-live="polite">
+            {mensagemDeErro(seguir.error)}
+          </Text>
+        ) : null}
       </View>
       <Alternar
         rotulo="Seguir"
         rotuloMarcado="Seguindo"
         descricao={`Seguir ${nome}`}
         marcado={segue}
+        desabilitado={ocupado || seguir.isPending}
         aoAlternar={() => {
+          if (aoAlternar) return aoAlternar(!segue);
           seguir.mutate({ alvo, seguir: !segue, nome, detalhe });
-          if (segue) aoDeixar?.();
         }}
       />
     </View>
@@ -64,5 +73,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: rules.hairline,
   },
   texto: { flex: 1, gap: 0 },
+  empilhada: { flexDirection: 'column', alignItems: 'stretch' },
   semLink: { paddingVertical: space.sm },
 });

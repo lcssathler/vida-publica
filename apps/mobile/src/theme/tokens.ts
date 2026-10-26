@@ -142,6 +142,7 @@ export const typography = {
   /** Título de tela e de painel, em Instrument Serif. */
   display: { fontFamily: fontFamily.serif, fontSize: 36, lineHeight: 38, letterSpacing: -0.5 },
   headline: { fontFamily: fontFamily.serif, fontSize: 30, lineHeight: 34, letterSpacing: -0.25 },
+  postHeadline: { fontFamily: fontFamily.serif, fontSize: 23, lineHeight: 28, letterSpacing: -0.25 },
   /** Nome do dia na lista ("14 outubro."). */
   dia: { fontFamily: fontFamily.serif, fontSize: 24, lineHeight: 26, letterSpacing: -0.25 },
   title: { fontFamily: fontFamily.sansMedium, fontSize: 16, lineHeight: 24, letterSpacing: -0.25 },
@@ -191,7 +192,7 @@ export const rules = { hairline: 1, faixa: 8 } as const;
 export const recuo = 20;
 
 /** Barra de navegação flutuante: distância da borda de baixo e espaço que o conteúdo reserva. */
-export const barra = { margemInferior: 16, altura: 58, reserva: 104 } as const;
+export const barra = { margemInferior: 16, altura: 76, reserva: 128 } as const;
 
 /** Movimento: uma curva e três durações (personalidade "Corporate" da skill de movimento). */
 export const movimento = {

@@ -10,7 +10,9 @@ Cada ato público vira uma publicação datada, com a fonte oficial. As regras f
 - O acento só marca interface (abas, etiquetas, links), e nenhuma cor identifica partido ou campo político.
 - Cores de dado: voto, orientação de bancada e resultado de votação. Sim e aprovado em verde suave, Não e rejeitado em vermelho suave, sempre com ícone (✓ ou ✕) e a palavra, nunca só a cor. Valores em dinheiro ficam neutros.
 - Tipografia: Inter (interface) e Instrument Serif (títulos, dias e valores de votação), SIL Open Font License. Ícones de traço Feather (`@expo/vector-icons`), sempre decorativos. Foto oficial 3×4, nunca círculo.
-- Dock flutuante com Feed, Navegar, Seguindo, Busca e Conta; o destino ativo vira cápsula com o nome, que é o que o leitor de tela lê. O detalhe do registro abre num painel que sobe de baixo.
+- Dock flutuante com Feed, Navegar, Seguindo, Busca e Conta; todos os destinos mantêm ícone e nome visíveis, com largura estável e cápsula clara no ativo. O detalhe do registro abre num painel que sobe de baixo.
+- Com fonte do sistema acima de 130%, o dock distribui os destinos em mais linhas e o rodapé de ações empilha os botões. No Android, o teclado reduz a área de conteúdo e oculta o dock; é possível rolar o formulário mantendo o teclado aberto. Os textos continuam respeitando a ampliação do sistema.
+- O dock ocupa seu espaço no layout, mantendo a cápsula visual sem cobrir o conteúdo focado. Na Conta, linhas de ajustes têm separadores e respiro; seletores anunciam aberto/recolhido e botões de aumentar/diminuir informam o valor atual ao leitor de tela.
 - Contraste testado automaticamente (WCAG AA) nos modos claro e escuro.
 - Alvo de toque mínimo de 48 pt (`toque.minimo`); acessibilidade pelas props `role` e `aria-*`, que valem no Android, no iOS e na web.
 
@@ -45,7 +47,7 @@ Até concluir, só as telas do onboarding ficam acessíveis (`Stack.Protected` e
 
 ## Feed
 
-- Abas (`src/app/(abas)`): Feed, Busca, Seguindo e Conta, só com rótulo de texto.
+- Abas (`src/app/(abas)`): Feed, Navegar, Seguindo, Busca e Conta. Filtros múltiplos usam controles com marca de seleção; abas sublinhadas dos perfis continuam com seleção única.
 - `GET /feed` por cursor (`useInfiniteQuery`), de 20 em 20, com "Quem eu sigo" ou "Tudo" e filtros por tipo (as mesmas categorias dos perfis: votos, presença, gastos, propostas, campanha, eleições) e por assunto (os seguidos e os de mais propostas).
 - Registros agrupados por dia de Brasília. Fato só com data (meia-noite em Brasília) não mostra hora. Datas e valores formatados sem depender do `Intl` (`src/comum/formato.ts`).
 - "Você parou aqui": o registro do topo da última visita fica guardado no aparelho por escopo. Na volta, o que vem antes dele é grifado como novo e um divisor marca onde a pessoa parou (`src/feed/linhas.ts`).

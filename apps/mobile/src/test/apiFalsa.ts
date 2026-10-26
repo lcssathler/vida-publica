@@ -13,7 +13,7 @@ export interface RespostaFalsa {
   cabecalhos?: Record<string, string>;
 }
 
-type Rota = RespostaFalsa | ((pedido: PedidoRegistrado) => RespostaFalsa);
+export type Rota = RespostaFalsa | ((pedido: PedidoRegistrado) => RespostaFalsa | Promise<RespostaFalsa>);
 
 export function apiFalsa(rotas: Record<string, Rota>) {
   const pedidos: PedidoRegistrado[] = [];
@@ -47,7 +47,7 @@ export function apiFalsa(rotas: Record<string, Rota>) {
     const semConsulta = caminho.split('?')[0];
     const rota =
       rotas[`${metodo} ${caminho}`] ?? rotas[`${metodo} ${semConsulta}`] ?? padrao[`${metodo} ${semConsulta}`];
-    const resposta = typeof rota === 'function' ? rota(pedido) : (rota ?? { status: 404, corpo: { message: 'rota falsa ausente' } });
+    const resposta = typeof rota === 'function' ? await rota(pedido) : (rota ?? { status: 404, corpo: { message: 'rota falsa ausente' } });
     const status = resposta.status ?? 200;
     return new Response(status === 204 ? null : JSON.stringify(resposta.corpo ?? {}), {
       status,

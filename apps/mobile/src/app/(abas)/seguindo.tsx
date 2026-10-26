@@ -54,9 +54,9 @@ export default function Seguindo() {
           <Botao
             variante="texto"
             rotulo="Desfazer"
+            ocupado={seguir.isPending}
             aoTocar={() => {
-              seguir.mutate(desfeito);
-              setDesfeito(null);
+              seguir.mutate(desfeito, { onSuccess: () => setDesfeito(null) });
             }}
           />
         </View>
@@ -84,7 +84,14 @@ export default function Seguindo() {
                   alvo={{ tipo: s.tipo, id: s.id }}
                   nome={s.nome}
                   detalhe={s.detalhe}
-                  aoDeixar={() => deixar(s)}
+                  ocupado={seguir.isPending}
+                  aoAlternar={(quer) => {
+                    setDesfeito(null);
+                    seguir.mutate(
+                      { alvo: { tipo: s.tipo, id: s.id }, seguir: quer, nome: s.nome, detalhe: s.detalhe },
+                      { onSuccess: () => { if (!quer) deixar(s); } },
+                    );
+                  }}
                 />
               ))}
             </Secao>

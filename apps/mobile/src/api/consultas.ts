@@ -72,6 +72,7 @@ export function useSeguir() {
   const { cliente } = useSessao();
   const consultas = useQueryClient();
   return useMutation({
+    mutationKey: ['seguir'],
     mutationFn: async ({ alvo, seguir }: PedidoSeguir) => {
       if (seguir) await cliente.put(caminhoAlvo(alvo));
       else await cliente.delete(caminhoAlvo(alvo));
@@ -86,12 +87,17 @@ export function useSeguir() {
           ? [{ ...alvo, nome, detalhe: detalhe ?? null, desde: new Date().toISOString() }, ...sem]
           : sem,
       );
-      return { antes };
+      return { anterior: antes?.find((s) => chaveAlvo(s) === chaveAlvo(alvo)) };
     },
-    onError: (_erro, _pedido, contexto) => {
-      consultas.setQueryData(chaves.seguindo, contexto?.antes);
+    onError: (_erro, pedido, contexto) => {
+      consultas.setQueryData<AlvoSeguido[]>(chaves.seguindo, (atuais) => {
+        const outros = (atuais ?? []).filter((s) => chaveAlvo(s) !== chaveAlvo(pedido.alvo));
+        return contexto?.anterior ? [contexto.anterior, ...outros] : outros;
+      });
     },
     onSettled: async () => {
+      // Não sobrescrever escolhas otimistas que ainda estão sendo salvas.
+      if (consultas.isMutating({ mutationKey: ['seguir'] }) > 1) return;
       await consultas.invalidateQueries({ queryKey: chaves.seguindo });
       // O feed "seguindo" e os eventos de campanha dependem de quem se segue.
       await consultas.invalidateQueries({ queryKey: chaves.feed });
@@ -126,12 +132,13 @@ export function useParlamentares(uf: Uf | null) {
 
 /** Grava preferências na conta (só os campos enviados). */
 export function useSalvarPreferencias() {
-  const { cliente } = useSessao();
+  const { cliente, atualizarLocal } = useSessao();
   const consultas = useQueryClient();
   return useMutation({
     mutationFn: (mudancas: Partial<Preferencias>) =>
       cliente.patch<Preferencias>('/conta/preferencias', mudancas),
     onSuccess: (preferencias) => {
+      atualizarLocal({ uf: preferencias.uf, avisos: preferencias.notificacoes });
       consultas.setQueryData(chaves.preferencias, preferencias);
       consultas.setQueryData<Conta>(chaves.conta, (conta) => (conta ? { ...conta, preferencias } : conta));
     },

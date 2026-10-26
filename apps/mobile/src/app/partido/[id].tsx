@@ -5,8 +5,9 @@ import { mensagemDeErro } from '../../api/erros';
 import type { PerfilPartido } from '../../api/tipos';
 import { capitalizar, plural, reais } from '../../comum/formato';
 import { Alternar } from '../../components/Alternar';
+import { Detalhes } from '../../components/Detalhes';
 import { BarraVoltar } from '../../components/BotaoVoltar';
-import { Carregando, Falha } from '../../components/Estado';
+import { EstadoComVolta } from '../../components/Estado';
 import { Dado, LinkTexto, Secao } from '../../components/Secao';
 import { nomeEsfera, nomeFonteRepasse } from '../../feed/rotulos';
 import { PerfilComLinhaDoTempo } from '../../perfis/LinhaDoTempo';
@@ -18,9 +19,9 @@ export default function PerfilDePartido() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const partido = usePartido(id);
 
-  if (partido.isPending) return <Carregando rotulo="Carregando o partido" />;
+  if (partido.isPending) return <EstadoComVolta carregando="Carregando o partido" />;
   if (partido.isError) {
-    return <Falha mensagem={mensagemDeErro(partido.error)} aoTentar={() => void partido.refetch()} />;
+    return <EstadoComVolta mensagem={mensagemDeErro(partido.error)} aoTentar={() => void partido.refetch()} />;
   }
   return (
     <PerfilComLinhaDoTempo
@@ -79,6 +80,7 @@ function Cabecalho({ p }: { p: PerfilPartido }) {
         </Text>
       ) : null}
 
+      <Detalhes titulo="História, parlamentares e repasses">
       {p.sucessor || p.antecessores.length ? (
         <Secao titulo="História">
           {p.sucessor ? (
@@ -131,6 +133,7 @@ function Cabecalho({ p }: { p: PerfilPartido }) {
           ))}
         </Secao>
       ) : null}
+      </Detalhes>
     </View>
   );
 }

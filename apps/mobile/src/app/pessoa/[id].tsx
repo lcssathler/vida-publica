@@ -1,13 +1,14 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Linking, StyleSheet, Text, View } from 'react-native';
+import { Linking, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useDoadores, useEstaSeguindo, usePessoa, useSeguir } from '../../api/consultas';
 import { mensagemDeErro } from '../../api/erros';
 import type { DoadoresCandidatura, PerfilPessoa } from '../../api/tipos';
 import { capitalizar, dataSimples, inteiro, plural, reais } from '../../comum/formato';
 import { Alternar } from '../../components/Alternar';
+import { Detalhes } from '../../components/Detalhes';
 import { BarraVoltar } from '../../components/BotaoVoltar';
-import { Carregando, Falha } from '../../components/Estado';
+import { EstadoComVolta } from '../../components/Estado';
 import { FotoOficial } from '../../components/FotoOficial';
 import { Dado, LinkTexto, Secao } from '../../components/Secao';
 import { PerfilComLinhaDoTempo } from '../../perfis/LinhaDoTempo';
@@ -21,9 +22,9 @@ export default function PerfilDePessoa() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const pessoa = usePessoa(id);
 
-  if (pessoa.isPending) return <Carregando rotulo="Carregando o perfil" />;
+  if (pessoa.isPending) return <EstadoComVolta carregando="Carregando o perfil" />;
   if (pessoa.isError) {
-    return <Falha mensagem={mensagemDeErro(pessoa.error)} aoTentar={() => void pessoa.refetch()} />;
+    return <EstadoComVolta mensagem={mensagemDeErro(pessoa.error)} aoTentar={() => void pessoa.refetch()} />;
   }
   return (
     <PerfilComLinhaDoTempo
@@ -36,6 +37,7 @@ export default function PerfilDePessoa() {
 
 function Cabecalho({ p }: { p: PerfilPessoa }) {
   const theme = useTheme();
+  const { fontScale } = useWindowDimensions();
   const router = useRouter();
   const seguir = useSeguir();
   const segue = useEstaSeguindo()({ tipo: 'pessoa', id: p.id });
@@ -57,7 +59,7 @@ function Cabecalho({ p }: { p: PerfilPessoa }) {
           />
         }
       />
-      <View style={styles.identidade}>
+      <View style={[styles.identidade, fontScale > 1.3 && { alignItems: 'flex-start' }]}>
         <FotoOficial foto={p.foto} nome={p.nome} largura={72} />
         <View style={styles.nomes}>
           {resumo ? <Text style={[typography.tipo, { color: theme.accent }]}>{resumo}</Text> : null}
@@ -78,6 +80,7 @@ function Cabecalho({ p }: { p: PerfilPessoa }) {
         </Text>
       ) : null}
 
+      <Detalhes titulo="Mandatos, partidos, gastos e campanha">
       {p.mandatos.length ? (
         <Secao titulo="Mandatos">
           {p.mandatos.map((m) => (
@@ -158,6 +161,7 @@ function Cabecalho({ p }: { p: PerfilPessoa }) {
           ))}
         </Secao>
       ) : null}
+      </Detalhes>
     </View>
   );
 }

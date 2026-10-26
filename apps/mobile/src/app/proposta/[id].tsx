@@ -9,11 +9,12 @@ import { dataCurta, dataSimples, diaPorExtenso, hora } from '../../comum/formato
 import { Alternar } from '../../components/Alternar';
 import { Botao } from '../../components/Botao';
 import { BarraVoltar } from '../../components/BotaoVoltar';
-import { Carregando, Falha, Vazio } from '../../components/Estado';
+import { EstadoComVolta, Vazio } from '../../components/Estado';
 import { Icone } from '../../components/Icone';
 import { LinkTexto, Secao } from '../../components/Secao';
 import { NOME_TIPO } from '../../feed/rotulos';
 import { situacaoMudou } from '../../propostas/linha';
+import { resultadoDaVotacao } from '../../propostas/resultado';
 import { AvisoSemConexao } from '../../offline/AvisoSemConexao';
 import { Placar } from '../../propostas/Placar';
 import { radius, space, typography } from '../../theme/tokens';
@@ -27,9 +28,9 @@ export default function DetalheDaProposta() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const proposta = useProposta(id);
 
-  if (proposta.isPending) return <Carregando rotulo="Carregando a proposta" />;
+  if (proposta.isPending) return <EstadoComVolta carregando="Carregando a proposta" />;
   if (proposta.isError) {
-    return <Falha mensagem={mensagemDeErro(proposta.error)} aoTentar={() => void proposta.refetch()} />;
+    return <EstadoComVolta mensagem={mensagemDeErro(proposta.error)} aoTentar={() => void proposta.refetch()} />;
   }
 
   const itens = proposta.data.linhaDoTempo;
@@ -203,7 +204,10 @@ function ItemDaLinha({
               cor={item.aprovada ? theme.yes : theme.no}
             />
             <Text style={[typography.bodyStrong, { color: item.aprovada ? theme.yes : theme.no }]}>
-              {item.aprovada ? 'Aprovada' : 'Rejeitada'}
+              {(() => {
+                const resultado = resultadoDaVotacao(item.aprovada, item.descricao);
+                return `${resultado.rotulo}: ${resultado.valor.toLowerCase()}`;
+              })()}
             </Text>
           </View>
         )}

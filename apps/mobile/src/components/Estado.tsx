@@ -1,7 +1,22 @@
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { space, typography } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
 import { Botao } from './Botao';
+import { BotaoVoltar } from './BotaoVoltar';
+
+/** As telas empilhadas preservam a saída mesmo antes de os dados chegarem. */
+export function EstadoComVolta({ carregando, mensagem, aoTentar, fechar = false }: {
+  carregando?: string; mensagem?: string; aoTentar?: () => void; fechar?: boolean;
+}) {
+  const theme = useTheme();
+  return (
+    <SafeAreaView style={[styles.tela, { backgroundColor: theme.background }]}>
+      <View style={styles.voltar}><BotaoVoltar icone={fechar ? 'x' : 'chevron-left'} rotulo={fechar ? 'Fechar' : 'Voltar'} /></View>
+      {carregando ? <Carregando rotulo={carregando} /> : <Falha mensagem={mensagem ?? 'Não foi possível carregar.'} aoTentar={aoTentar} />}
+    </SafeAreaView>
+  );
+}
 
 /** Carregando, com o que está sendo carregado anunciado ao leitor de tela. */
 export function Carregando({ rotulo = 'Carregando' }: { rotulo?: string }) {
@@ -50,6 +65,8 @@ export function Vazio({ mensagem }: { mensagem: string }) {
 }
 
 const styles = StyleSheet.create({
+  tela: { flex: 1 },
+  voltar: { paddingHorizontal: space.xxl },
   centro: {
     flex: 1,
     alignItems: 'center',

@@ -93,6 +93,8 @@ describe('Perfil de pessoa', () => {
     expect(screen.getByText('Maria Exemplo da Silva')).toBeOnTheScreen();
     expect(screen.getByText('Deputada Federal · SP · AAA')).toBeOnTheScreen();
     expect(screen.getByText('Foto: Câmara dos Deputados')).toBeOnTheScreen();
+    expect(screen.queryByText('Combustíveis e Lubrificantes')).toBeNull();
+    await fireEvent.press(screen.getByRole('button', { name: 'Mandatos, partidos, gastos e campanha' }));
     expect(screen.getByText('Combustíveis e Lubrificantes')).toBeOnTheScreen();
     expect(screen.getByText('1 documento')).toBeOnTheScreen();
     expect(await screen.findByText('DOADORA FICTÍCIA')).toBeOnTheScreen();
@@ -114,6 +116,7 @@ describe('Perfil de pessoa', () => {
     const { api } = await renderizar(<PerfilDePessoa />, { rotas });
     await fireEvent.press(await screen.findByRole('checkbox', { name: 'Seguir Maria Exemplo' }));
     await waitFor(() => expect(api.pedidos.some((p) => p.metodo === 'PUT' && p.caminho === '/seguindo/pessoa/p1')).toBe(true));
+    await fireEvent.press(screen.getByRole('button', { name: 'Mandatos, partidos, gastos e campanha' }));
     await fireEvent.press(screen.getByRole('link', { name: 'Partido AAA' }));
     expect(mockRoteador.push).toHaveBeenCalledWith({ pathname: '/partido/[id]', params: { id: '30' } });
   });
@@ -146,6 +149,7 @@ describe('Perfil de partido', () => {
     });
     expect(await screen.findByRole('heading', { name: 'AAA' })).toBeOnTheScreen();
     expect(screen.getByText('Partido Exemplo')).toBeOnTheScreen();
+    await fireEvent.press(screen.getByRole('button', { name: 'História, parlamentares e repasses' }));
     expect(screen.getByText('2026 · Fundo Eleitoral (FEFC)')).toBeOnTheScreen();
     expect(screen.getByText('Pelos diretórios estaduais · 1 repasse a 1 candidatura')).toBeOnTheScreen();
     expect(await screen.findByText('Nenhum registro publicado ainda.')).toBeOnTheScreen();
